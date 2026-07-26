@@ -139,14 +139,7 @@ window.Utils.formatters.formatAlbumDetail = function(data) {
         year: data.year,
         song_count: data.list ? data.list.length : 0,
         songs: (data.list || []).map(function(song) {
-            return {
-                id: song.id,
-                token: window.Utils.formatters.extractToken(song.perma_url),
-                title: window.Utils.formatters.decode(song.title),
-                image: song.image || '',
-                duration: song.more_info ? song.more_info.duration || 'N/A' : 'N/A',
-                has_stream: song.more_info ? !!song.more_info.encrypted_media_url : false
-            };
+            return window.Utils.formatters.formatSong(song);
         })
     };
 };
