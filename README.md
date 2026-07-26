@@ -39,8 +39,8 @@ This userscript solves both problems:
 - **Other Browsers:** Visit [violentmonkey.github.io](https://violentmonkey.github.io/)
 
 ### 2. Install the Userscript
-- Download `song-downloader.user.js` from the [dist folder](./dist/song-downloader.user.js)
-- Or install directly from the GitHub repo
+- Open `song-downloader.user.js` from the [userscript branch](https://raw.githubusercontent.com/HemanthJabalpuri/songdl/refs/heads/userscript/song-downloader.user.js) and click "Install" when Violentmonkey page appears
+- Or install directly from the `userscript` branch in GitHub repo 
 
 ### 3. Visit JioSaavn
 - Go to [jiosaavn.com](https://www.jiosaavn.com/)
