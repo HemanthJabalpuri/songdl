@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Song Downloader</title>
+    <link rel="stylesheet" href="/css/ui.css">
+    <style>
+        body {
+            margin: 0;
+            background: #111;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #app {
+            max-width: 600px;
+            margin: 40px 20px;
+            padding: 40px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            border: 1px solid #333;
+            text-align: center;
+        }
+        h1 {
+            color: #1db954;
+            font-size: 28px;
+            margin: 0 0 10px 0;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 16px;
+            margin: 0 0 30px 0;
+        }
+        .shortcut {
+            display: inline-block;
+            background: #2a2a2a;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            color: #ddd;
+            font-family: monospace;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #333;
+            margin: 30px 0;
+        }
+        .info {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0;
+        }
+        .info a {
+            color: #1db954;
+            text-decoration: none;
+        }
+        .info a:hover {
+            text-decoration: underline;
+        }
+        .emoji-big {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 15px;
+        }
+        .badge {
+            display: inline-block;
+            background: #1db954;
+            color: #111;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 4px 12px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Set proxy mode flag -->
+    <script>
+        window.isProxy = true;
+    </script>
+
+    <div id="app">
+        <span class="emoji-big">🎵</span>
+        <h1>Song Downloader</h1>
+        <p class="subtitle">Download songs and albums with metadata</p>
+        
+        <div>
+            <span class="shortcut">🎵 Click the floating button</span>
+            <span style="color:#555;margin:0 8px;">or</span>
+            <span class="shortcut">⌨️ Alt+J</span>
+        </div>
+
+        <hr>
+
+        <p class="info">
+            💡 This is <strong>split mode</strong> — files are loaded individually for development.<br>
+            📦 Try <a href="/bundle">bundle mode</a> to test the userscript build.
+        </p>
+        
+        <span class="badge">Development</span>
+    </div>
+
+    <!-- JavaScript - ORDER MATTERS! -->
+    <script src="/js/ui/utils.js"></script>
+    
+    <!-- Libraries -->
+    <script src="/js/libs/des.js"></script>
+    <script src="/js/libs/writem4a.js"></script>
+    
+    <!-- Utils -->
+    <script src="/js/utils/decrypt.js"></script>
+    <script src="/js/utils/resource.js"></script>
+    <script src="/js/utils/formatters.js"></script>
+    <script src="/js/utils/url-helper.js"></script>
+    <script src="/js/utils/download-helper.js"></script>
+    
+    <!-- API (Pure API calls) -->
+    <script src="/js/api/constants.js"></script>
+    <script src="/js/api/fetch.js"></script>
+    <script src="/js/api/songs.js"></script>
+    <script src="/js/api/albums.js"></script>
+    
+    <!-- Services (Business logic) -->
+    <script src="/js/services/song.js"></script>
+    <script src="/js/services/album.js"></script>
+    <script src="/js/services/download.js"></script>
+    
+    <!-- UI -->
+    <script src="/js/ui/search.js"></script>
+    <script src="/js/ui/display.js"></script>
+    <script src="/js/ui/player.js"></script>
+    <script src="/js/ui/download.js"></script>
+    <script src="/js/ui/core.js"></script>
+    <script src="/js/ui/builder.js"></script>
+    <script src="/js/ui/handlers.js"></script>
+</body>
+</html>

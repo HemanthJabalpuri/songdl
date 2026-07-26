@@ -1,0 +1,9 @@
+{
+  "name": "song-downloader",
+  "version": "1.0.0",
+  "description": "Song Downloader",
+  "scripts": {
+    "start": "node server.js",
+    "build": "node build.js"
+  }
+}
