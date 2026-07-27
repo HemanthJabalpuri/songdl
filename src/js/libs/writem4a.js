@@ -121,14 +121,10 @@ const TAG_MAPPING = {
  */
 const TAG_TO_ATOM = {};
 for (const [atom, key] of Object.entries(TAG_MAPPING)) {
-  if (!TAG_TO_ATOM[key]) {
+  if (!TAG_TO_ATOM[key] || (atom === '\xa9ART' && TAG_TO_ATOM[key] === '\xa9art')) {
     TAG_TO_ATOM[key] = atom;
   }
 }
-
-// Override artist to use uppercase ART (ffmpeg standard)
-// This makes ffprobe show the artist tag correctly
-TAG_TO_ATOM['artist'] = '\xa9ART';
 
 /**
  * Reads size and type boundaries of an atom header.

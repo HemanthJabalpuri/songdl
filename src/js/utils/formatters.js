@@ -179,7 +179,7 @@ window.Utils.formatters.formatDecryptedSong = function(songData, decryptedUrl) {
         year: songData.year || '',
         language: songData.language || '',
         copyright: songData.more_info ? window.Utils.formatters.decode(songData.more_info.copyright_text || '') : '',
-        token: songData.id,
+        token: window.Utils.formatters.extractToken(songData.perma_url),
         url: decryptedUrl,
         has_lyrics: !!(songData.more_info && songData.more_info.has_lyrics === 'true')
     };

@@ -51,7 +51,7 @@ window.Utils.buildMetadata = function(song, albumArt, lyrics) {
         year: song.year || '',
         genre: song.language || '',
         copyright: song.copyright || '',
-        comment: 'ID: ' + (song.token || ''),
+        comment: 'Token: ' + (song.token || ''),
         album_artist: allArtists,
     };
     
