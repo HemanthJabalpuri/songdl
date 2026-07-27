@@ -42,32 +42,47 @@ window.Utils.formatters.formatUrlWithQuality = function(url, quality) {
     return url.replace(/_(\d+)\.mp4/, '_' + quality + '.mp4');
 };
 
-// ============ FORMAT ARTIST ============
-window.Utils.formatters.formatArtist = function(artist) {
+// ============ EXTRACT ARTISTS ============
+window.Utils.formatters.extractArtists = function(songData) {
+    var primaryArtists = (songData.more_info && songData.more_info.artistMap) 
+        ? songData.more_info.artistMap.primary_artists || [] 
+        : [];
+    var featuredArtists = (songData.more_info && songData.more_info.artistMap) 
+        ? songData.more_info.artistMap.featured_artists || [] 
+        : [];
+    
+    var primaryNames = primaryArtists.map(function(a) { return a.name; });
+    var featuredNames = featuredArtists.map(function(a) { return a.name; });
+    var allNames = primaryNames.concat(featuredNames);
+    var primaryArtist = primaryNames[0] || '';
+    var allArtists = allNames.join(', ');
+    
     return {
-        id: artist.id,
-        token: window.Utils.formatters.extractToken(artist.perma_url),
-        name: window.Utils.formatters.decode(artist.name),
-        image: artist.image || "",
-        perma_url: artist.perma_url || "",
+        primary: primaryArtists,
+        featured: featuredArtists,
+        primaryNames: primaryNames,
+        featuredNames: featuredNames,
+        allNames: allNames,
+        primaryArtist: primaryArtist,
+        allArtists: allArtists
     };
 };
 
-// ============ GET ARTISTS ============
-window.Utils.formatters.getPrimaryArtists = function(artists) {
-    if (!artists || artists.length === 0) return "";
-    return artists.map(function(a) { return a.name; }).join(", ");
+// ============ GET ALBUM NAME ============
+window.Utils.formatters.getAlbumName = function(songData) {
+    var albumName = songData.more_info ? window.Utils.formatters.decode(songData.more_info.album || '') : '';
+    if (!albumName) {
+        var subtitleParts = window.Utils.formatters.decode(songData.subtitle || '').split(' - ');
+        if (subtitleParts.length > 1) {
+            albumName = subtitleParts[subtitleParts.length - 1];
+        }
+    }
+    return albumName;
 };
 
-window.Utils.formatters.getAllArtists = function(primary, featured) {
-    var all = [];
-    if (primary && primary.length > 0) {
-        all.push.apply(all, primary.map(function(a) { return a.name; }));
-    }
-    if (featured && featured.length > 0) {
-        all.push.apply(all, featured.map(function(a) { return a.name; }));
-    }
-    return all.join(", ");
+// ============ GET COPYRIGHT ============
+window.Utils.formatters.getCopyright = function(songData) {
+    return songData.more_info ? window.Utils.formatters.decode(songData.more_info.copyright_text || '') : '';
 };
 
 // ============ FORMAT SEARCH RESULTS ============
@@ -90,14 +105,11 @@ window.Utils.formatters.formatSearchResults = function(data, type) {
 
 // ============ SONG FORMATTER ============
 window.Utils.formatters.formatSong = function(song) {
-    if (song.more_info.has_lyrics) {
-        console.log('[Utils] has lyrics true');
-    }
-
     return {
         id: song.id,
         token: window.Utils.formatters.extractToken(song.perma_url),
         title: window.Utils.formatters.decode(song.title),
+        subtitle: window.Utils.formatters.decode(song.subtitle),
         image: song.image || '',
         language: song.language,
         year: song.year,
@@ -108,7 +120,7 @@ window.Utils.formatters.formatSong = function(song) {
             album: song.more_info ? window.Utils.formatters.decode(song.more_info.album || '') : ''
         },
         has_stream: song.more_info ? !!song.more_info.encrypted_media_url : false,
-has_lyrics: !!(song.more_info && song.more_info.has_lyrics === 'true')
+        has_lyrics: !!(song.more_info && song.more_info.has_lyrics === 'true')
     };
 };
 
@@ -146,42 +158,32 @@ window.Utils.formatters.formatAlbumDetail = function(data) {
 
 // ============ DECRYPTED SONG FORMATTER ============
 window.Utils.formatters.formatDecryptedSong = function(songData, decryptedUrl) {
-    var primaryArtists = (songData.more_info && songData.more_info.artistMap) 
-        ? songData.more_info.artistMap.primary_artists || [] 
-        : [];
-    var featuredArtists = (songData.more_info && songData.more_info.artistMap) 
-        ? songData.more_info.artistMap.featured_artists || [] 
-        : [];
+    // Get base fields from formatSong
+    var base = window.Utils.formatters.formatSong(songData);
     
-    var primaryNames = primaryArtists.map(function(a) { return a.name; });
-    var featuredNames = featuredArtists.map(function(a) { return a.name; });
-    var allNames = primaryNames.concat(featuredNames);
-    var primaryArtist = primaryNames[0] || '';
-    var allArtists = allNames.join(', ');
+    // Extract artist info
+    var artists = window.Utils.formatters.extractArtists(songData);
     
     // Get album name
-    var albumName = songData.more_info ? window.Utils.formatters.decode(songData.more_info.album || '') : '';
-    if (!albumName) {
-        var subtitleParts = window.Utils.formatters.decode(songData.subtitle || '').split(' - ');
-        if (subtitleParts.length > 1) {
-            albumName = subtitleParts[subtitleParts.length - 1];
-        }
-    }
+    var albumName = window.Utils.formatters.getAlbumName(songData);
+    
+    // Get copyright
+    var copyright = window.Utils.formatters.getCopyright(songData);
     
     return {
-        title: window.Utils.formatters.decode(songData.title),
-        subtitle: window.Utils.formatters.decode(songData.subtitle),
-        artist: allArtists,
-        primary_artist: primaryArtist,
-        all_artists: allArtists,
+        title: base.title,
+        subtitle: base.subtitle,
+        token: base.token,
+        image: base.image,
+        year: base.year,
+        language: base.language,
+        has_lyrics: base.has_lyrics,
+        artist: artists.allArtists,
+        primary_artist: artists.primaryArtist,
+        all_artists: artists.allArtists,
         album: albumName,
-        image: songData.image || '',
-        year: songData.year || '',
-        language: songData.language || '',
-        copyright: songData.more_info ? window.Utils.formatters.decode(songData.more_info.copyright_text || '') : '',
-        token: window.Utils.formatters.extractToken(songData.perma_url),
-        url: decryptedUrl,
-        has_lyrics: !!(songData.more_info && songData.more_info.has_lyrics === 'true')
+        copyright: copyright,
+        url: decryptedUrl
     };
 };
 

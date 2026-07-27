@@ -73,17 +73,17 @@ function attachSongEvents(container) {
         });
     });
 
-// Lyrics buttons
-var lyricsBtns = container.querySelectorAll('.btn-lyrics');
-lyricsBtns.forEach(function(btn) {
-    btn.addEventListener('click', function() {
-        var token = this.dataset.token;
-        var songId = this.dataset.songid;
-        if (token && typeof window.showLyrics === 'function') {
-            window.showLyrics(token, songId);
-        }
+    // Lyrics buttons
+    var lyricsBtns = container.querySelectorAll('.btn-lyrics');
+    lyricsBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var token = this.dataset.token;
+            var songId = this.dataset.songid;
+            if (token && typeof window.showLyrics === 'function') {
+                window.showLyrics(token, songId);
+            }
+        });
     });
-});
 }
 
 // ============ CREATE ALBUM CARD ============
