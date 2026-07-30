@@ -1,7 +1,15 @@
 // src/js/ui/player.js
 
-async function playSong(token, songId, songCardElement) {
-    console.log('[Player] Playing song:', token, songId);
+async function playSong(songData) {
+    if (!songData) {
+        console.error('[Player] No song data provided');
+        return;
+    }
+    
+    var token = songData.token || songData.id;
+    var title = songData.title || 'Song';
+ 
+    console.log('[Player] Playing song:', token);
 
     // If player already exists, remove it
     if (currentPlayerElement) {
@@ -10,14 +18,14 @@ async function playSong(token, songId, songCardElement) {
         currentSongCard = null;
     }
 
-    var progressDiv = document.getElementById('play-progress-' + songId);
+    var progressDiv = document.getElementById('play-progress-' + token);
     
     if (progressDiv) {
         progressDiv.style.display = 'block';
         progressDiv.textContent = '⏳ Decrypting...';
     }
 
-    var buttons = document.querySelectorAll('#song-' + songId + ' .btn-play, #album-song-' + songId + ' .btn-play');
+    var buttons = document.querySelectorAll('[data-token="' + token + '"] .btn-play');
     buttons.forEach(function(btn) {
         btn.textContent = '⏳';
         btn.disabled = true;
@@ -27,8 +35,19 @@ async function playSong(token, songId, songCardElement) {
         var decryptedUrl = decryptedUrlCache.get(token);
         
         if (!decryptedUrl) {
-            var song = await window.Services.Song.getDecrypted(token);
-            decryptedUrl = song.url;
+            // Get encrypted URL from songData
+            var encrypted = songData.more_info && songData.more_info.encrypted_media_url;
+            if (!encrypted) {
+                throw new Error('No encrypted URL found');
+            }
+            
+            if (typeof window.decryptMediaUrl !== 'function') {
+                throw new Error('decryptMediaUrl not available');
+            }
+            
+            decryptedUrl = window.decryptMediaUrl(encrypted);
+            if (!decryptedUrl) throw new Error('Decryption failed');
+            
             decryptedUrlCache.set(token, decryptedUrl);
             setTimeout(function() { decryptedUrlCache.delete(token); }, 3600000);
         }
@@ -40,11 +59,19 @@ async function playSong(token, songId, songCardElement) {
             }, 2000);
         }
 
-        var title = 'Song';
-        var songElement = document.getElementById('song-' + songId) || document.getElementById('album-song-' + songId);
-        if (songElement) {
-            var titleEl = songElement.querySelector('.song-title');
-            if (titleEl) title = titleEl.textContent;
+        // Get title from songData if available
+        var displayTitle = songData.title || 'Song';
+
+        // Find the song card to insert player below it
+        var songCard = document.querySelector('[data-token="' + token + '"]');
+        if (!songCard) {
+            // Fallback: try to find by id
+            songCard = document.getElementById('song-' + token) || document.getElementById('album-song-' + token);
+        }
+        
+        if (songCard) {
+            var titleEl = songCard.querySelector('.song-title');
+            if (titleEl) displayTitle = titleEl.textContent || displayTitle;
         }
 
         if (window.currentAudio) {
@@ -55,7 +82,7 @@ async function playSong(token, songId, songCardElement) {
         var audioHtml = `
             <div id="player-container" style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 15px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <strong>Now Playing: ${title}</strong>
+                    <strong>Now Playing: ${displayTitle}</strong>
                     <button id="player-close-btn" style="background: #dc3545; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer;">✕ Close</button>
                 </div>
                 <audio controls autoplay style="width: 100%;">
@@ -69,12 +96,24 @@ async function playSong(token, songId, songCardElement) {
         tempDiv.innerHTML = audioHtml;
         var playerElement = tempDiv.firstElementChild;
 
-        // Insert after the song card
-        songCardElement.parentNode.insertBefore(playerElement, songCardElement.nextSibling);
+        // Insert after the song card - make sure it's a sibling
+        if (songCard && songCard.parentNode) {
+            // Insert as next sibling of the song card
+            songCard.parentNode.insertBefore(playerElement, songCard.nextSibling);
+    
+            // Add a margin to separate from the card
+            playerElement.style.marginTop = '10px';
+        } else {
+            // Fallback: append to results
+            var resultsDiv = document.getElementById('results');
+            if (resultsDiv) {
+                resultsDiv.appendChild(playerElement);
+            }
+        }
 
         // Store references
         currentPlayerElement = playerElement;
-        currentSongCard = songCardElement;
+        currentSongCard = songCard;
 
         window.currentAudio = playerElement.querySelector('audio');
         

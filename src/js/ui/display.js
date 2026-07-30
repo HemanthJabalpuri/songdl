@@ -14,7 +14,7 @@ function createSongCard(song, index, albumContext) {
     var titlePrefix = (index !== undefined && albumContext) ? (index + 1) + '. ' : '';
     
     var html = `
-        <div class="song-card" id="song-${songId}">
+        <div class="song-card" data-token="${song.token || song.id}">
             <img src="${image}" alt="${escapeHtml(song.title)}" />
             <div class="song-info">
                 <div class="song-title">${titlePrefix}${escapeHtml(song.title)}</div>
@@ -26,11 +26,11 @@ function createSongCard(song, index, albumContext) {
                     ${duration}
                 </div>
                 <div class="song-actions">
-                    <button class="btn-play" data-token="${song.token}" data-songid="${songId}" 
+                    <button class="btn-play" data-token="${song.token || song.id}" data-songid="${songId}" 
                         ${!hasStream ? 'disabled' : ''}>
                         ▶ Play
                     </button>
-                    <button class="btn-download" data-token="${song.token}" data-songid="${songId}" 
+                    <button class="btn-download" data-token="${song.token || song.id}" data-songid="${songId}" 
                         ${!hasStream ? 'disabled' : ''}>
                         ⬇ Download
                     </button>
@@ -53,22 +53,20 @@ function attachSongEvents(container) {
     
     playBtns.forEach(function(btn) {
         btn.addEventListener('click', function() {
-            var token = this.dataset.token;
-            var songId = this.dataset.songid;
-            if (token && songId && typeof window.playSong === 'function') {
-                // Find the song card
-                var songCard = document.getElementById('song-' + songId);
-                window.playSong(token, songId, songCard);
+            var songCard = this.closest('.song-card');
+            var songData = songCard ? songCard._songData : null;
+            if (songData && typeof window.playSong === 'function') {
+                window.playSong(songData);
             }
         });
     });
-
+    
     downloadBtns.forEach(function(btn) {
         btn.addEventListener('click', function() {
-            var token = this.dataset.token;
-            var songId = this.dataset.songid;
-            if (token && songId && typeof window.downloadSong === 'function') {
-                window.downloadSong(token, songId);
+            var songCard = this.closest('.song-card');
+            var songData = songCard ? songCard._songData : null;
+            if (songData && typeof window.downloadSong === 'function') {
+                window.downloadSong(songData);
             }
         });
     });
@@ -146,6 +144,14 @@ function displaySongs(songs) {
     html += '</div>';
     DOM.results.innerHTML = html;
     
+    // Attach song data to cards
+    var cards = DOM.results.querySelectorAll('.song-card');
+    cards.forEach(function(card, index) {
+        if (songs[index]) {
+            card._songData = songs[index];
+        }
+    });
+    
     // Attach events to the results container
     attachSongEvents(DOM.results);
 }
@@ -190,7 +196,6 @@ async function viewAlbum(token) {
 
         if (album.songs && album.songs.length > 0) {
             album.songs.forEach(function(song, index) {
-                // Pass album context for album view
                 html += createSongCard(song, index, album);
             });
         } else {
@@ -199,6 +204,16 @@ async function viewAlbum(token) {
 
         html += '</div>';
         DOM.results.innerHTML = html;
+        
+        // Attach song data to cards
+        var cards = DOM.results.querySelectorAll('.song-card');
+        if (album.songs && album.songs.length > 0) {
+            cards.forEach(function(card, index) {
+                if (album.songs[index]) {
+                    card._songData = album.songs[index];
+                }
+            });
+        }
         
         // Attach events to the results container
         attachSongEvents(DOM.results);

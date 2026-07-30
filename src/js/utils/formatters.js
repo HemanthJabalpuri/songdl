@@ -105,7 +105,7 @@ window.Utils.formatters.formatSearchResults = function(data, type) {
 
 // ============ SONG FORMATTER ============
 window.Utils.formatters.formatSong = function(song) {
-    return {
+    var formatted = {
         id: song.id,
         token: window.Utils.formatters.extractToken(song.perma_url),
         title: window.Utils.formatters.decode(song.title),
@@ -122,6 +122,11 @@ window.Utils.formatters.formatSong = function(song) {
         has_stream: song.more_info ? !!song.more_info.encrypted_media_url : false,
         has_lyrics: !!(song.more_info && song.more_info.has_lyrics === 'true')
     };
+    
+    // Store raw data for metadata extraction
+    formatted._raw = song;
+    
+    return formatted;
 };
 
 // ============ ALBUM FORMATTER ============
@@ -158,26 +163,26 @@ window.Utils.formatters.formatAlbumDetail = function(data) {
 
 // ============ DECRYPTED SONG FORMATTER ============
 window.Utils.formatters.formatDecryptedSong = function(songData, decryptedUrl) {
-    // Get base fields from formatSong
-    var base = window.Utils.formatters.formatSong(songData);
+    // Get raw data (if available)
+    var rawData = songData._raw || songData;
     
-    // Extract artist info
-    var artists = window.Utils.formatters.extractArtists(songData);
+    // Extract artist info from raw data
+    var artists = window.Utils.formatters.extractArtists(rawData);
     
-    // Get album name
-    var albumName = window.Utils.formatters.getAlbumName(songData);
+    // Get album name from raw data
+    var albumName = window.Utils.formatters.getAlbumName(rawData);
     
-    // Get copyright
-    var copyright = window.Utils.formatters.getCopyright(songData);
+    // Get copyright from raw data
+    var copyright = window.Utils.formatters.getCopyright(rawData);
     
     return {
-        title: base.title,
-        subtitle: base.subtitle,
-        token: base.token,
-        image: base.image,
-        year: base.year,
-        language: base.language,
-        has_lyrics: base.has_lyrics,
+        title: window.Utils.formatters.decode(rawData.title),
+        subtitle: window.Utils.formatters.decode(rawData.subtitle),
+        token: window.Utils.formatters.extractToken(rawData.perma_url) || rawData.id,
+        image: rawData.image || '',
+        year: rawData.year || '',
+        language: rawData.language || '',
+        has_lyrics: !!(rawData.more_info && rawData.more_info.has_lyrics === 'true'),
         artist: artists.allArtists,
         primary_artist: artists.primaryArtist,
         all_artists: artists.allArtists,
