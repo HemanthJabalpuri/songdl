@@ -70,6 +70,10 @@ json_val() {
     echo "$data" | jq -r "$query // \"$fallback\""
 }
 
+# Pretty print JSON response
+pretty_json() {
+    echo "$1" | jq -MC . 2>/dev/null || echo "$1"
+}
 
 # ============================================================
 # RENDER / FORMATTERS (DRY Layers)
@@ -132,6 +136,7 @@ search_songs() {
 
     printf '🔍 Searching for songs: "%s" (limit: %s)\n\n' "$query" "$limit"
     response=$(api_request "__call=search.getResults&q=$(url_encode "$query")&n=$limit") || return 1
+pretty_json "$response" > search_songs.json
 
     total=$(echo "$response" | jq -r '.total // 0')
     [ "$total" -eq 0 ] && { printf '❌ No songs found\n'; return 1; }
@@ -153,6 +158,7 @@ search_albums() {
 
     printf '🔍 Searching for albums: "%s" (limit: %s)\n\n' "$query" "$limit"
     response=$(api_request "__call=search.getAlbumResults&q=$(url_encode "$query")&n=$limit") || return 1
+pretty_json "$response" > search_albums.json
 
     total=$(echo "$response" | jq -r '.total // 0')
     [ "$total" -eq 0 ] && { printf '❌ No albums found\n'; return 1; }
@@ -186,6 +192,7 @@ get_song() {
 
     printf '🎵 Fetching song: %s\n\n' "$token"
     response=$(api_request "__call=webapi.get&token=$token&type=song") || return 1
+pretty_json "$response" > get_song.json
 
     song=$(echo "$response" | jq -r '.songs[0] // null')
     [ "$song" = "null" ] && { printf '❌ Song not found\n'; return 1; }
@@ -199,6 +206,7 @@ get_album() {
 
     printf '💿 Fetching album: %s\n\n' "$token"
     response=$(api_request "__call=webapi.get&token=$token&type=album") || return 1
+pretty_json "$response" > get_album.json
 
     title=$(json_val "$response" ".title")
     artist=$(json_val "$response" ".subtitle")
