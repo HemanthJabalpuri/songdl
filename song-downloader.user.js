@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         JioSaavn Song Downloader
-// @namespace    https://github.com
-// @version      1.0.0
+// @namespace    https://github.com/HemanthJabalpuri/songdl
+// @version      1.0.1
 // @description  Download songs and albums with metadata
-// @author       You
+// @author       HemanthJabalpuri
 // @match        https://www.jiosaavn.com/*
 // @grant        GM_xmlhttpRequest
 // @connect      aac.saavncdn.com
@@ -403,14 +403,10 @@ const TAG_MAPPING = {
  */
 const TAG_TO_ATOM = {};
 for (const [atom, key] of Object.entries(TAG_MAPPING)) {
-  if (!TAG_TO_ATOM[key]) {
+  if (!TAG_TO_ATOM[key] || (atom === '\xa9ART' && TAG_TO_ATOM[key] === '\xa9art')) {
     TAG_TO_ATOM[key] = atom;
   }
 }
-
-// Override artist to use uppercase ART (ffmpeg standard)
-// This makes ffprobe show the artist tag correctly
-TAG_TO_ATOM['artist'] = '\xa9ART';
 
 /**
  * Reads size and type boundaries of an atom header.
@@ -1142,32 +1138,47 @@ window.Utils.formatters.formatUrlWithQuality = function(url, quality) {
     return url.replace(/_(\d+)\.mp4/, '_' + quality + '.mp4');
 };
 
-// ============ FORMAT ARTIST ============
-window.Utils.formatters.formatArtist = function(artist) {
+// ============ EXTRACT ARTISTS ============
+window.Utils.formatters.extractArtists = function(songData) {
+    var primaryArtists = (songData.more_info && songData.more_info.artistMap) 
+        ? songData.more_info.artistMap.primary_artists || [] 
+        : [];
+    var featuredArtists = (songData.more_info && songData.more_info.artistMap) 
+        ? songData.more_info.artistMap.featured_artists || [] 
+        : [];
+    
+    var primaryNames = primaryArtists.map(function(a) { return a.name; });
+    var featuredNames = featuredArtists.map(function(a) { return a.name; });
+    var allNames = primaryNames.concat(featuredNames);
+    var primaryArtist = primaryNames[0] || '';
+    var allArtists = allNames.join(', ');
+    
     return {
-        id: artist.id,
-        token: window.Utils.formatters.extractToken(artist.perma_url),
-        name: window.Utils.formatters.decode(artist.name),
-        image: artist.image || "",
-        perma_url: artist.perma_url || "",
+        primary: primaryArtists,
+        featured: featuredArtists,
+        primaryNames: primaryNames,
+        featuredNames: featuredNames,
+        allNames: allNames,
+        primaryArtist: primaryArtist,
+        allArtists: allArtists
     };
 };
 
-// ============ GET ARTISTS ============
-window.Utils.formatters.getPrimaryArtists = function(artists) {
-    if (!artists || artists.length === 0) return "";
-    return artists.map(function(a) { return a.name; }).join(", ");
+// ============ GET ALBUM NAME ============
+window.Utils.formatters.getAlbumName = function(songData) {
+    var albumName = songData.more_info ? window.Utils.formatters.decode(songData.more_info.album || '') : '';
+    if (!albumName) {
+        var subtitleParts = window.Utils.formatters.decode(songData.subtitle || '').split(' - ');
+        if (subtitleParts.length > 1) {
+            albumName = subtitleParts[subtitleParts.length - 1];
+        }
+    }
+    return albumName;
 };
 
-window.Utils.formatters.getAllArtists = function(primary, featured) {
-    var all = [];
-    if (primary && primary.length > 0) {
-        all.push.apply(all, primary.map(function(a) { return a.name; }));
-    }
-    if (featured && featured.length > 0) {
-        all.push.apply(all, featured.map(function(a) { return a.name; }));
-    }
-    return all.join(", ");
+// ============ GET COPYRIGHT ============
+window.Utils.formatters.getCopyright = function(songData) {
+    return songData.more_info ? window.Utils.formatters.decode(songData.more_info.copyright_text || '') : '';
 };
 
 // ============ FORMAT SEARCH RESULTS ============
@@ -1190,14 +1201,11 @@ window.Utils.formatters.formatSearchResults = function(data, type) {
 
 // ============ SONG FORMATTER ============
 window.Utils.formatters.formatSong = function(song) {
-    if (song.more_info.has_lyrics) {
-        console.log('[Utils] has lyrics true');
-    }
-
-    return {
+    var formatted = {
         id: song.id,
         token: window.Utils.formatters.extractToken(song.perma_url),
         title: window.Utils.formatters.decode(song.title),
+        subtitle: window.Utils.formatters.decode(song.subtitle),
         image: song.image || '',
         language: song.language,
         year: song.year,
@@ -1208,8 +1216,13 @@ window.Utils.formatters.formatSong = function(song) {
             album: song.more_info ? window.Utils.formatters.decode(song.more_info.album || '') : ''
         },
         has_stream: song.more_info ? !!song.more_info.encrypted_media_url : false,
-has_lyrics: !!(song.more_info && song.more_info.has_lyrics === 'true')
+        has_lyrics: !!(song.more_info && song.more_info.has_lyrics === 'true')
     };
+    
+    // Store raw data for metadata extraction
+    formatted._raw = song;
+    
+    return formatted;
 };
 
 // ============ ALBUM FORMATTER ============
@@ -1246,42 +1259,32 @@ window.Utils.formatters.formatAlbumDetail = function(data) {
 
 // ============ DECRYPTED SONG FORMATTER ============
 window.Utils.formatters.formatDecryptedSong = function(songData, decryptedUrl) {
-    var primaryArtists = (songData.more_info && songData.more_info.artistMap) 
-        ? songData.more_info.artistMap.primary_artists || [] 
-        : [];
-    var featuredArtists = (songData.more_info && songData.more_info.artistMap) 
-        ? songData.more_info.artistMap.featured_artists || [] 
-        : [];
+    // Get raw data (if available)
+    var rawData = songData._raw || songData;
     
-    var primaryNames = primaryArtists.map(function(a) { return a.name; });
-    var featuredNames = featuredArtists.map(function(a) { return a.name; });
-    var allNames = primaryNames.concat(featuredNames);
-    var primaryArtist = primaryNames[0] || '';
-    var allArtists = allNames.join(', ');
+    // Extract artist info from raw data
+    var artists = window.Utils.formatters.extractArtists(rawData);
     
-    // Get album name
-    var albumName = songData.more_info ? window.Utils.formatters.decode(songData.more_info.album || '') : '';
-    if (!albumName) {
-        var subtitleParts = window.Utils.formatters.decode(songData.subtitle || '').split(' - ');
-        if (subtitleParts.length > 1) {
-            albumName = subtitleParts[subtitleParts.length - 1];
-        }
-    }
+    // Get album name from raw data
+    var albumName = window.Utils.formatters.getAlbumName(rawData);
+    
+    // Get copyright from raw data
+    var copyright = window.Utils.formatters.getCopyright(rawData);
     
     return {
-        title: window.Utils.formatters.decode(songData.title),
-        subtitle: window.Utils.formatters.decode(songData.subtitle),
-        artist: allArtists,
-        primary_artist: primaryArtist,
-        all_artists: allArtists,
+        title: window.Utils.formatters.decode(rawData.title),
+        subtitle: window.Utils.formatters.decode(rawData.subtitle),
+        token: window.Utils.formatters.extractToken(rawData.perma_url) || rawData.id,
+        image: rawData.image || '',
+        year: rawData.year || '',
+        language: rawData.language || '',
+        has_lyrics: !!(rawData.more_info && rawData.more_info.has_lyrics === 'true'),
+        artist: artists.allArtists,
+        primary_artist: artists.primaryArtist,
+        all_artists: artists.allArtists,
         album: albumName,
-        image: songData.image || '',
-        year: songData.year || '',
-        language: songData.language || '',
-        copyright: songData.more_info ? window.Utils.formatters.decode(songData.more_info.copyright_text || '') : '',
-        token: songData.id,
-        url: decryptedUrl,
-        has_lyrics: !!(songData.more_info && songData.more_info.has_lyrics === 'true')
+        copyright: copyright,
+        url: decryptedUrl
     };
 };
 
@@ -1389,7 +1392,7 @@ window.Utils.buildMetadata = function(song, albumArt, lyrics) {
         year: song.year || '',
         genre: song.language || '',
         copyright: song.copyright || '',
-        comment: 'ID: ' + (song.token || ''),
+        comment: 'Token: ' + (song.token || ''),
         album_artist: allArtists,
     };
     
@@ -1653,75 +1656,24 @@ console.log('[Services] Album loaded');
 window.Services = window.Services || {};
 
 window.Services.Download = {
-    // Download a song with metadata
+    /**
+     * Download a song using token (legacy - uses API call)
+     * Kept for backward compatibility (URL detection, etc.)
+     */
     song: async function(token, filename) {
-        console.log('[Services] Downloading song:', token);
+        console.log('[Services] Downloading song via API:', token);
         
-        // 1. Get decrypted song data
+        // Get decrypted song data
         var song = await window.Services.Song.getDecrypted(token);
         if (!song.url) throw new Error('No stream URL available');
         
-        console.log('[Services] Song:', song.title, '-', song.artist);
-        
-        // 2. Fetch audio
-        var audioBuffer = await window.Utils.fetchResource(song.url, 'arraybuffer');
-        var audioBytes = new Uint8Array(audioBuffer);
-        console.log('[Services] Audio fetched:', (audioBytes.length / 1024 / 1024).toFixed(2) + ' MB');
-        
-        if (audioBytes.length === 0) {
-            throw new Error('Audio file is empty (0 bytes)');
-        }
-        
-        // 3. Fetch album art
-        var albumArtData = null;
-        if (song.image) {
-            albumArtData = await window.Utils.fetchAlbumArt(song.image);
-            if (albumArtData) {
-                console.log('[Services] Album art ready for metadata');
-            }
-        }
-
-// Fetch lyrics if available
-var lyricsText = null;
-if (song.has_lyrics) {
-    try {
-        var lyricsData = await window.API.getLyrics(token);
-        if (lyricsData && lyricsData.lyrics && lyricsData.lyrics.lyrics) {
-            lyricsText = lyricsData.lyrics.lyrics;
-   lyricsText = window.Utils.formatters.formatLyrics(lyricsText);
-            console.log('[Services] Lyrics fetched');
-        }
-    } catch (e) {
-        console.warn('[Services] Failed to fetch lyrics:', e.message);
-    }
-}
-        // 4. Build metadata
-        var metadata = window.Utils.buildMetadata(song, albumArtData, lyricsText);
-        console.log('[Services] Metadata: title="' + song.title + '", artist="' + song.artist + '"');
-        
-        // 5. Write metadata to M4A
-        var dataToDownload = audioBytes;
-        if (typeof window.writeM4ABytes === 'function') {
-            try {
-                dataToDownload = window.writeM4ABytes(audioBytes, metadata);
-                console.log('[Services] Metadata written to M4A');
-            } catch (e) {
-                console.warn('[Services] Metadata write failed:', e.message);
-                dataToDownload = audioBytes;
-            }
-        }
-        
-        // 6. Generate filename
-        var quality = window.currentQuality || 96;
-        var finalFilename = filename || window.Utils.buildFilename(song, quality);
-
-        console.log('[Services] Filename:', finalFilename);
-
-        // 7. Trigger download
-        return window.Utils.downloadFile(dataToDownload, finalFilename);
+        // Delegate to songFromData
+        return await window.Services.Download.songFromData(song, filename);
     },
     
-    // Download all songs in an album
+    /**
+     * Download all songs in an album
+     */
     album: async function(albumToken) {
         var album = await window.Services.Album.getDetails(albumToken);
         console.log('[Services] Downloading album:', album.title, 
@@ -1732,7 +1684,8 @@ if (song.has_lyrics) {
             var song = album.songs[i];
             try {
                 var filename = (i + 1).toString().padStart(2, '0') + '. ' + song.title + '.m4a';
-                await window.Services.Download.song(song.token, filename);
+                // Use songFromData directly since we already have the data
+                await window.Services.Download.songFromData(song, filename);
                 results.push({ song: song.title, success: true });
             } catch (error) {
                 console.error('[Services] Failed to download:', song.title, error.message);
@@ -1743,8 +1696,76 @@ if (song.has_lyrics) {
     }
 };
 
-console.log('[Services] Download loaded');
+/**
+ * Download a song from pre-fetched data (no API call)
+ * @param {Object} songData - Song data with all fields (title, artist, url, etc.)
+ * @param {string} filename - Optional filename
+ */
+window.Services.Download.songFromData = async function(songData, filename) {
+    console.log('[Services] Downloading song from data:', songData.title);
+    
+    if (!songData.url) throw new Error('No stream URL available');
+    
+    // 1. Fetch audio
+    var audioBuffer = await window.Utils.fetchResource(songData.url, 'arraybuffer');
+    var audioBytes = new Uint8Array(audioBuffer);
+    console.log('[Services] Audio fetched:', (audioBytes.length / 1024 / 1024).toFixed(2) + ' MB');
+    
+    if (audioBytes.length === 0) {
+        throw new Error('Audio file is empty (0 bytes)');
+    }
+    
+    // 2. Fetch album art
+    var albumArtData = null;
+    if (songData.image) {
+        albumArtData = await window.Utils.fetchAlbumArt(songData.image);
+        if (albumArtData) {
+            console.log('[Services] Album art ready for metadata');
+        }
+    }
+    
+    // 3. Fetch lyrics if available
+    var lyricsText = null;
+    if (songData.has_lyrics) {
+        try {
+            var token = songData.token || songData.id;
+            var lyricsData = await window.API.getLyrics(token);
+            if (lyricsData && lyricsData.lyrics && lyricsData.lyrics.lyrics) {
+                lyricsText = lyricsData.lyrics.lyrics;
+                lyricsText = window.Utils.formatters.formatLyrics(lyricsText);
+                console.log('[Services] Lyrics fetched');
+            }
+        } catch (e) {
+            console.warn('[Services] Failed to fetch lyrics:', e.message);
+        }
+    }
+    
+    // 4. Build metadata
+    var metadata = window.Utils.buildMetadata(songData, albumArtData, lyricsText);
+    console.log('[Services] Metadata: title="' + songData.title + '", artist="' + (songData.artist || songData.all_artists) + '"');
+    
+    // 5. Write metadata to M4A
+    var dataToDownload = audioBytes;
+    if (typeof window.writeM4ABytes === 'function') {
+        try {
+            dataToDownload = window.writeM4ABytes(audioBytes, metadata);
+            console.log('[Services] Metadata written to M4A');
+        } catch (e) {
+            console.warn('[Services] Metadata write failed:', e.message);
+            dataToDownload = audioBytes;
+        }
+    }
+    
+    // 6. Generate filename
+    var quality = window.currentQuality || 96;
+    var finalFilename = filename || window.Utils.buildFilename(songData, quality);
+    console.log('[Services] Filename:', finalFilename);
+    
+    // 7. Trigger download
+    return window.Utils.downloadFile(dataToDownload, finalFilename);
+};
 
+console.log('[Services] Download loaded');
 
     // ============================================================
     // FILE: /js/ui/search.js
@@ -1769,56 +1790,56 @@ async function search() {
         return;
     }
 
-// Check if it's a valid URL
-var parsed = window.Utils.parseUrl(query);
-if (parsed && parsed.token) {
-    // Clear previous results
-    resultsDiv.innerHTML = '<div class="loading">🔍 Loading...</div>';
-    if (statsDiv) statsDiv.innerHTML = '';
-    if (playerDiv) playerDiv.innerHTML = '';
+    // Check if it's a valid URL
+    var parsed = window.Utils.parseUrl(query);
+    if (parsed && parsed.token) {
+        // Clear previous results
+        resultsDiv.innerHTML = '<div class="loading">🔍 Loading...</div>';
+        if (statsDiv) statsDiv.innerHTML = '';
+        if (playerDiv) playerDiv.innerHTML = '';
     
-    try {
-        if (parsed.type === 'song' || parsed.type === 'lyrics') {
-            // Switch to Songs tab if needed
-            if (window.currentSearchType !== 'songs') {
-                switchTab('songs');
+        try {
+            if (parsed.type === 'song' || parsed.type === 'lyrics') {
+                // Switch to Songs tab if needed
+                if (window.currentSearchType !== 'songs') {
+                    switchTab('songs');
+                }
+            
+                // Get song details
+                var songData = await window.API.getSong(parsed.token);
+                var song = songData.songs ? songData.songs[0] : null;
+            
+                if (song) {
+                    var formattedSong = window.Utils.formatters.formatSong(song);
+                    if (statsDiv) statsDiv.innerHTML = 'Found 1 song';
+                    displaySongs([formattedSong]);
+                } else {
+                    resultsDiv.innerHTML = '<div class="no-results">😕 Song not found</div>';
+                }
+            
+            } else if (parsed.type === 'album') {
+                // Switch to Albums tab if needed
+                if (window.currentSearchType !== 'albums') {
+                    switchTab('albums');
+                }
+            
+                // Get album details
+                var albumData = await window.API.getAlbum(parsed.token);
+            
+                if (albumData && albumData.id) {
+                    if (statsDiv) statsDiv.innerHTML = 'Found 1 album';
+                    viewAlbum(parsed.token);
+                } else {
+                    resultsDiv.innerHTML = '<div class="no-results">😕 Album not found</div>';
+                }
             }
-            
-            // Get song details
-            var songData = await window.API.getSong(parsed.token);
-            var song = songData.songs ? songData.songs[0] : null;
-            
-            if (song) {
-                var formattedSong = window.Utils.formatters.formatSong(song);
-                if (statsDiv) statsDiv.innerHTML = 'Found 1 song';
-                displaySongs([formattedSong]);
-            } else {
-                resultsDiv.innerHTML = '<div class="no-results">😕 Song not found</div>';
-            }
-            
-        } else if (parsed.type === 'album') {
-            // Switch to Albums tab if needed
-            if (window.currentSearchType !== 'albums') {
-                switchTab('albums');
-            }
-            
-            // Get album details
-            var albumData = await window.API.getAlbum(parsed.token);
-            
-            if (albumData && albumData.id) {
-                if (statsDiv) statsDiv.innerHTML = 'Found 1 album';
-                viewAlbum(parsed.token);
-            } else {
-                resultsDiv.innerHTML = '<div class="no-results">😕 Album not found</div>';
-            }
+        } catch (error) {
+            console.error('[Search] URL fetch error:', error);
+            resultsDiv.innerHTML = '<div class="error">❌ Failed to load: ' + error.message + '</div>';
         }
-    } catch (error) {
-        console.error('[Search] URL fetch error:', error);
-        resultsDiv.innerHTML = '<div class="error">❌ Failed to load: ' + error.message + '</div>';
+
+        return; // Exit after handling URL
     }
-    
-    return; // Exit after handling URL
-}
 
     var searchType = window.currentSearchType || 'songs';
     console.log('[Search] Searching for:', query, 'Type:', searchType);
@@ -1874,7 +1895,7 @@ function createSongCard(song, index, albumContext) {
     var titlePrefix = (index !== undefined && albumContext) ? (index + 1) + '. ' : '';
     
     var html = `
-        <div class="song-card" id="song-${songId}">
+        <div class="song-card" data-token="${song.token || song.id}">
             <img src="${image}" alt="${escapeHtml(song.title)}" />
             <div class="song-info">
                 <div class="song-title">${titlePrefix}${escapeHtml(song.title)}</div>
@@ -1886,11 +1907,11 @@ function createSongCard(song, index, albumContext) {
                     ${duration}
                 </div>
                 <div class="song-actions">
-                    <button class="btn-play" data-token="${song.token}" data-songid="${songId}" 
+                    <button class="btn-play" data-token="${song.token || song.id}" data-songid="${songId}" 
                         ${!hasStream ? 'disabled' : ''}>
                         ▶ Play
                     </button>
-                    <button class="btn-download" data-token="${song.token}" data-songid="${songId}" 
+                    <button class="btn-download" data-token="${song.token || song.id}" data-songid="${songId}" 
                         ${!hasStream ? 'disabled' : ''}>
                         ⬇ Download
                     </button>
@@ -1913,37 +1934,35 @@ function attachSongEvents(container) {
     
     playBtns.forEach(function(btn) {
         btn.addEventListener('click', function() {
-            var token = this.dataset.token;
-            var songId = this.dataset.songid;
-            if (token && songId && typeof window.playSong === 'function') {
-                // Find the song card
-                var songCard = document.getElementById('song-' + songId);
-                window.playSong(token, songId, songCard);
+            var songCard = this.closest('.song-card');
+            var songData = songCard ? songCard._songData : null;
+            if (songData && typeof window.playSong === 'function') {
+                window.playSong(songData);
+            }
+        });
+    });
+    
+    downloadBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var songCard = this.closest('.song-card');
+            var songData = songCard ? songCard._songData : null;
+            if (songData && typeof window.downloadSong === 'function') {
+                window.downloadSong(songData);
             }
         });
     });
 
-    downloadBtns.forEach(function(btn) {
+    // Lyrics buttons
+    var lyricsBtns = container.querySelectorAll('.btn-lyrics');
+    lyricsBtns.forEach(function(btn) {
         btn.addEventListener('click', function() {
             var token = this.dataset.token;
             var songId = this.dataset.songid;
-            if (token && songId && typeof window.downloadSong === 'function') {
-                window.downloadSong(token, songId);
+            if (token && typeof window.showLyrics === 'function') {
+                window.showLyrics(token, songId);
             }
         });
     });
-
-// Lyrics buttons
-var lyricsBtns = container.querySelectorAll('.btn-lyrics');
-lyricsBtns.forEach(function(btn) {
-    btn.addEventListener('click', function() {
-        var token = this.dataset.token;
-        var songId = this.dataset.songid;
-        if (token && typeof window.showLyrics === 'function') {
-            window.showLyrics(token, songId);
-        }
-    });
-});
 }
 
 // ============ CREATE ALBUM CARD ============
@@ -2006,6 +2025,14 @@ function displaySongs(songs) {
     html += '</div>';
     DOM.results.innerHTML = html;
     
+    // Attach song data to cards
+    var cards = DOM.results.querySelectorAll('.song-card');
+    cards.forEach(function(card, index) {
+        if (songs[index]) {
+            card._songData = songs[index];
+        }
+    });
+    
     // Attach events to the results container
     attachSongEvents(DOM.results);
 }
@@ -2050,7 +2077,6 @@ async function viewAlbum(token) {
 
         if (album.songs && album.songs.length > 0) {
             album.songs.forEach(function(song, index) {
-                // Pass album context for album view
                 html += createSongCard(song, index, album);
             });
         } else {
@@ -2059,6 +2085,16 @@ async function viewAlbum(token) {
 
         html += '</div>';
         DOM.results.innerHTML = html;
+        
+        // Attach song data to cards
+        var cards = DOM.results.querySelectorAll('.song-card');
+        if (album.songs && album.songs.length > 0) {
+            cards.forEach(function(card, index) {
+                if (album.songs[index]) {
+                    card._songData = album.songs[index];
+                }
+            });
+        }
         
         // Attach events to the results container
         attachSongEvents(DOM.results);
@@ -2207,8 +2243,16 @@ window.closeLyricsOverlay = closeLyricsOverlay;
 
 // src/js/ui/player.js
 
-async function playSong(token, songId, songCardElement) {
-    console.log('[Player] Playing song:', token, songId);
+async function playSong(songData) {
+    if (!songData) {
+        console.error('[Player] No song data provided');
+        return;
+    }
+    
+    var token = songData.token || songData.id;
+    var title = songData.title || 'Song';
+ 
+    console.log('[Player] Playing song:', token);
 
     // If player already exists, remove it
     if (currentPlayerElement) {
@@ -2217,14 +2261,14 @@ async function playSong(token, songId, songCardElement) {
         currentSongCard = null;
     }
 
-    var progressDiv = document.getElementById('play-progress-' + songId);
+    var progressDiv = document.getElementById('play-progress-' + token);
     
     if (progressDiv) {
         progressDiv.style.display = 'block';
         progressDiv.textContent = '⏳ Decrypting...';
     }
 
-    var buttons = document.querySelectorAll('#song-' + songId + ' .btn-play, #album-song-' + songId + ' .btn-play');
+    var buttons = document.querySelectorAll('[data-token="' + token + '"] .btn-play');
     buttons.forEach(function(btn) {
         btn.textContent = '⏳';
         btn.disabled = true;
@@ -2234,8 +2278,19 @@ async function playSong(token, songId, songCardElement) {
         var decryptedUrl = decryptedUrlCache.get(token);
         
         if (!decryptedUrl) {
-            var song = await window.Services.Song.getDecrypted(token);
-            decryptedUrl = song.url;
+            // Get encrypted URL from songData
+            var encrypted = songData.more_info && songData.more_info.encrypted_media_url;
+            if (!encrypted) {
+                throw new Error('No encrypted URL found');
+            }
+            
+            if (typeof window.decryptMediaUrl !== 'function') {
+                throw new Error('decryptMediaUrl not available');
+            }
+            
+            decryptedUrl = window.decryptMediaUrl(encrypted);
+            if (!decryptedUrl) throw new Error('Decryption failed');
+            
             decryptedUrlCache.set(token, decryptedUrl);
             setTimeout(function() { decryptedUrlCache.delete(token); }, 3600000);
         }
@@ -2247,11 +2302,19 @@ async function playSong(token, songId, songCardElement) {
             }, 2000);
         }
 
-        var title = 'Song';
-        var songElement = document.getElementById('song-' + songId) || document.getElementById('album-song-' + songId);
-        if (songElement) {
-            var titleEl = songElement.querySelector('.song-title');
-            if (titleEl) title = titleEl.textContent;
+        // Get title from songData if available
+        var displayTitle = songData.title || 'Song';
+
+        // Find the song card to insert player below it
+        var songCard = document.querySelector('[data-token="' + token + '"]');
+        if (!songCard) {
+            // Fallback: try to find by id
+            songCard = document.getElementById('song-' + token) || document.getElementById('album-song-' + token);
+        }
+        
+        if (songCard) {
+            var titleEl = songCard.querySelector('.song-title');
+            if (titleEl) displayTitle = titleEl.textContent || displayTitle;
         }
 
         if (window.currentAudio) {
@@ -2262,7 +2325,7 @@ async function playSong(token, songId, songCardElement) {
         var audioHtml = `
             <div id="player-container" style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 15px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <strong>Now Playing: ${title}</strong>
+                    <strong>Now Playing: ${displayTitle}</strong>
                     <button id="player-close-btn" style="background: #dc3545; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer;">✕ Close</button>
                 </div>
                 <audio controls autoplay style="width: 100%;">
@@ -2276,12 +2339,24 @@ async function playSong(token, songId, songCardElement) {
         tempDiv.innerHTML = audioHtml;
         var playerElement = tempDiv.firstElementChild;
 
-        // Insert after the song card
-        songCardElement.parentNode.insertBefore(playerElement, songCardElement.nextSibling);
+        // Insert after the song card - make sure it's a sibling
+        if (songCard && songCard.parentNode) {
+            // Insert as next sibling of the song card
+            songCard.parentNode.insertBefore(playerElement, songCard.nextSibling);
+    
+            // Add a margin to separate from the card
+            playerElement.style.marginTop = '10px';
+        } else {
+            // Fallback: append to results
+            var resultsDiv = document.getElementById('results');
+            if (resultsDiv) {
+                resultsDiv.appendChild(playerElement);
+            }
+        }
 
         // Store references
         currentPlayerElement = playerElement;
-        currentSongCard = songCardElement;
+        currentSongCard = songCard;
 
         window.currentAudio = playerElement.querySelector('audio');
         
@@ -2343,24 +2418,48 @@ window.closePlayer = closePlayer;
 
 // ui/js/download.js
 
-async function downloadSong(token, songId) {
-    console.log('[Download] Downloading song:', token, songId);
+async function downloadSong(songData) {
+    if (!songData) {
+        console.error('[Download] No song data provided');
+        return;
+    }
     
-    var progressDiv = document.getElementById('download-progress-' + songId);
+    var token = songData.token || songData.id;
+    console.log('[Download] Downloading song:', token);
+    
+    var progressDiv = document.getElementById('download-progress-' + token);
     if (progressDiv) {
         progressDiv.style.display = 'block';
         progressDiv.textContent = '⏳ Downloading...';
     }
-
-    var buttons = document.querySelectorAll('#song-' + songId + ' .btn-download');
+    
+    var buttons = document.querySelectorAll('[data-token="' + token + '"] .btn-download');
     buttons.forEach(function(btn) {
         btn.textContent = '⏳';
         btn.disabled = true;
     });
-
+    
     try {
-        await window.Services.Download.song(token);
-
+        // Get encrypted URL from songData
+        var encrypted = songData.more_info && songData.more_info.encrypted_media_url;
+        if (!encrypted) {
+            throw new Error('No encrypted URL found');
+        }
+        
+        if (typeof window.decryptMediaUrl !== 'function') {
+            throw new Error('decryptMediaUrl not available');
+        }
+        
+        var decryptedUrl = window.decryptMediaUrl(encrypted);
+        if (!decryptedUrl) throw new Error('Decryption failed');
+        
+        // Format song data using the existing formatter
+        // formatDecryptedSong will use songData._raw if available
+        var song = window.Utils.formatters.formatDecryptedSong(songData, decryptedUrl);
+        
+        // Use existing download logic
+        await window.Services.Download.songFromData(song);
+        
         if (progressDiv) {
             progressDiv.textContent = '✅ Done!';
             progressDiv.style.color = '#1db954';
@@ -2387,6 +2486,7 @@ async function downloadSong(token, songId) {
         });
     }
 }
+
 
 window.downloadSong = downloadSong;
 
