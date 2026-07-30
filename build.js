@@ -58,10 +58,10 @@ function build() {
 
     combined += `// ==UserScript==
 // @name         JioSaavn Song Downloader
-// @namespace    https://github.com
-// @version      1.0.0
+// @namespace    https://github.com/HemanthJabalpuri/songdl
+// @version      1.0.1
 // @description  Download songs and albums with metadata
-// @author       You
+// @author       HemanthJabalpuri
 // @match        https://www.jiosaavn.com/*
 // @grant        GM_xmlhttpRequest
 // @connect      aac.saavncdn.com
