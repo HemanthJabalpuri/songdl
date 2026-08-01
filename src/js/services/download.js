@@ -51,11 +51,13 @@ window.Services.Download = {
  */
 window.Services.Download.songFromData = async function(songData, filename) {
     console.log('[Services] Downloading song from data:', songData.title);
-    
-    if (!songData.url) throw new Error('No stream URL available');
+
+    var songUrl = songData.url;
+    if (!songUrl) throw new Error('No stream URL available');
     
     // 1. Fetch audio
-    var audioBuffer = await window.Utils.fetchResource(songData.url, 'arraybuffer');
+    songUrl = window.Utils.formatters.formatUrlWithQuality(songUrl, window.currentQuality || 96);
+    var audioBuffer = await window.Utils.fetchResource(songUrl, 'arraybuffer');
     var audioBytes = new Uint8Array(audioBuffer);
     console.log('[Services] Audio fetched:', (audioBytes.length / 1024 / 1024).toFixed(2) + ' MB');
     

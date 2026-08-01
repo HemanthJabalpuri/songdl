@@ -4,15 +4,12 @@ window.API = window.API || {};
 window.API.constants = window.API.constants || {};
 
 // API endpoints
-window.API.constants.API_HOST = 'https://www.jiosaavn.com';
-window.API.constants.API_BASE = 'https://www.jiosaavn.com/api.php';
-window.API.constants.REFERER = 'https://www.jiosaavn.com/';
-
-// CDN domains for audio and album art
-window.API.constants.CDN_DOMAINS = [
-    'aac.saavncdn.com',
-    'saavncdn.com'
-];
+const HOST = 'https://www.jiosaavn.com';
+Object.assign(window.API.constants, {
+  API_HOST: HOST,
+  API_BASE: `${HOST}/api.php`,
+  REFERER: `${HOST}/`,
+});
 
 // Default headers for all requests
 window.API.constants.DEFAULT_HEADERS = {
