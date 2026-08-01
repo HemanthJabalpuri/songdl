@@ -51,6 +51,12 @@ decrypt_url() {
     printf '%s' "$1" | base64 -d | openssl enc -provider legacy -d -des-ecb -K "3338333436353931" 2>/dev/null
 }
 
+encrypt_url() {
+    printf '%s' "$1" | \
+        openssl enc -provider legacy -des-ecb -K "3338333436353931" | \
+        base64 -w0
+}
+
 get_high_res_album_art() {
     url="${1:-}"
     [ -z "$url" ] && { echo ""; return 1; }
@@ -284,6 +290,8 @@ main() {
         get-song) get_song "$@" ;;
         get-album) get_album "$@" ;;
         get-lyrics) get_lyrics "$@" ;;
+        encrypt-url) encrypt_url "$@" ;;
+        decrypt-url) decrypt_url "$@" ;;
         help|--help|-h) usage ;;
         *) printf '❌ Unknown command: %s\n\n' "$cmd"; usage; exit 1 ;;
     esac

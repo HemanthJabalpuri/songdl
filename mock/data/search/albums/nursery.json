@@ -1,0 +1,53 @@
+{
+  "total": 1,
+  "start": 1,
+  "results": [
+    {
+      "id": "mock_album_002",
+      "title": "Nursery Rhymes",
+      "subtitle": "Traditional",
+      "header_desc": "",
+      "type": "album",
+      "perma_url": "https://music.example.com/album/nursery-rhymes/mock_album_002",
+      "image": "http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg",
+      "language": "english",
+      "year": "1830",
+      "play_count": "",
+      "explicit_content": "0",
+      "list_count": "0",
+      "list_type": "",
+      "list": "",
+      "more_info": {
+        "query": "nursery",
+        "text": "nursery",
+        "music": "Traditional",
+        "song_count": "1",
+        "artistMap": {
+          "primary_artists": [
+            {
+              "id": "mock_artist_002",
+              "name": "Traditional",
+              "role": "primary_artists",
+              "image": "",
+              "type": "artist",
+              "perma_url": "https://music.example.com/artist/traditional"
+            }
+          ],
+          "featured_artists": [],
+          "artists": [
+            {
+              "id": "mock_artist_002",
+              "name": "Traditional",
+              "role": "music",
+              "image": "",
+              "type": "artist",
+              "perma_url": "https://music.example.com/artist/traditional"
+            }
+          ]
+        }
+      },
+      "button_tooltip_info": [],
+      "pro_hva_campaigns": []
+    }
+  ]
+}

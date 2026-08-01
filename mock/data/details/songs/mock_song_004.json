@@ -1,0 +1,105 @@
+{
+  "songs": [
+    {
+      "id": "mock_song_004",
+      "title": "When the Saints Go Marching In",
+      "subtitle": "Traditional",
+      "header_desc": "",
+      "type": "song",
+      "perma_url": "https://music.example.com/song/when-the-saints-go-marching-in/mock_song_004",
+      "image": "http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg",
+      "language": "english",
+      "year": "1896",
+      "play_count": "620000",
+      "explicit_content": "0",
+      "list_count": "0",
+      "list_type": "",
+      "list": "",
+      "more_info": {
+        "music": "Traditional",
+        "album_id": "mock_album_003",
+        "album": "American Folk Songs",
+        "label": "Mock Records",
+        "label_id": null,
+        "origin": "search",
+        "is_dolby_content": false,
+        "320kbps": "true",
+        "encrypted_media_url": "JKcIGVL+NOVwdDWakCj6fWGE8WcC+2iTTmjcVY5gjZcb6MwSnJjGC0KIVQL/LeFRb5cctSKeEIo=",
+        "encrypted_cache_url": "",
+        "encrypted_drm_cache_url": "",
+        "encrypted_drm_media_url": "",
+        "album_url": "https://music.example.com/album/american-folk-songs/mock_album_003",
+        "duration": "165",
+        "rights": {
+          "code": "0",
+          "cacheable": "true",
+          "delete_cached_object": "false",
+          "reason": ""
+        },
+        "cache_state": "false",
+        "has_lyrics": "true",
+        "lyrics_snippet": "Oh, when the saints go marching in...",
+        "has_trivia": "false",
+        "trivia": [],
+        "starred": "false",
+        "copyright_text": "",
+        "artistMap": {
+          "primary_artists": [
+            {
+              "id": "mock_artist_004",
+              "name": "Traditional",
+              "role": "primary_artists",
+              "image": "",
+              "type": "artist",
+              "perma_url": "https://music.example.com/artist/traditional"
+            }
+          ],
+          "featured_artists": [],
+          "artists": [
+            {
+              "id": "mock_artist_004",
+              "name": "Traditional",
+              "role": "music",
+              "image": "",
+              "type": "artist",
+              "perma_url": "https://music.example.com/artist/traditional"
+            },
+            {
+              "id": "mock_artist_004",
+              "name": "Traditional",
+              "role": "singer",
+              "image": "",
+              "type": "artist",
+              "perma_url": "https://music.example.com/artist/traditional"
+            },
+            {
+              "id": "mock_lyricist_004",
+              "name": "Traditional",
+              "role": "lyricist",
+              "image": "",
+              "type": "artist",
+              "perma_url": "https://music.example.com/artist/traditional"
+            },
+            {
+              "id": "mock_starring_006",
+              "name": "Mock Actor Six",
+              "role": "starring",
+              "image": "",
+              "type": "artist",
+              "perma_url": "https://music.example.com/artist/mock-actor-six"
+            }
+          ]
+        },
+        "release_date": null,
+        "label_url": "",
+        "vcode": "",
+        "vlink": "",
+        "triller_available": false,
+        "request_jiotune_flag": false,
+        "webp": "true"
+      },
+      "button_tooltip_info": [],
+      "pro_hva_campaigns": []
+    }
+  ]
+}

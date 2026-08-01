@@ -1,0 +1,69 @@
+{
+  "total": 1,
+  "start": 1,
+  "results": [
+    {
+      "id": "mock_album_003",
+      "title": "American Folk Songs",
+      "subtitle": "Various Artists",
+      "header_desc": "",
+      "type": "album",
+      "perma_url": "https://music.example.com/album/american-folk-songs/mock_album_003",
+      "image": "http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg",
+      "language": "english",
+      "year": "1873",
+      "play_count": "",
+      "explicit_content": "0",
+      "list_count": "0",
+      "list_type": "",
+      "list": "",
+      "more_info": {
+        "query": "folk",
+        "text": "folk",
+        "music": "Various Artists",
+        "song_count": "2",
+        "artistMap": {
+          "primary_artists": [
+            {
+              "id": "mock_artist_003",
+              "name": "Daniel E. Kelley",
+              "role": "primary_artists",
+              "image": "",
+              "type": "artist",
+              "perma_url": "https://music.example.com/artist/daniel-e-kelley"
+            },
+            {
+              "id": "mock_artist_004",
+              "name": "Traditional",
+              "role": "primary_artists",
+              "image": "",
+              "type": "artist",
+              "perma_url": "https://music.example.com/artist/traditional"
+            }
+          ],
+          "featured_artists": [],
+          "artists": [
+            {
+              "id": "mock_artist_003",
+              "name": "Daniel E. Kelley",
+              "role": "music",
+              "image": "",
+              "type": "artist",
+              "perma_url": "https://music.example.com/artist/daniel-e-kelley"
+            },
+            {
+              "id": "mock_artist_004",
+              "name": "Traditional",
+              "role": "music",
+              "image": "",
+              "type": "artist",
+              "perma_url": "https://music.example.com/artist/traditional"
+            }
+          ]
+        }
+      },
+      "button_tooltip_info": [],
+      "pro_hva_campaigns": []
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "total": 1,
+  "start": 1,
+  "results": [
+    {
+      "id": "mock_album_001",
+      "title": "Holiday Classics",
+      "subtitle": "James Pierpont",
+      "header_desc": "",
+      "type": "album",
+      "perma_url": "https://music.example.com/album/holiday-classics/mock_album_001",
+      "image": "http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg",
+      "language": "english",
+      "year": "1857",
+      "play_count": "",
+      "explicit_content": "0",
+      "list_count": "0",
+      "list_type": "",
+      "list": "",
+      "more_info": {
+        "query": "holiday",
+        "text": "holiday",
+        "music": "James Pierpont",
+        "song_count": "1",
+        "artistMap": {
+          "primary_artists": [
+            {
+              "id": "mock_artist_001",
+              "name": "James Pierpont",
+              "role": "primary_artists",
+              "image": "",
+              "type": "artist",
+              "perma_url": "https://music.example.com/artist/james-pierpont"
+            }
+          ],
+          "featured_artists": [],
+          "artists": [
+            {
+              "id": "mock_artist_001",
+              "name": "James Pierpont",
+              "role": "music",
+              "image": "",
+              "type": "artist",
+              "perma_url": "https://music.example.com/artist/james-pierpont"
+            }
+          ]
+        }
+      },
+      "button_tooltip_info": [],
+      "pro_hva_campaigns": []
+    }
+  ]
+}

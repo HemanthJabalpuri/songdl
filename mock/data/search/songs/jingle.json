@@ -1,0 +1,83 @@
+{
+  "total": 1,
+  "start": 1,
+  "results": [
+    {
+      "id": "mock_song_001",
+      "title": "Jingle Bells",
+      "subtitle": "James Pierpont",
+      "header_desc": "",
+      "type": "song",
+      "perma_url": "https://music.example.com/song/jingle-bells/mock_song_001",
+      "image": "http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg",
+      "language": "english",
+      "year": "1857",
+      "play_count": "1500000",
+      "explicit_content": "0",
+      "list_count": "0",
+      "list_type": "",
+      "list": "",
+      "more_info": {
+        "music": "James Pierpont",
+        "album_id": "mock_album_001",
+        "album": "Holiday Classics",
+        "label": "Mock Records",
+        "label_id": null,
+        "origin": "search",
+        "is_dolby_content": false,
+        "320kbps": "true",
+        "encrypted_media_url": "JKcIGVL+NOVwdDWakCj6fWGE8WcC+2iTTmjcVY5gjZcb6MwSnJjGC0KIVQL/LeFRb5cctSKeEIo=",
+        "encrypted_cache_url": "",
+        "encrypted_drm_cache_url": "",
+        "encrypted_drm_media_url": "",
+        "album_url": "https://music.example.com/album/holiday-classics/mock_album_001",
+        "duration": "180",
+        "rights": {
+          "code": "0",
+          "cacheable": "true",
+          "delete_cached_object": "false",
+          "reason": ""
+        },
+        "cache_state": "false",
+        "has_lyrics": "true",
+        "lyrics_snippet": "Dashing through the snow...",
+        "has_trivia": "false",
+        "trivia": [],
+        "starred": "false",
+        "copyright_text": "",
+        "artistMap": {
+          "primary_artists": [
+            {
+              "id": "mock_artist_001",
+              "name": "James Pierpont",
+              "role": "primary_artists",
+              "image": "",
+              "type": "artist",
+              "perma_url": "https://music.example.com/artist/james-pierpont"
+            }
+          ],
+          "featured_artists": [],
+          "artists": [
+            {
+              "id": "mock_artist_001",
+              "name": "James Pierpont",
+              "role": "music",
+              "image": "",
+              "type": "artist",
+              "perma_url": "https://music.example.com/artist/james-pierpont"
+            }
+          ]
+        },
+        "release_date": null,
+        "label_url": "",
+        "vcode": "",
+        "vlink": "",
+        "triller_available": false,
+        "request_jiotune_flag": false,
+        "webp": "true"
+      },
+      "button_tooltip_info": [],
+      "pro_hva_campaigns": []
+    }
+  ]
+}

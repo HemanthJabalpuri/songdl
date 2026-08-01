@@ -64,8 +64,12 @@ function serveFile(req, res, config) {
             ".svg": "image/svg+xml",
             ".ico": "image/x-icon",
             ".txt": "text/plain",
-            ".map": "application/json"
+            ".map": "application/json",
+            ".mp3": "audio/mpeg",
+            ".mp4": "audio/mp4",
+            ".m4a": "audio/mp4"
         };
+
         var contentType = mimeTypes[ext] || "application/octet-stream";
 
         res.writeHead(200, { "Content-Type": contentType });
@@ -246,6 +250,23 @@ http.createServer(function(req, res) {
 
     var pathname = getRequestPathname(req);
     console.log(req.method + " " + pathname);
+
+    // ============ MOCK ASSETS ============
+    // Serve mock assets from mock/assets/ folder
+    if (pathname.startsWith('/mock/')) {
+        // Set CORS headers for mock assets
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range');
+        res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range');
+
+        var mockPathname = pathname.replace('/mock', '');
+        var originalUrl = req.url;
+        req.url = mockPathname;
+        serveFile(req, res, { root: './mock/assets' });
+        req.url = originalUrl;
+        return;
+    }
 
     if (pathname === CONFIG.proxy) {
         return proxy(req, res);
