@@ -5,6 +5,7 @@ window.currentAudio = null;
 window.currentSearchType = 'songs';
 window.currentQuery = '';
 window.decryptedUrlCache = new Map();
+window.lyricsCache = {};
 // Quality setting (default: 96 kbps)
 window.currentQuality = 96;
 

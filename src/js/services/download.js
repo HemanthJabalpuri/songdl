@@ -75,16 +75,28 @@ window.Services.Download.songFromData = async function(songData, filename) {
     // 3. Fetch lyrics if available
     var lyricsText = null;
     if (songData.has_lyrics) {
-        try {
-            var token = songData.token || songData.id;
-            var lyricsData = await window.API.getLyrics(token);
-            if (lyricsData && lyricsData.lyrics && lyricsData.lyrics.lyrics) {
-                lyricsText = lyricsData.lyrics.lyrics;
-                lyricsText = window.Utils.formatters.formatLyrics(lyricsText);
-                console.log('[Services] Lyrics fetched');
+        var token = songData.token || songData.id;
+    
+        // Check cache first
+        if (window.lyricsCache && window.lyricsCache[token]) {
+            lyricsText = window.lyricsCache[token];
+            console.log('[Services] Using cached lyrics for metadata');
+        } else {
+            try {
+                var lyricsData = await window.API.getLyrics(token);
+                if (lyricsData && lyricsData.lyrics && lyricsData.lyrics.lyrics) {
+                    lyricsText = lyricsData.lyrics.lyrics;
+                    lyricsText = window.Utils.formatters.formatLyrics(lyricsText);
+                    // Store in cache
+                    if (!window.lyricsCache) {
+                        window.lyricsCache = {};
+                    }
+                    window.lyricsCache[token] = lyricsText;
+                    console.log('[Services] Lyrics fetched and cached');
+                }
+            } catch (e) {
+                console.warn('[Services] Failed to fetch lyrics:', e.message);
             }
-        } catch (e) {
-            console.warn('[Services] Failed to fetch lyrics:', e.message);
         }
     }
     
