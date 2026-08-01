@@ -3,6 +3,7 @@ var https = require("https");
 var fs = require("fs");
 var path = require("path");
 var url = require("url");
+var mockMode = process.argv.indexOf('--mock') !== -1;
 
 var CONFIG = {
     host: "127.0.0.1",
@@ -82,6 +83,13 @@ function serveFile(req, res, config) {
 
 // ============ PROXY ============
 function proxy(req, res) {
+    // Check if mock mode is enabled
+    if (mockMode) {
+        // Delegate to mock server
+        require('./mock/mock-server.js').handleRequest(req, res);
+        return;
+    }
+
     var targetUrl = req.headers["x-proxy-url"];
 
     if (!targetUrl) {

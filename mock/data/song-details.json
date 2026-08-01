@@ -1,0 +1,136 @@
+{
+  "mock001": {
+    "songs": [
+      {
+        "id": "mock001",
+        "title": "Mock Song One",
+        "subtitle": "Mock Artist One",
+        "image": "https://cdn.example.com/images/mock001-150x150.jpg",
+        "language": "hindi",
+        "year": "2024",
+        "more_info": {
+          "duration": "180",
+          "encrypted_media_url": "mock_encrypted_001",
+          "album": "Mock Album One",
+          "has_lyrics": "true",
+          "copyright_text": "© 2024 Mock Records",
+          "artistMap": {
+            "primary_artists": [
+              {
+                "id": "mock_artist_001",
+                "name": "Mock Artist One",
+                "role": "primary_artists",
+                "image": "",
+                "type": "artist",
+                "perma_url": "https://music.example.com/artist/mock-artist-one"
+              }
+            ],
+            "featured_artists": [],
+            "artists": [
+              {
+                "id": "mock_artist_001",
+                "name": "Mock Artist One",
+                "role": "music",
+                "image": "",
+                "type": "artist",
+                "perma_url": "https://music.example.com/artist/mock-artist-one"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "mock002": {
+    "songs": [
+      {
+        "id": "mock002",
+        "title": "Mock Song Two",
+        "subtitle": "Mock Artist Two",
+        "image": "https://cdn.example.com/images/mock002-150x150.jpg",
+        "language": "telugu",
+        "year": "2024",
+        "more_info": {
+          "duration": "210",
+          "encrypted_media_url": "mock_encrypted_002",
+          "album": "Mock Album Two",
+          "has_lyrics": "true",
+          "copyright_text": "© 2024 Mock Records",
+          "artistMap": {
+            "primary_artists": [
+              {
+                "id": "mock_artist_002",
+                "name": "Mock Artist Two",
+                "role": "primary_artists",
+                "image": "",
+                "type": "artist",
+                "perma_url": "https://music.example.com/artist/mock-artist-two"
+              },
+              {
+                "id": "mock_artist_003",
+                "name": "Mock Artist Three",
+                "role": "primary_artists",
+                "image": "",
+                "type": "artist",
+                "perma_url": "https://music.example.com/artist/mock-artist-three"
+              }
+            ],
+            "featured_artists": [],
+            "artists": [
+              {
+                "id": "mock_artist_002",
+                "name": "Mock Artist Two",
+                "role": "music",
+                "image": "",
+                "type": "artist",
+                "perma_url": "https://music.example.com/artist/mock-artist-two"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "mock003": {
+    "songs": [
+      {
+        "id": "mock003",
+        "title": "Mock Song Three",
+        "subtitle": "Mock Artist Two",
+        "image": "https://cdn.example.com/images/mock003-150x150.jpg",
+        "language": "tamil",
+        "year": "2024",
+        "more_info": {
+          "duration": "195",
+          "encrypted_media_url": "mock_encrypted_003",
+          "album": "Mock Album One",
+          "has_lyrics": "false",
+          "copyright_text": "© 2024 Mock Records",
+          "artistMap": {
+            "primary_artists": [
+              {
+                "id": "mock_artist_002",
+                "name": "Mock Artist Two",
+                "role": "primary_artists",
+                "image": "",
+                "type": "artist",
+                "perma_url": "https://music.example.com/artist/mock-artist-two"
+              }
+            ],
+            "featured_artists": [],
+            "artists": [
+              {
+                "id": "mock_artist_002",
+                "name": "Mock Artist Two",
+                "role": "music",
+                "image": "",
+                "type": "artist",
+                "perma_url": "https://music.example.com/artist/mock-artist-two"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

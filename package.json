@@ -4,6 +4,7 @@
   "description": "Song Downloader",
   "scripts": {
     "start": "node server.js",
+    "start:mock": "node server.js --mock",
     "build": "node build.js"
   }
 }

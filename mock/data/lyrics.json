@@ -1,0 +1,22 @@
+{
+  "mock001": {
+    "lyrics": {
+      "lyrics": "Mock song one lyrics<br>Line two of mock lyrics<br>Line three of mock lyrics<br>Line four of mock lyrics<br>Line five of mock lyrics<br><br>This is the second verse<br>Of the mock song one lyrics<br>Testing multi-line display<br>In the lyrics overlay."
+    }
+  },
+  "mock002": {
+    "lyrics": {
+      "lyrics": "Mock song two lyrics<br>Different lyrics here<br>For testing purposes<br>With multiple lines<br><br>Second part of mock song two<br>Testing the scrollable overlay<br>And the formatting."
+    }
+  },
+  "mock004": {
+    "lyrics": {
+      "lyrics": "Mock song four lyrics<br>Testing with a different song<br>From mock album one<br>Has lyrics available<br><br>More lines for testing<br>To ensure everything works<br>Properly in the overlay."
+    }
+  },
+  "mock005": {
+    "lyrics": {
+      "lyrics": "Mock song five lyrics<br>Another song with lyrics<br>From mock album one<br>Has lyrics set to true<br><br>Testing lyrics feature<br>For this mock song."
+    }
+  }
+}
