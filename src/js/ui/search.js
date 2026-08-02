@@ -176,17 +176,6 @@ async function search() {
     }
 }
 
-// ============ DISPLAY SEARCH RESULTS ============
-function displaySearchResults(results, type) {
-    if (type === 'songs') {
-        displaySongs(results);
-    } else if (type === 'albums') {
-        displayAlbums(results);
-    } else if (type === 'playlists') {
-        displayPlaylists(results);
-    }
-}
-
 // ============ LOAD MORE SEARCH ============
 async function loadMoreSearch() {
     if (window._searchState.isLoading) return;

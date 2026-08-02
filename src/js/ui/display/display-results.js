@@ -1,0 +1,68 @@
+// ============ DISPLAY SONGS ============
+function displaySongs(songs) {
+    var html = '<div class="results">';
+    
+    songs.forEach(function(song, index) {
+        html += createSongCard(song, index);
+    });
+    
+    html += '</div>';
+    DOM.results.innerHTML = html;
+    
+    // Attach song data to cards
+    var cards = DOM.results.querySelectorAll('.song-card');
+    cards.forEach(function(card, index) {
+        if (songs[index]) {
+            card._songData = songs[index];
+        }
+    });
+    
+    // Attach events to the results container
+    attachSongEvents(DOM.results);
+}
+
+// ============ DISPLAY ALBUMS ============
+function displayAlbums(albums) {
+    var html = '<div class="results">';
+    
+    albums.forEach(function(album) {
+        html += createAlbumCard(album);
+    });
+    
+    html += '</div>';
+    DOM.results.innerHTML = html;
+    
+    // Attach events to the results container
+    attachAlbumEvents(DOM.results);
+}
+
+// ============ DISPLAY PLAYLISTS ============
+function displayPlaylists(playlists) {
+    var html = '<div class="results">';
+    
+    playlists.forEach(function(playlist) {
+        html += createPlaylistCard(playlist);
+    });
+    
+    html += '</div>';
+    DOM.results.innerHTML = html;
+    
+    // Attach events to the results container
+    attachPlaylistEvents(DOM.results);
+}
+
+// ============ DISPLAY SEARCH RESULTS ============
+function displaySearchResults(results, type) {
+    if (type === 'songs') {
+        displaySongs(results);
+    } else if (type === 'albums') {
+        displayAlbums(results);
+    } else if (type === 'playlists') {
+        displayPlaylists(results);
+    }
+}
+
+// ============ EXPOSE ============
+window.displaySongs = displaySongs;
+window.displayAlbums = displayAlbums;
+window.displayPlaylists = displayPlaylists;

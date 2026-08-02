@@ -1,5 +1,5 @@
 // mock/mock-server.js
-// Mock server for JioSaavn API - Dynamic with Cache
+// Mock server for JioSaavn API - Static JSON with Pagination
 
 const fs = require('fs');
 const path = require('path');
@@ -24,7 +24,6 @@ let lyricsTokens = [];
 let playlistTokens = [];
 
 function loadCache() {
-    // Load search files
     try {
         searchSongFiles = fs.readdirSync(SEARCH_SONGS_DIR)
             .filter(f => f.endsWith('.json') && f !== 'default.json')
@@ -41,7 +40,14 @@ function loadCache() {
         searchAlbumFiles = [];
     }
     
-    // Load details tokens
+    try {
+        searchPlaylistFiles = fs.readdirSync(SEARCH_PLAYLISTS_DIR)
+            .filter(f => f.endsWith('.json') && f !== 'default.json')
+            .map(f => f.replace('.json', ''));
+    } catch (e) {
+        searchPlaylistFiles = [];
+    }
+    
     try {
         songTokens = fs.readdirSync(DETAILS_SONGS_DIR)
             .filter(f => f.endsWith('.json'))
@@ -59,29 +65,19 @@ function loadCache() {
     }
     
     try {
-        lyricsTokens = fs.readdirSync(DETAILS_LYRICS_DIR)
-            .filter(f => f.endsWith('.json'))
-            .map(f => f.replace('.json', ''));
-    } catch (e) {
-        lyricsTokens = [];
-    }
-    
-    // Load playlist search files
-    try {
-        searchPlaylistFiles = fs.readdirSync(SEARCH_PLAYLISTS_DIR)
-            .filter(f => f.endsWith('.json') && f !== 'default.json')
-            .map(f => f.replace('.json', ''));
-    } catch (e) {
-        searchPlaylistFiles = [];
-    }
-    
-    // Load playlist tokens
-    try {
         playlistTokens = fs.readdirSync(DETAILS_PLAYLISTS_DIR)
             .filter(f => f.endsWith('.json'))
             .map(f => f.replace('.json', ''));
     } catch (e) {
         playlistTokens = [];
+    }
+    
+    try {
+        lyricsTokens = fs.readdirSync(DETAILS_LYRICS_DIR)
+            .filter(f => f.endsWith('.json'))
+            .map(f => f.replace('.json', ''));
+    } catch (e) {
+        lyricsTokens = [];
     }
     
     console.log('[Mock] Cache loaded:');
@@ -106,7 +102,6 @@ function loadJSON(filePath) {
 function getSearchResponse(query, type) {
     query = query.toLowerCase().trim();
     
-    // Use cached file list
     let files;
     let searchDir;
     if (type === 'song') {
@@ -123,7 +118,6 @@ function getSearchResponse(query, type) {
         searchDir = null;
     }
     
-    // Find matching file
     let matchedFile = null;
     for (const file of files) {
         if (query.includes(file.toLowerCase())) {
@@ -132,7 +126,6 @@ function getSearchResponse(query, type) {
         }
     }
     
-    // If no match, return default
     if (!matchedFile || !searchDir) {
         const defaultPath = path.join(searchDir || '.', 'default.json');
         const data = loadJSON(defaultPath);
@@ -142,125 +135,6 @@ function getSearchResponse(query, type) {
     const filePath = path.join(searchDir, matchedFile + '.json');
     const data = loadJSON(filePath);
     return data || { total: 0, start: 0, results: [] };
-}
-
-// ============ GENERATE PLAYLIST RESPONSE ============
-function generatePlaylistResponse(token, page, limit) {
-    page = parseInt(page) || 1;
-    limit = parseInt(limit) || 50;
-    
-    // Load base playlist data
-    const basePath = path.join(DETAILS_PLAYLISTS_DIR, token + '.json');
-    const baseData = loadJSON(basePath);
-    if (!baseData) return null;
-    
-    // Total songs (use existing count or default)
-    var totalSongs = parseInt(baseData.list_count) || 100;
-    var start = (page - 1) * limit;
-    var end = Math.min(start + limit, totalSongs);
-    
-    // Generate songs for this page
-    var songs = [];
-    for (var i = start; i < end; i++) {
-        var num = String(i + 1).padStart(3, '0');
-        songs.push({
-            id: 'mock_song_' + num,
-            title: 'Mock Song ' + (i + 1),
-            subtitle: 'Mock Artist ' + (i + 1),
-            header_desc: '',
-            type: 'song',
-            perma_url: 'https://music.example.com/song/mock-song-' + (i + 1) + '/mock_song_' + num,
-            image: 'http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg',
-            language: 'english',
-            year: '2024',
-            play_count: String(Math.floor(Math.random() * 1000000)),
-            explicit_content: '0',
-            list_count: '0',
-            list_type: '',
-            list: '',
-            more_info: {
-                music: 'Mock Music Producer',
-                album_id: 'mock_album_' + num,
-                album: 'Mock Album ' + (i + 1),
-                label: 'Mock Records',
-                label_id: null,
-                origin: 'playlist',
-                is_dolby_content: false,
-                '320kbps': 'true',
-                encrypted_media_url: 'JKcIGVL+NOVwdDWakCj6fWGE8WcC+2iTTmjcVY5gjZcb6MwSnJjGC0KIVQL/LeFRb5cctSKeEIo=',
-                encrypted_cache_url: '',
-                encrypted_drm_cache_url: '',
-                encrypted_drm_media_url: '',
-                album_url: 'https://music.example.com/album/mock-album-' + (i + 1) + '/mock_album_' + num,
-                duration: String(Math.floor(Math.random() * 200) + 120),
-                rights: {
-                    code: '0',
-                    cacheable: 'true',
-                    delete_cached_object: 'false',
-                    reason: ''
-                },
-                cache_state: '',
-                has_lyrics: Math.random() > 0.5 ? 'true' : 'false',
-                lyrics_snippet: 'Mock lyrics snippet for song ' + (i + 1),
-                has_trivia: '0',
-                trivia: [],
-                starred: 'false',
-                copyright_text: '© 2024 Mock Records',
-                artistMap: {
-                    primary_artists: [
-                        {
-                            id: 'mock_artist_' + num,
-                            name: 'Mock Artist ' + (i + 1),
-                            role: 'primary_artists',
-                            image: '',
-                            type: 'artist',
-                            perma_url: 'https://music.example.com/artist/mock-artist-' + (i + 1)
-                        }
-                    ],
-                    featured_artists: [],
-                    artists: [
-                        {
-                            id: 'mock_artist_' + num,
-                            name: 'Mock Artist ' + (i + 1),
-                            role: 'music',
-                            image: '',
-                            type: 'artist',
-                            perma_url: 'https://music.example.com/artist/mock-artist-' + (i + 1)
-                        }
-                    ]
-                },
-                release_date: null,
-                label_url: '',
-                vcode: '',
-                vlink: '',
-                triller_available: false,
-                request_jiotune_flag: false,
-                webp: 'true',
-                lyrics_id: ''
-            },
-            button_tooltip_info: [],
-            pro_hva_campaigns: []
-        });
-    }
-    
-    // Return playlist with paginated songs
-    return {
-        id: baseData.id,
-        title: baseData.title,
-        subtitle: baseData.subtitle,
-        header_desc: baseData.header_desc || '',
-        type: 'playlist',
-        perma_url: baseData.perma_url || 'https://music.example.com/featured/mock-playlist/mock_playlist_001',
-        image: baseData.image || 'http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg',
-        language: baseData.language || 'english',
-        year: '',
-        play_count: '',
-        explicit_content: '0',
-        song_count: String(totalSongs),
-        list_count: String(totalSongs),
-        list_type: '',
-        list: songs
-    };
 }
 
 function getDetailsResponse(token, type, page, limit) {
@@ -283,18 +157,83 @@ function getDetailsResponse(token, type, page, limit) {
         return null;
     }
     
-    // Check if token exists
     if (!tokens.includes(token)) {
         return null;
     }
     
-    // For playlist, handle pagination dynamically
+    const filePath = path.join(dir, token + '.json');
+    const data = loadJSON(filePath);
+    if (!data) return null;
+    
+    // For playlist, apply pagination
     if (type === 'playlist') {
-        return generatePlaylistResponse(token, page, limit);
+        return paginatePlaylist(data, page, limit);
     }
     
-    const filePath = path.join(dir, token + '.json');
-    return loadJSON(filePath);
+    return data;
+}
+
+// ============ PAGINATION HELPERS ============
+
+function paginatePlaylist(data, page, limit) {
+    page = parseInt(page) || 1;
+    limit = parseInt(limit) || 50;
+    
+    var totalSongs = parseInt(data.list_count) || (data.list ? data.list.length : 0);
+    var start = (page - 1) * limit;
+    var end = Math.min(start + limit, totalSongs);
+    
+    if (start >= totalSongs) {
+        return {
+            ...data,
+            list: []
+        };
+    }
+    
+    var paginatedList = data.list ? data.list.slice(start, end) : [];
+    
+    return {
+        id: data.id,
+        title: data.title,
+        subtitle: data.subtitle,
+        header_desc: data.header_desc || '',
+        type: 'playlist',
+        perma_url: data.perma_url || '',
+        image: data.image || 'http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg',
+        language: data.language || 'english',
+        year: data.year || '',
+        play_count: data.play_count || '',
+        explicit_content: data.explicit_content || '0',
+        song_count: String(totalSongs),
+        list_count: String(totalSongs),
+        list_type: data.list_type || '',
+        list: paginatedList
+    };
+}
+
+function paginateSearchResults(data, page, limit) {
+    page = parseInt(page) || 1;
+    limit = parseInt(limit) || 20;
+    
+    var total = parseInt(data.total) || (data.results ? data.results.length : 0);
+    var start = (page - 1) * limit;
+    var end = Math.min(start + limit, total);
+    
+    if (start >= total) {
+        return {
+            total: total,
+            start: start + 1,
+            results: []
+        };
+    }
+    
+    var paginatedResults = data.results ? data.results.slice(start, end) : [];
+    
+    return {
+        total: total,
+        start: start + 1,
+        results: paginatedResults
+    };
 }
 
 // ============ Load cache at startup ============
@@ -317,7 +256,7 @@ function handleRequest(req, res) {
     const query = params.get('q');
     const type = params.get('type');
     const page = params.get('p') || 1;
-    const limit = params.get('n') || 50;
+    const limit = params.get('n') || 20;
 
     let responseData = null;
 
@@ -330,7 +269,8 @@ function handleRequest(req, res) {
         } else if (call === 'search.getPlaylistResults') {
             searchType = 'playlist';
         }
-        responseData = getSearchResponse(query, searchType);
+        var rawData = getSearchResponse(query, searchType);
+        responseData = paginateSearchResults(rawData, page, limit);
     } else if (call === 'webapi.get') {
         responseData = getDetailsResponse(token, type, page, limit);
     }
