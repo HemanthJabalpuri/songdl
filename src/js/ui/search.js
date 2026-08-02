@@ -59,6 +59,22 @@ async function search() {
                 } else {
                     resultsDiv.innerHTML = '<div class="no-results">😕 Album not found</div>';
                 }
+
+            } else if (parsed.type === 'playlist') {
+                // Switch to Playlists tab if needed
+                if (window.currentSearchType !== 'playlists') {
+                    switchTab('playlists');
+                }
+    
+                // Get playlist details
+                var playlistData = await window.API.getPlaylist(parsed.token);
+    
+                if (playlistData && playlistData.id) {
+                    if (statsDiv) statsDiv.innerHTML = 'Found 1 playlist';
+                    viewPlaylist(parsed.token);
+                } else {
+                    resultsDiv.innerHTML = '<div class="no-results">😕 Playlist not found</div>';
+                }
             }
         } catch (error) {
             console.error('[Search] URL fetch error:', error);

@@ -23,6 +23,8 @@ window.Utils.parseUrl = function(url) {
         type = 'album';
     } else if (url.includes('/lyrics/')) {
         type = 'lyrics';
+    } else if (url.includes('/featured/')) {
+        type = 'playlist';
     } else {
         return { type: null, token: null };
     }
