@@ -75,20 +75,29 @@ async function search() {
     if (statsDiv) statsDiv.innerHTML = '';
     if (playerDiv) playerDiv.innerHTML = '';
 
+
+
     try {
         var data;
         if (searchType === 'songs') {
             data = await window.Services.Song.search(query, 20);
-        } else {
+        } else if (searchType === 'albums') {
             data = await window.Services.Album.search(query, 20);
+        } else if (searchType === 'playlists') {
+            data = await window.Services.Playlist.search(query, 20);
+        } else {
+            // Unknown type, default to songs
+            data = await window.Services.Song.search(query, 20);
         }
 
         if (data.results && data.results.length > 0) {
             if (statsDiv) statsDiv.innerHTML = 'Found ' + data.results.length + ' ' + searchType;
             if (searchType === 'songs') {
                 displaySongs(data.results);
-            } else {
+            } else if (searchType === 'albums') {
                 displayAlbums(data.results);
+            } else if (searchType === 'playlists') {
+                displayPlaylists(data.results);
             }
         } else {
             resultsDiv.innerHTML = '<div class="no-results">😕 No results found. Try a different search term.</div>';

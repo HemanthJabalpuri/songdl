@@ -1,0 +1,35 @@
+{
+  "total": 1,
+  "start": 1,
+  "results": [
+    {
+      "id": "mock_playlist_001",
+      "title": "Telugu 2000s",
+      "subtitle": "22.3K Fans",
+      "type": "playlist",
+      "image": "http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg",
+      "perma_url": "https://music.example.com/featured/telugu-2000s/mock_playlist_001",
+      "more_info": {
+        "uid": "mock_user",
+        "firstname": "Mock",
+        "artist_name": [
+          "Benny Dayal",
+          "Priya",
+          "S.P.B. Charan"
+        ],
+        "entity_type": "playlist",
+        "entity_sub_type": "",
+        "video_available": false,
+        "is_dolby_content": null,
+        "sub_types": null,
+        "images": null,
+        "lastname": "Editor",
+        "song_count": "50",
+        "language": "telugu"
+      },
+      "explicit_content": "0",
+      "mini_obj": true,
+      "numsongs": null
+    }
+  ]
+}

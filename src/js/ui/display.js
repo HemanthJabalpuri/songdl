@@ -109,6 +109,30 @@ function createAlbumCard(album) {
     return html;
 }
 
+// ============ CREATE PLAYLIST CARD ============
+function createPlaylistCard(playlist) {
+    var songCount = playlist.more_info?.song_count || playlist.song_count || '0';
+    
+    var html = `
+        <div class="playlist-card" data-token="${playlist.token}">
+            <img src="${playlist.image || 'https://via.placeholder.com/100'}" alt="${playlist.title}" />
+            <div class="playlist-info">
+                <div class="playlist-title">${escapeHtml(playlist.title)}</div>
+                <div class="playlist-artist">${escapeHtml(playlist.subtitle || '')}</div>
+                <div class="playlist-details">
+                    ${songCount} songs • 
+                    ${escapeHtml(playlist.language || 'Unknown')}
+                </div>
+                <button class="btn-view-playlist" data-token="${playlist.token}">
+                    📂 View Playlist
+                </button>
+            </div>
+        </div>
+    `;
+    
+    return html;
+}
+
 // ============ ATTACH ALBUM EVENTS ============
 function attachAlbumEvents(container) {
     // Album card click (open album)
@@ -128,6 +152,30 @@ function attachAlbumEvents(container) {
             var token = this.dataset.token;
             if (token && typeof window.viewAlbum === 'function') {
                 window.viewAlbum(token);
+            }
+        });
+    });
+}
+
+// ============ ATTACH PLAYLIST EVENTS ============
+function attachPlaylistEvents(container) {
+    // Playlist card click (open playlist)
+    container.querySelectorAll('.playlist-card').forEach(function(card) {
+        card.addEventListener('click', function() {
+            var token = this.dataset.token;
+            if (token && typeof window.viewPlaylist === 'function') {
+                window.viewPlaylist(token);
+            }
+        });
+    });
+    
+    // View playlist button click
+    container.querySelectorAll('.btn-view-playlist').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var token = this.dataset.token;
+            if (token && typeof window.viewPlaylist === 'function') {
+                window.viewPlaylist(token);
             }
         });
     });
@@ -169,6 +217,21 @@ function displayAlbums(albums) {
     
     // Attach events to the results container
     attachAlbumEvents(DOM.results);
+}
+
+// ============ DISPLAY PLAYLISTS ============
+function displayPlaylists(playlists) {
+    var html = '<div class="results">';
+    
+    playlists.forEach(function(playlist) {
+        html += createPlaylistCard(playlist);
+    });
+    
+    html += '</div>';
+    DOM.results.innerHTML = html;
+    
+    // Attach events to the results container
+    attachPlaylistEvents(DOM.results);
 }
 
 // ============ VIEW ALBUM ============
@@ -230,6 +293,69 @@ async function viewAlbum(token) {
         
     } catch (error) {
         DOM.results.innerHTML = `<div class="error">❌ Error loading album: ${error.message}</div>`;
+    }
+}
+
+// ============ VIEW PLAYLIST ============
+async function viewPlaylist(token) {
+    DOM.results.innerHTML = '<div class="loading">📂 Loading playlist...</div>';
+    DOM.stats.innerHTML = '';
+
+    try {
+        var playlist = await window.Services.Playlist.getDetails(token);
+
+        var html = `
+            <div class="playlist-header">
+                <img src="${playlist.image || 'https://via.placeholder.com/200'}" alt="${playlist.title}" />
+                <div class="playlist-header-info">
+                    <h2>${escapeHtml(playlist.title)}</h2>
+                    <p>${escapeHtml(playlist.subtitle || '')}</p>
+                    <p>${playlist.song_count || 0} songs • ${escapeHtml(playlist.language || 'Unknown')}</p>
+                    ${playlist.description ? `<p class="playlist-description">${escapeHtml(playlist.description)}</p>` : ''}
+                    <div class="playlist-actions">
+                        <button class="btn-back" id="btn-back-search">← Back to Search</button>
+                    </div>
+                </div>
+            </div>
+            <div class="song-list">
+        `;
+
+        if (playlist.songs && playlist.songs.length > 0) {
+            playlist.songs.forEach(function(song, index) {
+                html += createSongCard(song, index, playlist);
+            });
+        } else {
+            html += `<div class="no-results">No songs found in this playlist.</div>`;
+        }
+
+        html += '</div>';
+        DOM.results.innerHTML = html;
+        
+        // Attach song data to cards
+        var cards = DOM.results.querySelectorAll('.song-card');
+        if (playlist.songs && playlist.songs.length > 0) {
+            cards.forEach(function(card, index) {
+                if (playlist.songs[index]) {
+                    card._songData = playlist.songs[index];
+                }
+            });
+        }
+        
+        // Attach events
+        attachSongEvents(DOM.results);
+        
+        // Back button
+        var backBtn = document.getElementById('btn-back-search');
+        if (backBtn) {
+            backBtn.addEventListener('click', function() {
+                if (typeof window.search === 'function') {
+                    window.search();
+                }
+            });
+        }
+        
+    } catch (error) {
+        DOM.results.innerHTML = `<div class="error">❌ Error loading playlist: ${error.message}</div>`;
     }
 }
 
@@ -374,6 +500,8 @@ function closeLyricsOverlay() {
 // ============ EXPOSE ============
 window.displaySongs = displaySongs;
 window.displayAlbums = displayAlbums;
+window.displayPlaylists = displayPlaylists;
 window.viewAlbum = viewAlbum;
+window.viewPlaylist = viewPlaylist;
 window.showLyrics = showLyrics;
 window.closeLyricsOverlay = closeLyricsOverlay;

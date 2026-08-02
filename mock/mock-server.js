@@ -7,17 +7,21 @@ const path = require('path');
 const DATA_DIR = path.join(__dirname, 'data');
 const SEARCH_SONGS_DIR = path.join(DATA_DIR, 'search', 'songs');
 const SEARCH_ALBUMS_DIR = path.join(DATA_DIR, 'search', 'albums');
+const SEARCH_PLAYLISTS_DIR = path.join(DATA_DIR, 'search', 'playlists');
 const DETAILS_SONGS_DIR = path.join(DATA_DIR, 'details', 'songs');
 const DETAILS_ALBUMS_DIR = path.join(DATA_DIR, 'details', 'albums');
 const DETAILS_LYRICS_DIR = path.join(DATA_DIR, 'details', 'lyrics');
+const DETAILS_PLAYLISTS_DIR = path.join(DATA_DIR, 'details', 'playlists');
 
 // ============ CACHE (loaded once at startup) ============
 
 let searchSongFiles = [];
 let searchAlbumFiles = [];
+let searchPlaylistFiles = [];
 let songTokens = [];
 let albumTokens = [];
 let lyricsTokens = [];
+let playlistTokens = [];
 
 function loadCache() {
     // Load search files
@@ -62,11 +66,31 @@ function loadCache() {
         lyricsTokens = [];
     }
     
+    // Load playlist search files
+    try {
+        searchPlaylistFiles = fs.readdirSync(SEARCH_PLAYLISTS_DIR)
+            .filter(f => f.endsWith('.json') && f !== 'default.json')
+            .map(f => f.replace('.json', ''));
+    } catch (e) {
+        searchPlaylistFiles = [];
+    }
+    
+    // Load playlist tokens
+    try {
+        playlistTokens = fs.readdirSync(DETAILS_PLAYLISTS_DIR)
+            .filter(f => f.endsWith('.json'))
+            .map(f => f.replace('.json', ''));
+    } catch (e) {
+        playlistTokens = [];
+    }
+    
     console.log('[Mock] Cache loaded:');
     console.log('  - Song search files:', searchSongFiles.length);
     console.log('  - Album search files:', searchAlbumFiles.length);
+    console.log('  - Playlist search files:', searchPlaylistFiles.length);
     console.log('  - Song tokens:', songTokens.length);
     console.log('  - Album tokens:', albumTokens.length);
+    console.log('  - Playlist tokens:', playlistTokens.length);
     console.log('  - Lyrics tokens:', lyricsTokens.length);
 }
 
@@ -83,7 +107,21 @@ function getSearchResponse(query, type) {
     query = query.toLowerCase().trim();
     
     // Use cached file list
-    const files = type === 'song' ? searchSongFiles : searchAlbumFiles;
+    let files;
+    let searchDir;
+    if (type === 'song') {
+        files = searchSongFiles;
+        searchDir = SEARCH_SONGS_DIR;
+    } else if (type === 'album') {
+        files = searchAlbumFiles;
+        searchDir = SEARCH_ALBUMS_DIR;
+    } else if (type === 'playlist') {
+        files = searchPlaylistFiles;
+        searchDir = SEARCH_PLAYLISTS_DIR;
+    } else {
+        files = [];
+        searchDir = null;
+    }
     
     // Find matching file
     let matchedFile = null;
@@ -95,9 +133,8 @@ function getSearchResponse(query, type) {
     }
     
     // If no match, return default
-    const searchDir = type === 'song' ? SEARCH_SONGS_DIR : SEARCH_ALBUMS_DIR;
-    if (!matchedFile) {
-        const defaultPath = path.join(searchDir, 'default.json');
+    if (!matchedFile || !searchDir) {
+        const defaultPath = path.join(searchDir || '.', 'default.json');
         const data = loadJSON(defaultPath);
         return data || { total: 0, start: 0, results: [] };
     }
@@ -108,7 +145,6 @@ function getSearchResponse(query, type) {
 }
 
 function getDetailsResponse(token, type) {
-    // Use cached tokens to check existence
     let dir;
     let tokens;
     
@@ -118,6 +154,9 @@ function getDetailsResponse(token, type) {
     } else if (type === 'album') {
         dir = DETAILS_ALBUMS_DIR;
         tokens = albumTokens;
+    } else if (type === 'playlist') {
+        dir = DETAILS_PLAYLISTS_DIR;
+        tokens = playlistTokens;
     } else if (type === 'lyrics') {
         dir = DETAILS_LYRICS_DIR;
         tokens = lyricsTokens;
@@ -156,8 +195,15 @@ function handleRequest(req, res) {
 
     let responseData = null;
 
-    if (call === 'search.getResults' || call === 'search.getAlbumResults') {
-        const searchType = call === 'search.getResults' ? 'song' : 'album';
+    if (call === 'search.getResults' || call === 'search.getAlbumResults' || call === 'search.getPlaylistResults') {
+        let searchType;
+        if (call === 'search.getResults') {
+            searchType = 'song';
+        } else if (call === 'search.getAlbumResults') {
+            searchType = 'album';
+        } else if (call === 'search.getPlaylistResults') {
+            searchType = 'playlist';
+        }
         responseData = getSearchResponse(query, searchType);
     } else if (call === 'webapi.get') {
         responseData = getDetailsResponse(token, type);

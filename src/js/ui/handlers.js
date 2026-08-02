@@ -80,6 +80,30 @@ function setupEventListeners() {
         });
     }
 
+    // Playlists tab
+    var playlistsTab = document.getElementById('tab-playlists');
+    if (playlistsTab) {
+        playlistsTab.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            switchTab('playlists');
+        });
+    }
+
+    // Artists tab - disabled, but still handle click to show message
+    var artistsTab = document.getElementById('tab-artists');
+    if (artistsTab) {
+        artistsTab.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            // Don't switch, just show message
+            var results = document.getElementById('results');
+            var stats = document.getElementById('stats');
+            if (results) results.innerHTML = '<div class="info-message">🎤 Artists feature coming soon!</div>';
+            if (stats) stats.innerHTML = '';
+        });
+    }
+
     // Quality dropdown
     var qualitySelect = document.getElementById('quality-select');
     if (qualitySelect) {
@@ -115,24 +139,38 @@ function switchTab(type) {
     
     var songsTab = document.getElementById('tab-songs');
     var albumsTab = document.getElementById('tab-albums');
+    var playlistsTab = document.getElementById('tab-playlists');
+    var artistsTab = document.getElementById('tab-artists');
     var stats = document.getElementById('stats');
     var results = document.getElementById('results');
     var player = document.getElementById('player');
     
-    if (songsTab && albumsTab) {
-        if (type === 'songs') {
-            songsTab.classList.add('active');
-            albumsTab.classList.remove('active');
-        } else {
-            albumsTab.classList.add('active');
-            songsTab.classList.remove('active');
-        }
+    // Remove active class from all tabs
+    if (songsTab) songsTab.classList.remove('active');
+    if (albumsTab) albumsTab.classList.remove('active');
+    if (playlistsTab) playlistsTab.classList.remove('active');
+    if (artistsTab) artistsTab.classList.remove('active');
+    
+    // Add active class to selected tab
+    if (type === 'songs' && songsTab) {
+        songsTab.classList.add('active');
+    } else if (type === 'albums' && albumsTab) {
+        albumsTab.classList.add('active');
+    } else if (type === 'playlists' && playlistsTab) {
+        playlistsTab.classList.add('active');
+    } else if (type === 'artists' && artistsTab) {
+        artistsTab.classList.add('active');
+        // Artists is disabled, so show "Coming soon" message
+        if (results) results.innerHTML = '<div class="info-message">🎤 Artists feature coming soon!</div>';
+        if (stats) stats.innerHTML = '';
+        if (player) player.innerHTML = '';
+        return;
     }
     
+    // Clear results for other tabs
     if (results) results.innerHTML = '';
     if (stats) stats.innerHTML = '';
     if (player) player.innerHTML = '';
-    
     if (DOM.searchInput) DOM.searchInput.focus();
 }
 

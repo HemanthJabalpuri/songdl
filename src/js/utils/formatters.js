@@ -94,6 +94,8 @@ window.Utils.formatters.formatSearchResults = function(data, type) {
         results = results.map(window.Utils.formatters.formatSong);
     } else if (type === 'album') {
         results = results.map(window.Utils.formatters.formatAlbum);
+    } else if (type === 'playlist') {
+        results = results.map(window.Utils.formatters.formatPlaylist);
     }
     
     return {
@@ -154,6 +156,38 @@ window.Utils.formatters.formatAlbumDetail = function(data) {
         image: data.image || '',
         language: data.language,
         year: data.year,
+        song_count: data.list ? data.list.length : 0,
+        songs: (data.list || []).map(function(song) {
+            return window.Utils.formatters.formatSong(song);
+        })
+    };
+};
+
+// ============ PLAYLIST FORMATTER ============
+window.Utils.formatters.formatPlaylist = function(playlist) {
+    return {
+        id: playlist.id,
+        token: window.Utils.formatters.extractToken(playlist.perma_url),
+        title: window.Utils.formatters.decode(playlist.title),
+        subtitle: window.Utils.formatters.decode(playlist.subtitle || ''),
+        image: playlist.image || '',
+        language: playlist.more_info ? playlist.more_info.language || '' : '',
+        year: '',
+        more_info: {
+            song_count: playlist.more_info ? playlist.more_info.song_count || '0' : '0'
+        }
+    };
+};
+
+// ============ PLAYLIST DETAIL FORMATTER ============
+window.Utils.formatters.formatPlaylistDetail = function(data) {
+    return {
+        id: data.id,
+        token: window.Utils.formatters.extractToken(data.perma_url),
+        title: window.Utils.formatters.decode(data.title),
+        image: data.image || '',
+        language: data.language || '',
+        year: '',
         song_count: data.list ? data.list.length : 0,
         songs: (data.list || []).map(function(song) {
             return window.Utils.formatters.formatSong(song);
