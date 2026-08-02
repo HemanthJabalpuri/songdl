@@ -13,10 +13,11 @@ window.Services.Playlist = {
     },
     
     /**
-     * Get playlist details with formatted songs
-     */
-    getDetails: async function(token) {
-        var rawData = await window.API.getPlaylist(token);
+    * Get playlist details with formatted songs
+    * Supports pagination
+    */
+    getDetails: async function(token, page, limit) {
+        var rawData = await window.API.getPlaylist(token, page, limit);
         return window.Utils.formatters.formatPlaylistDetail(rawData);
     }
 };

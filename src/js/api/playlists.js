@@ -16,6 +16,7 @@ window.API.searchPlaylists = async function(query, limit, page) {
 
 /**
  * Get playlist details by token - returns raw API response
+ * Supports pagination for large playlists
  */
 window.API.getPlaylist = async function(token, page, limit) {
     return await window.API.callAPI('webapi.get', {

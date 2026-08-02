@@ -8,6 +8,41 @@ window.decryptedUrlCache = new Map();
 window.lyricsCache = {};
 // Quality setting (default: 96 kbps)
 window.currentQuality = 96;
+// ============ CACHE ============
+window.Cache = {
+    store: {},
+    
+    set: function(key, data) {
+        this.store[key] = {
+            data: data,
+            timestamp: Date.now()
+        };
+    },
+    
+    get: function(key) {
+        return this.store[key] ? this.store[key].data : null;
+    },
+    
+    has: function(key) {
+        return !!this.store[key];
+    },
+    
+    delete: function(key) {
+        delete this.store[key];
+    },
+    
+    clear: function() {
+        this.store = {};
+    },
+    
+    getSearchKey: function(type, query, page, limit) {
+        return 'search:' + type + ':' + query + ':' + (page || 1) + ':' + (limit || 20);
+    },
+    
+    getDetailKey: function(type, token) {
+        return 'detail:' + type + ':' + token;
+    }
+};
 
 var isOpen = false;
 var isInitialized = false;

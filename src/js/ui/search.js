@@ -69,26 +69,53 @@ async function search() {
     }
 
     var searchType = window.currentSearchType || 'songs';
+    var page = 1;
+    var limit = 20;
+    var cacheKey = window.Cache.getSearchKey(searchType, query, page, limit);
+    
     console.log('[Search] Searching for:', query, 'Type:', searchType);
 
     resultsDiv.innerHTML = '<div class="loading">🔍 Searching</div>';
     if (statsDiv) statsDiv.innerHTML = '';
     if (playerDiv) playerDiv.innerHTML = '';
 
+    // Check cache first
+    if (window.Cache.has(cacheKey)) {
+        console.log('[Search] Using cached results for:', cacheKey);
+        var data = window.Cache.get(cacheKey);
+        window._lastSearch = { type: searchType, query: query, page: page, limit: limit };
 
+        if (data.results && data.results.length > 0) {
+            if (statsDiv) statsDiv.innerHTML = 'Found ' + data.results.length + ' ' + searchType + ' (cached)';
+            if (searchType === 'songs') {
+                displaySongs(data.results);
+            } else if (searchType === 'albums') {
+                displayAlbums(data.results);
+            } else if (searchType === 'playlists') {
+                displayPlaylists(data.results);
+            }
+        } else {
+            resultsDiv.innerHTML = '<div class="no-results">😕 No results found. Try a different search term.</div>';
+        }
+        return;
+    }
 
     try {
         var data;
         if (searchType === 'songs') {
-            data = await window.Services.Song.search(query, 20);
+            data = await window.Services.Song.search(query, limit, page);
         } else if (searchType === 'albums') {
-            data = await window.Services.Album.search(query, 20);
+            data = await window.Services.Album.search(query, limit, page);
         } else if (searchType === 'playlists') {
-            data = await window.Services.Playlist.search(query, 20);
+            data = await window.Services.Playlist.search(query, limit, page);
         } else {
             // Unknown type, default to songs
-            data = await window.Services.Song.search(query, 20);
+            data = await window.Services.Song.search(query, limit, page);
         }
+
+        // Store in cache
+        window.Cache.set(cacheKey, data);
+        window._lastSearch = { type: searchType, query: query, page: page, limit: limit };
 
         if (data.results && data.results.length > 0) {
             if (statsDiv) statsDiv.innerHTML = 'Found ' + data.results.length + ' ' + searchType;

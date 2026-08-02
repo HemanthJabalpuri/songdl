@@ -234,125 +234,205 @@ function displayPlaylists(playlists) {
     attachPlaylistEvents(DOM.results);
 }
 
+// Extract rendering logic to a separate function
+function renderAlbum(album) {
+    var html = `
+        <div class="album-header">
+            <img src="${album.image || 'https://via.placeholder.com/200'}" alt="${album.title}" />
+            <div class="album-header-info">
+                <h2>${escapeHtml(album.title)}</h2>
+                <p>${escapeHtml(album.subtitle || '')}</p>
+                <p>${album.song_count || album.songs?.length || 0} songs • ${escapeHtml(album.language || 'Unknown')} • ${album.year || 'N/A'}</p>
+                <div class="album-actions">
+                    <button class="btn-back" id="btn-back-search">← Back to Search</button>
+                </div>
+            </div>
+        </div>
+        <div class="song-list">
+    `;
+
+    if (album.songs && album.songs.length > 0) {
+        album.songs.forEach(function(song, index) {
+            html += createSongCard(song, index, album);
+        });
+    } else {
+        html += `<div class="no-results">No songs found in this album.</div>`;
+    }
+
+    html += '</div>';
+    DOM.results.innerHTML = html;
+    
+    // Attach song data to cards
+    var cards = DOM.results.querySelectorAll('.song-card');
+    if (album.songs && album.songs.length > 0) {
+        cards.forEach(function(card, index) {
+            if (album.songs[index]) {
+                card._songData = album.songs[index];
+            }
+        });
+    }
+    
+    // Attach events
+    attachSongEvents(DOM.results);
+    
+    // Back button with cache support
+    var backBtn = document.getElementById('btn-back-search');
+    if (backBtn) {
+        backBtn.addEventListener('click', function() {
+            // Check if we have cached search results
+            if (window._lastSearch) {
+                var last = window._lastSearch;
+                var searchKey = window.Cache.getSearchKey(last.type, last.query, last.page, last.limit);
+                
+                if (window.Cache.has(searchKey)) {
+                    console.log('[Display] Restoring search from cache');
+                    var data = window.Cache.get(searchKey);
+                    // Restore results
+                    if (last.type === 'songs') {
+                        displaySongs(data.results);
+                    } else if (last.type === 'albums') {
+                        displayAlbums(data.results);
+                    } else if (last.type === 'playlists') {
+                        displayPlaylists(data.results);
+                    }
+                    var statsDiv = document.getElementById('stats');
+                    if (statsDiv) statsDiv.innerHTML = 'Found ' + data.results.length + ' ' + last.type + ' (cached)';
+                    return;
+                }
+            }
+            
+            // Fallback: call search
+            if (typeof window.search === 'function') {
+                window.search();
+            }
+        });
+    }
+}
+
 // ============ VIEW ALBUM ============
 async function viewAlbum(token) {
+    var cacheKey = window.Cache.getDetailKey('album', token);
+    
+    // Check cache first
+    if (window.Cache.has(cacheKey)) {
+        console.log('[Display] Using cached album:', token);
+        var album = window.Cache.get(cacheKey);
+        renderAlbum(album);
+        return;
+    }
+    
     DOM.results.innerHTML = '<div class="loading">📂 Loading album...</div>';
     DOM.stats.innerHTML = '';
 
     try {
         var album = await window.Services.Album.getDetails(token);
-
-        var html = `
-            <div class="album-header">
-                <img src="${album.image || 'https://via.placeholder.com/200'}" alt="${album.title}" />
-                <div class="album-header-info">
-                    <h2>${escapeHtml(album.title)}</h2>
-                    <p>${escapeHtml(album.subtitle || '')}</p>
-                    <p>${album.song_count || album.songs?.length || 0} songs • ${escapeHtml(album.language || 'Unknown')} • ${album.year || 'N/A'}</p>
-                    <div class="album-actions">
-                        <button class="btn-back" id="btn-back-search">← Back to Search</button>
-                    </div>
-                </div>
-            </div>
-            <div class="song-list">
-        `;
-
-        if (album.songs && album.songs.length > 0) {
-            album.songs.forEach(function(song, index) {
-                html += createSongCard(song, index, album);
-            });
-        } else {
-            html += `<div class="no-results">No songs found in this album.</div>`;
-        }
-
-        html += '</div>';
-        DOM.results.innerHTML = html;
         
-        // Attach song data to cards
-        var cards = DOM.results.querySelectorAll('.song-card');
-        if (album.songs && album.songs.length > 0) {
-            cards.forEach(function(card, index) {
-                if (album.songs[index]) {
-                    card._songData = album.songs[index];
-                }
-            });
-        }
-        
-        // Attach events to the results container
-        attachSongEvents(DOM.results);
-        
-        // Back button
-        var backBtn = document.getElementById('btn-back-search');
-        if (backBtn) {
-            backBtn.addEventListener('click', function() {
-                if (typeof window.search === 'function') {
-                    window.search();
-                }
-            });
-        }
+        // Store in cache
+        window.Cache.set(cacheKey, album);
+        renderAlbum(album);
         
     } catch (error) {
         DOM.results.innerHTML = `<div class="error">❌ Error loading album: ${error.message}</div>`;
     }
 }
 
+// Extract rendering logic to a separate function
+function renderPlaylist(playlist) {
+    var html = `
+        <div class="playlist-header">
+            <img src="${playlist.image || 'https://via.placeholder.com/200'}" alt="${playlist.title}" />
+            <div class="playlist-header-info">
+                <h2>${escapeHtml(playlist.title)}</h2>
+                <p>${escapeHtml(playlist.subtitle || '')}</p>
+                <p>${playlist.song_count || 0} songs • ${escapeHtml(playlist.language || 'Unknown')}</p>
+                ${playlist.description ? `<p class="playlist-description">${escapeHtml(playlist.description)}</p>` : ''}
+                <div class="playlist-actions">
+                    <button class="btn-back" id="btn-back-search">← Back to Search</button>
+                </div>
+            </div>
+        </div>
+        <div class="song-list">
+    `;
+
+    if (playlist.songs && playlist.songs.length > 0) {
+        playlist.songs.forEach(function(song, index) {
+            html += createSongCard(song, index, playlist);
+        });
+    } else {
+        html += `<div class="no-results">No songs found in this playlist.</div>`;
+    }
+
+    html += '</div>';
+    DOM.results.innerHTML = html;
+    
+    // Attach song data to cards
+    var cards = DOM.results.querySelectorAll('.song-card');
+    if (playlist.songs && playlist.songs.length > 0) {
+        cards.forEach(function(card, index) {
+            if (playlist.songs[index]) {
+                card._songData = playlist.songs[index];
+            }
+        });
+    }
+    
+    // Attach events
+    attachSongEvents(DOM.results);
+    
+    // Back button with cache support
+    var backBtn = document.getElementById('btn-back-search');
+    if (backBtn) {
+        backBtn.addEventListener('click', function() {
+            // Check if we have cached search results
+            if (window._lastSearch) {
+                var last = window._lastSearch;
+                var searchKey = window.Cache.getSearchKey(last.type, last.query, last.page, last.limit);
+                
+                if (window.Cache.has(searchKey)) {
+                    console.log('[Display] Restoring search from cache');
+                    var data = window.Cache.get(searchKey);
+                    // Restore results
+                    if (last.type === 'songs') {
+                        displaySongs(data.results);
+                    } else if (last.type === 'albums') {
+                        displayAlbums(data.results);
+                    } else if (last.type === 'playlists') {
+                        displayPlaylists(data.results);
+                    }
+                    var statsDiv = document.getElementById('stats');
+                    if (statsDiv) statsDiv.innerHTML = 'Found ' + data.results.length + ' ' + last.type + ' (cached)';
+                    return;
+                }
+            }
+            
+            // Fallback: call search
+            if (typeof window.search === 'function') {
+                window.search();
+            }
+        });
+    }
+}
+
 // ============ VIEW PLAYLIST ============
 async function viewPlaylist(token) {
+    var cacheKey = window.Cache.getDetailKey('playlist', token);
+    
+    // Check cache first
+    if (window.Cache.has(cacheKey)) {
+        console.log('[Display] Using cached playlist:', token);
+        var playlist = window.Cache.get(cacheKey);
+        renderPlaylist(playlist);
+        return;
+    }
+    
     DOM.results.innerHTML = '<div class="loading">📂 Loading playlist...</div>';
     DOM.stats.innerHTML = '';
 
     try {
         var playlist = await window.Services.Playlist.getDetails(token);
-
-        var html = `
-            <div class="playlist-header">
-                <img src="${playlist.image || 'https://via.placeholder.com/200'}" alt="${playlist.title}" />
-                <div class="playlist-header-info">
-                    <h2>${escapeHtml(playlist.title)}</h2>
-                    <p>${escapeHtml(playlist.subtitle || '')}</p>
-                    <p>${playlist.song_count || 0} songs • ${escapeHtml(playlist.language || 'Unknown')}</p>
-                    ${playlist.description ? `<p class="playlist-description">${escapeHtml(playlist.description)}</p>` : ''}
-                    <div class="playlist-actions">
-                        <button class="btn-back" id="btn-back-search">← Back to Search</button>
-                    </div>
-                </div>
-            </div>
-            <div class="song-list">
-        `;
-
-        if (playlist.songs && playlist.songs.length > 0) {
-            playlist.songs.forEach(function(song, index) {
-                html += createSongCard(song, index, playlist);
-            });
-        } else {
-            html += `<div class="no-results">No songs found in this playlist.</div>`;
-        }
-
-        html += '</div>';
-        DOM.results.innerHTML = html;
         
-        // Attach song data to cards
-        var cards = DOM.results.querySelectorAll('.song-card');
-        if (playlist.songs && playlist.songs.length > 0) {
-            cards.forEach(function(card, index) {
-                if (playlist.songs[index]) {
-                    card._songData = playlist.songs[index];
-                }
-            });
-        }
-        
-        // Attach events
-        attachSongEvents(DOM.results);
-        
-        // Back button
-        var backBtn = document.getElementById('btn-back-search');
-        if (backBtn) {
-            backBtn.addEventListener('click', function() {
-                if (typeof window.search === 'function') {
-                    window.search();
-                }
-            });
-        }
+        // Store in cache
+        window.Cache.set(cacheKey, playlist);
+        renderPlaylist(playlist);
         
     } catch (error) {
         DOM.results.innerHTML = `<div class="error">❌ Error loading playlist: ${error.message}</div>`;
