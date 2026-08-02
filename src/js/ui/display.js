@@ -341,7 +341,7 @@ function renderAlbum(album) {
                 <p>${escapeHtml(album.subtitle || '')}</p>
                 <p>${album.song_count || album.songs?.length || 0} songs • ${escapeHtml(album.language || 'Unknown')} • ${album.year || 'N/A'}</p>
                 <div class="album-actions">
-                    <button class="btn-back" id="btn-back-search">← Back to Search</button>
+                    <button class="btn-back" id="btn-back-search">← Back</button>
                 </div>
             </div>
         </div>
@@ -379,43 +379,39 @@ function renderAlbum(album) {
     
     // Attach events
     attachSongEvents(DOM.results);
-    
-    // Back button with cache support
+
     var backBtn = document.getElementById('btn-back-search');
-    if (backBtn) {
-        backBtn.addEventListener('click', function() {
-            // Check if we have cached search results
-            if (window._lastSearch) {
-                var last = window._lastSearch;
-                var searchKey = window.Cache.getSearchKey(last.type, last.query, last.page, last.limit);
-                
-                if (window.Cache.has(searchKey)) {
-                    console.log('[Display] Restoring search from cache');
-                    var data = window.Cache.get(searchKey);
-                    // Restore results
-                    if (last.type === 'songs') {
-                        displaySongs(data.results);
-                    } else if (last.type === 'albums') {
-                        displayAlbums(data.results);
-                    } else if (last.type === 'playlists') {
-                        displayPlaylists(data.results);
-                    }
-                    var statsDiv = document.getElementById('stats');
-                    if (statsDiv) statsDiv.innerHTML = 'Found ' + data.results.length + ' ' + last.type + ' (cached)';
-                    return;
-                }
-            }
-            
-            // Fallback: call search
+    backBtn.addEventListener('click', function() {
+        console.log('[Back] Button clicked');
+    
+        // Pop the current view
+        var current = window.Nav.pop();
+        console.log('[Back] Popped:', current ? current.type : 'none');
+    
+        // Get the new top (previous view)
+        var prev = window.Nav.peek();
+        console.log('[Back] Previous view:', prev ? prev.type : 'none');
+    
+        if (prev) {
+            restoreView(prev);
+        } else {
+            console.log('[Back] No previous view, going to search');
             if (typeof window.search === 'function') {
                 window.search();
             }
-        });
-    }
+        }
+    });
 }
 
 // ============ VIEW ALBUM ============
 async function viewAlbum(token) {
+    console.log('[View] viewAlbum called, isRestoring:', window._isRestoring);
+    
+    // Only push if not restoring
+    if (!window._isRestoring) {
+        window.Nav.push({ type: 'album', data: { token: token } });
+    }
+    
     var cacheKey = window.Cache.getDetailKey('album', token);
     
     // Check cache first
@@ -493,6 +489,15 @@ async function loadMorePlaylist() {
             window._playlistState.currentPage = nextPage;
             window._playlistLoadedPages.push(cacheKey);
 
+    // ============ UPDATE STACK WITH LOADED PAGES ============
+    var currentStack = window.Nav.getStack();
+    for (var i = currentStack.length - 1; i >= 0; i--) {
+        if (currentStack[i].type === 'playlist') {
+            currentStack[i].data.loadedPages = window._playlistLoadedPages.slice();
+            console.log('[Nav] Updated playlist stack with loaded pages:', window._playlistLoadedPages.length);
+            break;
+        }
+    }
             // Attach events to new cards
             attachSongEvents(resultsDiv);
             
@@ -578,7 +583,7 @@ function renderPlaylist(playlist) {
                 <p>${playlist.list_count || playlist.song_count || 0} songs • ${escapeHtml(playlist.language || 'Unknown')}</p>
                 ${playlist.description ? `<p class="playlist-description">${escapeHtml(playlist.description)}</p>` : ''}
                 <div class="playlist-actions">
-                    <button class="btn-back" id="btn-back-search">← Back to Search</button>
+                    <button class="btn-back" id="btn-back-search">← Back</button>
                 </div>
             </div>
         </div>
@@ -617,42 +622,38 @@ function renderPlaylist(playlist) {
     
     // Attach events
     attachSongEvents(DOM.results);
-    
-    // Back button with cache support
+
     var backBtn = document.getElementById('btn-back-search');
-    if (backBtn) {
-        backBtn.addEventListener('click', function() {
-            // Check if we have cached search results
-            if (window._searchLoadedPages && window._searchLoadedPages.length > 0) {
-                console.log('[Display] Restoring search from cache');
-                var allResults = [];
-                var searchType = window._searchState.type || 'songs';
-                window._searchLoadedPages.forEach(function(pageKey) {
-                    var pageData = window.Cache.get(pageKey);
-                    if (pageData && pageData.results) {
-                        allResults = allResults.concat(pageData.results);
-                    }
-                });
-                
-                if (allResults.length > 0) {
-                    displaySearchResults(allResults, searchType);
-                    showLoadMoreButton('search');
-                    var statsDiv = document.getElementById('stats');
-                    if (statsDiv) statsDiv.innerHTML = 'Found ' + allResults.length + ' ' + searchType + ' (cached)';
-                    return;
-                }
-            }
-            
-            // Fallback: call search
+    backBtn.addEventListener('click', function() {
+        console.log('[Back] Button clicked');
+    
+        // Pop the current view
+        var current = window.Nav.pop();
+        console.log('[Back] Popped:', current ? current.type : 'none');
+    
+        // Get the new top (previous view)
+        var prev = window.Nav.peek();
+        console.log('[Back] Previous view:', prev ? prev.type : 'none');
+    
+        if (prev) {
+            restoreView(prev);
+        } else {
+            console.log('[Back] No previous view, going to search');
             if (typeof window.search === 'function') {
                 window.search();
             }
-        });
-    }
+        }
+    });
 }
 
-// ============ VIEW PLAYLIST ============
 async function viewPlaylist(token) {
+    console.log('[View] viewPlaylist called, isRestoring:', window._isRestoring);
+    
+    // Only push if not restoring
+    if (!window._isRestoring) {
+        window.Nav.push({ type: 'playlist', data: { token: token, page: 1, loadedPages: [] } });
+    }
+    
     // Reset playlist state
     window._playlistState.token = token;
     window._playlistState.currentPage = 1;
@@ -675,6 +676,17 @@ async function viewPlaylist(token) {
         // list_count is at top level
         window._playlistState.total = parseInt(playlist.list_count) || parseInt(playlist.song_count) || 0;
         window._playlistLoadedPages.push(cacheKey);
+        
+        // Update stack entry with the first page
+        var currentStack = window.Nav.getStack();
+        for (var i = currentStack.length - 1; i >= 0; i--) {
+            if (currentStack[i].type === 'playlist') {
+                currentStack[i].data.loadedPages = window._playlistLoadedPages.slice();
+                console.log('[Nav] Updated playlist stack with first page');
+                break;
+            }
+        }
+        
         renderPlaylist(playlist);
         showPlaylistLoadMoreButton();
         return;
@@ -687,6 +699,16 @@ async function viewPlaylist(token) {
         window.Cache.set(cacheKey, playlist);
         window._playlistState.total = parseInt(playlist.list_count) || parseInt(playlist.song_count) || 0;
         window._playlistLoadedPages.push(cacheKey);
+        
+        // Update stack entry with the first page
+        var currentStack = window.Nav.getStack();
+        for (var i = currentStack.length - 1; i >= 0; i--) {
+            if (currentStack[i].type === 'playlist') {
+                currentStack[i].data.loadedPages = window._playlistLoadedPages.slice();
+                console.log('[Nav] Updated playlist stack with first page');
+                break;
+            }
+        }
         
         renderPlaylist(playlist);
         showPlaylistLoadMoreButton();
@@ -832,6 +854,157 @@ function closeLyricsOverlay() {
         overlay.remove();
         console.log('[Display] Lyrics overlay closed');
     }
+}
+
+// ============ RESTORE SEARCH ============
+function restoreSearch(data) {
+    console.log('[Restore] Search:', data);
+    
+    var searchType = data.type || 'songs';
+    var query = data.query;
+    var loadedPages = data.loadedPages || [];
+    
+    // Get first page from cache
+    var firstPageKey = window.Cache.getSearchKey(searchType, query, 1, 20);
+    
+    if (!window.Cache.has(firstPageKey)) {
+        console.log('[Restore] No cache for search, falling back to search');
+        if (typeof window.search === 'function') {
+            window.search();
+        }
+        return;
+    }
+    
+    // Collect all results from all loaded pages
+    var allResults = [];
+    if (loadedPages.length > 0) {
+        loadedPages.forEach(function(pageKey) {
+            var pageData = window.Cache.get(pageKey);
+            if (pageData && pageData.results) {
+                allResults = allResults.concat(pageData.results);
+            }
+        });
+    } else {
+        var data = window.Cache.get(firstPageKey);
+        allResults = data.results || [];
+        loadedPages = [firstPageKey];
+    }
+    
+    if (allResults.length === 0) {
+        console.log('[Restore] No results found, falling back to search');
+        if (typeof window.search === 'function') {
+            window.search();
+        }
+        return;
+    }
+    
+    // Restore state
+    window._searchState.type = searchType;
+    window._searchState.query = query;
+    window._searchState.currentPage = loadedPages.length;
+    window._searchLoadedPages = loadedPages.slice();
+    
+    // Display results
+    displaySearchResults(allResults, searchType);
+    showLoadMoreButton('search');
+    
+    var statsDiv = document.getElementById('stats');
+    if (statsDiv) statsDiv.innerHTML = 'Found ' + allResults.length + ' ' + searchType + ' (cached)';
+    
+    console.log('[Restore] Search restored with', allResults.length, 'results');
+}
+
+// ============ RESTORE PLAYLIST ============
+function restorePlaylist(data) {
+    console.log('[Restore] Playlist:', data);
+    
+    var token = data.token;
+    var loadedPages = data.loadedPages || [];
+    
+    // Get first page from cache
+    var firstPageKey = 'playlist:' + token + ':' + 1 + ':' + 50;
+    
+    if (!window.Cache.has(firstPageKey)) {
+        console.log('[Restore] No cache for playlist, falling back to viewPlaylist');
+        window._isRestoring = false; // Temporarily allow push
+        viewPlaylist(token);
+        window._isRestoring = true;
+        return;
+    }
+    
+    // Collect all songs from all loaded pages
+    var allSongs = [];
+    var playlistData = null;
+    
+    if (loadedPages.length > 0) {
+        loadedPages.forEach(function(pageKey) {
+            var pageData = window.Cache.get(pageKey);
+            if (pageData && pageData.songs) {
+                if (!playlistData) playlistData = pageData;
+                allSongs = allSongs.concat(pageData.songs);
+            }
+        });
+    } else {
+        var data = window.Cache.get(firstPageKey);
+        playlistData = data;
+        allSongs = data.songs || [];
+        loadedPages = [firstPageKey];
+    }
+    
+    if (allSongs.length === 0) {
+        console.log('[Restore] No songs found, falling back to viewPlaylist');
+        window._isRestoring = false;
+        viewPlaylist(token);
+        window._isRestoring = true;
+        return;
+    }
+    
+    // Restore state
+    if (playlistData) {
+        playlistData.songs = allSongs;
+    }
+    window._playlistState.token = token;
+    window._playlistState.currentPage = loadedPages.length;
+    window._playlistLoadedPages = loadedPages.slice();
+    
+    // Display playlist
+    renderPlaylist(playlistData);
+    showPlaylistLoadMoreButton();
+    
+    console.log('[Restore] Playlist restored with', allSongs.length, 'songs');
+}
+
+// ============ RESTORE ALBUM ============
+function restoreAlbum(data) {
+    console.log('[Restore] Album:', data);
+    viewAlbum(data.token);
+}
+
+// ============ RESTORE VIEW ============
+function restoreView(view) {
+    console.log('[Restore] Restoring:', view.type, 'Data:', view.data);
+    
+    window._isRestoring = true;
+    
+    switch(view.type) {
+        case 'search':
+            restoreSearch(view.data);
+            break;
+        case 'playlist':
+            restorePlaylist(view.data);
+            break;
+        case 'album':
+            restoreAlbum(view.data);
+            break;
+        default:
+            console.log('[Restore] Unknown type:', view.type);
+            if (typeof window.search === 'function') {
+                window.search();
+            }
+    }
+    
+    window._isRestoring = false;
+    console.log('[Restore] Done, isRestoring:', window._isRestoring);
 }
 
 // ============ EXPOSE ============

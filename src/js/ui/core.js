@@ -65,6 +65,32 @@ window._playlistState = {
 };
 window._playlistLoadedPages = [];
 
+// ============ NAVIGATION ============
+window._navStack = [];
+window._isRestoring = false;
+
+window.Nav = {
+    push: function(view) {
+        window._navStack.push(view);
+        console.log('[Nav] PUSH:', view.type, 'Stack:', window._navStack.map(v => v.type).join(' → '));
+    },
+    pop: function() {
+        var view = window._navStack.pop();
+        console.log('[Nav] POP:', view ? view.type : 'none', 'Stack:', window._navStack.map(v => v.type).join(' → '));
+        return view;
+    },
+    clear: function() {
+        window._navStack = [];
+        console.log('[Nav] CLEAR');
+    },
+    peek: function() {
+        return window._navStack[window._navStack.length - 1];
+    },
+    getStack: function() {
+        return window._navStack;
+    }
+};
+
 var isOpen = false;
 var isInitialized = false;
 var isToggling = false;

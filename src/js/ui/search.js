@@ -107,6 +107,17 @@ async function search() {
 
     // Check cache for page 1
     if (window.Cache.has(cacheKey)) {
+        // Clear navigation stack and push search view
+        window.Nav.clear();
+        window.Nav.push({ 
+            type: 'search', 
+            data: { 
+                type: searchType, 
+                query: query,
+                page: 1,
+                loadedPages: window._searchLoadedPages ? window._searchLoadedPages.slice() : []
+            } 
+        });
         console.log('[Search] Using cached results for page 1');
         var data = window.Cache.get(cacheKey);
         window._searchState.total = data.total || 0;
@@ -138,6 +149,18 @@ async function search() {
         window.Cache.set(cacheKey, data);
         window._searchState.total = data.total || 0;
         window._searchLoadedPages.push(cacheKey);
+
+        // Clear navigation stack and push search view
+        window.Nav.clear();
+        window.Nav.push({ 
+            type: 'search', 
+            data: { 
+                type: searchType, 
+                query: query,
+                page: window._searchState.currentPage || 1,
+                loadedPages: window._searchLoadedPages ? window._searchLoadedPages.slice() : []
+            } 
+        });
 
         if (data.results && data.results.length > 0) {
             if (statsDiv) statsDiv.innerHTML = 'Found ' + data.results.length + ' ' + searchType;
