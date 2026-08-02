@@ -43,6 +43,27 @@ window.Cache = {
         return 'detail:' + type + ':' + token;
     }
 };
+// ============ PAGINATION STATE ============
+// For search results
+window._searchState = {
+    type: 'songs',
+    query: '',
+    currentPage: 1,
+    limit: 20,
+    total: 0,
+    isLoading: false
+};
+window._searchLoadedPages = [];
+
+// For playlist details
+window._playlistState = {
+    token: '',
+    currentPage: 1,
+    limit: 50,
+    total: 0,
+    isLoading: false
+};
+window._playlistLoadedPages = [];
 
 var isOpen = false;
 var isInitialized = false;

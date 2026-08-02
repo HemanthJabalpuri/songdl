@@ -336,7 +336,133 @@ async function viewAlbum(token) {
     }
 }
 
+// ============ LOAD MORE PLAYLIST ============
+async function loadMorePlaylist() {
+    if (window._playlistState.isLoading) return;
+    window._playlistState.isLoading = true;
+
+    var btn = document.getElementById('playlist-load-more-btn');
+    if (btn) {
+        btn.textContent = 'Loading...';
+        btn.disabled = true;
+    }
+
+    var nextPage = window._playlistState.currentPage + 1;
+    var cacheKey = window.Cache.getDetailKey('playlist', window._playlistState.token) + ':' + nextPage + ':' + window._playlistState.limit;
+
+    try {
+        var data;
+        
+        // Check cache first
+        if (window.Cache.has(cacheKey)) {
+            console.log('[Display] Using cached playlist page:', nextPage);
+            data = window.Cache.get(cacheKey);
+        } else {
+            data = await window.Services.Playlist.getDetails(
+                window._playlistState.token,
+                nextPage,
+                window._playlistState.limit
+            );
+            window.Cache.set(cacheKey, data);
+        }
+
+        // Append songs
+        if (data.songs && data.songs.length > 0) {
+            var resultsDiv = document.getElementById('results');
+            
+            // Remove load more button
+            var oldBtn = document.getElementById('playlist-load-more-btn');
+            if (oldBtn) oldBtn.remove();
+
+            // Calculate starting index for this page (global)
+            var startIndex = (nextPage - 1) * window._playlistState.limit;
+
+            // Append new songs with correct global numbering
+            data.songs.forEach(function(song, idx) {
+                var globalIndex = startIndex + idx;
+                var songCard = createSongCard(song, globalIndex, data);
+                resultsDiv.insertAdjacentHTML('beforeend', songCard);
+            });
+
+            // Update state
+            window._playlistState.currentPage = nextPage;
+            window._playlistLoadedPages.push(cacheKey);
+
+            // Attach events to new cards
+            attachSongEvents(resultsDiv);
+            
+            // Attach song data to new cards
+            var cards = resultsDiv.querySelectorAll('.song-card');
+            cards.forEach(function(card, idx) {
+                var globalIdx = startIndex + idx;
+                if (idx >= startIndex && data.songs[idx - startIndex]) {
+                    card._songData = data.songs[idx - startIndex];
+                }
+            });
+
+            // Show load more button again
+            showPlaylistLoadMoreButton();
+        } else {
+            var endMsg = document.createElement('div');
+            endMsg.className = 'end-of-results';
+            endMsg.id = 'playlist-load-more-btn';
+            endMsg.textContent = '🏁 End of playlist';
+            document.getElementById('results').appendChild(endMsg);
+        }
+    } catch (error) {
+        console.error('[Display] Load more playlist error:', error);
+        var btn = document.getElementById('playlist-load-more-btn');
+        if (btn) {
+            btn.textContent = 'Retry';
+            btn.disabled = false;
+        }
+    } finally {
+        window._playlistState.isLoading = false;
+    }
+}
+
+// ============ SHOW PLAYLIST LOAD MORE BUTTON ============
+function showPlaylistLoadMoreButton() {
+    var resultsDiv = document.getElementById('results');
+    if (!resultsDiv) return;
+    
+    // Remove existing load more button
+    var existingBtn = document.getElementById('playlist-load-more-btn');
+    if (existingBtn) existingBtn.remove();
+    
+    // Check if more results exist
+    var hasMore = false;
+    if (window._playlistState.total > 0) {
+        var loadedCount = window._playlistLoadedPages.length * window._playlistState.limit;
+        hasMore = loadedCount < window._playlistState.total;
+    } else {
+        var lastData = window.Cache.get(window._playlistLoadedPages[window._playlistLoadedPages.length - 1]);
+        if (lastData && lastData.songs) {
+            hasMore = lastData.songs.length >= window._playlistState.limit;
+        }
+    }
+    
+    if (!hasMore) {
+        var endMsg = document.createElement('div');
+        endMsg.className = 'end-of-results';
+        endMsg.id = 'playlist-load-more-btn';
+        endMsg.textContent = '🏁 End of playlist';
+        resultsDiv.appendChild(endMsg);
+        return;
+    }
+    
+    var btn = document.createElement('button');
+    btn.id = 'playlist-load-more-btn';
+    btn.className = 'btn-load-more';
+    btn.textContent = 'Load ' + window._playlistState.limit + ' More Songs';
+    btn.addEventListener('click', function() {
+        loadMorePlaylist();
+    });
+    resultsDiv.appendChild(btn);
+}
+
 // Extract rendering logic to a separate function
+// ============ RENDER PLAYLIST ============
 function renderPlaylist(playlist) {
     var html = `
         <div class="playlist-header">
@@ -344,7 +470,7 @@ function renderPlaylist(playlist) {
             <div class="playlist-header-info">
                 <h2>${escapeHtml(playlist.title)}</h2>
                 <p>${escapeHtml(playlist.subtitle || '')}</p>
-                <p>${playlist.song_count || 0} songs • ${escapeHtml(playlist.language || 'Unknown')}</p>
+                <p>${playlist.list_count || playlist.song_count || 0} songs • ${escapeHtml(playlist.language || 'Unknown')}</p>
                 ${playlist.description ? `<p class="playlist-description">${escapeHtml(playlist.description)}</p>` : ''}
                 <div class="playlist-actions">
                     <button class="btn-back" id="btn-back-search">← Back to Search</button>
@@ -355,6 +481,7 @@ function renderPlaylist(playlist) {
     `;
 
     if (playlist.songs && playlist.songs.length > 0) {
+        // For page 1, index starts at 0, so it's correct
         playlist.songs.forEach(function(song, index) {
             html += createSongCard(song, index, playlist);
         });
@@ -383,23 +510,22 @@ function renderPlaylist(playlist) {
     if (backBtn) {
         backBtn.addEventListener('click', function() {
             // Check if we have cached search results
-            if (window._lastSearch) {
-                var last = window._lastSearch;
-                var searchKey = window.Cache.getSearchKey(last.type, last.query, last.page, last.limit);
-                
-                if (window.Cache.has(searchKey)) {
-                    console.log('[Display] Restoring search from cache');
-                    var data = window.Cache.get(searchKey);
-                    // Restore results
-                    if (last.type === 'songs') {
-                        displaySongs(data.results);
-                    } else if (last.type === 'albums') {
-                        displayAlbums(data.results);
-                    } else if (last.type === 'playlists') {
-                        displayPlaylists(data.results);
+            if (window._searchLoadedPages && window._searchLoadedPages.length > 0) {
+                console.log('[Display] Restoring search from cache');
+                var allResults = [];
+                var searchType = window._searchState.type || 'songs';
+                window._searchLoadedPages.forEach(function(pageKey) {
+                    var pageData = window.Cache.get(pageKey);
+                    if (pageData && pageData.results) {
+                        allResults = allResults.concat(pageData.results);
                     }
+                });
+                
+                if (allResults.length > 0) {
+                    displaySearchResults(allResults, searchType);
+                    showLoadMoreButton('search');
                     var statsDiv = document.getElementById('stats');
-                    if (statsDiv) statsDiv.innerHTML = 'Found ' + data.results.length + ' ' + last.type + ' (cached)';
+                    if (statsDiv) statsDiv.innerHTML = 'Found ' + allResults.length + ' ' + searchType + ' (cached)';
                     return;
                 }
             }
@@ -414,25 +540,43 @@ function renderPlaylist(playlist) {
 
 // ============ VIEW PLAYLIST ============
 async function viewPlaylist(token) {
-    var cacheKey = window.Cache.getDetailKey('playlist', token);
-    
-    // Check cache first
-    if (window.Cache.has(cacheKey)) {
-        console.log('[Display] Using cached playlist:', token);
-        var playlist = window.Cache.get(cacheKey);
-        renderPlaylist(playlist);
-        return;
-    }
-    
+    // Reset playlist state
+    window._playlistState.token = token;
+    window._playlistState.currentPage = 1;
+    window._playlistState.limit = 50;
+    window._playlistState.total = 0;
+    window._playlistState.isLoading = false;
+    window._playlistLoadedPages = [];
+
+    var page = window._playlistState.currentPage;
+    var limit = window._playlistState.limit;
+    var cacheKey = 'playlist:' + token + ':' + page + ':' + limit;
+
     DOM.results.innerHTML = '<div class="loading">📂 Loading playlist...</div>';
     DOM.stats.innerHTML = '';
 
+    // Check cache first
+    if (window.Cache.has(cacheKey)) {
+        console.log('[Display] Using cached playlist page 1:', token);
+        var playlist = window.Cache.get(cacheKey);
+        // list_count is at top level
+        window._playlistState.total = parseInt(playlist.list_count) || parseInt(playlist.song_count) || 0;
+        window._playlistLoadedPages.push(cacheKey);
+        renderPlaylist(playlist);
+        showPlaylistLoadMoreButton();
+        return;
+    }
+
     try {
-        var playlist = await window.Services.Playlist.getDetails(token);
+        var playlist = await window.Services.Playlist.getDetails(token, page, limit);
         
         // Store in cache
         window.Cache.set(cacheKey, playlist);
+        window._playlistState.total = parseInt(playlist.list_count) || parseInt(playlist.song_count) || 0;
+        window._playlistLoadedPages.push(cacheKey);
+        
         renderPlaylist(playlist);
+        showPlaylistLoadMoreButton();
         
     } catch (error) {
         DOM.results.innerHTML = `<div class="error">❌ Error loading playlist: ${error.message}</div>`;
@@ -583,5 +727,8 @@ window.displayAlbums = displayAlbums;
 window.displayPlaylists = displayPlaylists;
 window.viewAlbum = viewAlbum;
 window.viewPlaylist = viewPlaylist;
+window.loadMorePlaylist = loadMorePlaylist;
+window.renderPlaylist = renderPlaylist;
+window.showPlaylistLoadMoreButton = showPlaylistLoadMoreButton;
 window.showLyrics = showLyrics;
 window.closeLyricsOverlay = closeLyricsOverlay;

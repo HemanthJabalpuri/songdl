@@ -188,7 +188,9 @@ window.Utils.formatters.formatPlaylistDetail = function(data) {
         image: data.image || '',
         language: data.language || '',
         year: '',
-        song_count: data.list ? data.list.length : 0,
+        list_count: parseInt(data.list_count) || 0,
+        song_count: parseInt(data.song_count) || parseInt(data.list_count) || data.list ? data.list.length : 0,
+        description: data.header_desc || '',
         songs: (data.list || []).map(function(song) {
             return window.Utils.formatters.formatSong(song);
         })

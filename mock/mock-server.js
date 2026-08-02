@@ -144,7 +144,126 @@ function getSearchResponse(query, type) {
     return data || { total: 0, start: 0, results: [] };
 }
 
-function getDetailsResponse(token, type) {
+// ============ GENERATE PLAYLIST RESPONSE ============
+function generatePlaylistResponse(token, page, limit) {
+    page = parseInt(page) || 1;
+    limit = parseInt(limit) || 50;
+    
+    // Load base playlist data
+    const basePath = path.join(DETAILS_PLAYLISTS_DIR, token + '.json');
+    const baseData = loadJSON(basePath);
+    if (!baseData) return null;
+    
+    // Total songs (use existing count or default)
+    var totalSongs = parseInt(baseData.list_count) || 100;
+    var start = (page - 1) * limit;
+    var end = Math.min(start + limit, totalSongs);
+    
+    // Generate songs for this page
+    var songs = [];
+    for (var i = start; i < end; i++) {
+        var num = String(i + 1).padStart(3, '0');
+        songs.push({
+            id: 'mock_song_' + num,
+            title: 'Mock Song ' + (i + 1),
+            subtitle: 'Mock Artist ' + (i + 1),
+            header_desc: '',
+            type: 'song',
+            perma_url: 'https://music.example.com/song/mock-song-' + (i + 1) + '/mock_song_' + num,
+            image: 'http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg',
+            language: 'english',
+            year: '2024',
+            play_count: String(Math.floor(Math.random() * 1000000)),
+            explicit_content: '0',
+            list_count: '0',
+            list_type: '',
+            list: '',
+            more_info: {
+                music: 'Mock Music Producer',
+                album_id: 'mock_album_' + num,
+                album: 'Mock Album ' + (i + 1),
+                label: 'Mock Records',
+                label_id: null,
+                origin: 'playlist',
+                is_dolby_content: false,
+                '320kbps': 'true',
+                encrypted_media_url: 'JKcIGVL+NOVwdDWakCj6fWGE8WcC+2iTTmjcVY5gjZcb6MwSnJjGC0KIVQL/LeFRb5cctSKeEIo=',
+                encrypted_cache_url: '',
+                encrypted_drm_cache_url: '',
+                encrypted_drm_media_url: '',
+                album_url: 'https://music.example.com/album/mock-album-' + (i + 1) + '/mock_album_' + num,
+                duration: String(Math.floor(Math.random() * 200) + 120),
+                rights: {
+                    code: '0',
+                    cacheable: 'true',
+                    delete_cached_object: 'false',
+                    reason: ''
+                },
+                cache_state: '',
+                has_lyrics: Math.random() > 0.5 ? 'true' : 'false',
+                lyrics_snippet: 'Mock lyrics snippet for song ' + (i + 1),
+                has_trivia: '0',
+                trivia: [],
+                starred: 'false',
+                copyright_text: '© 2024 Mock Records',
+                artistMap: {
+                    primary_artists: [
+                        {
+                            id: 'mock_artist_' + num,
+                            name: 'Mock Artist ' + (i + 1),
+                            role: 'primary_artists',
+                            image: '',
+                            type: 'artist',
+                            perma_url: 'https://music.example.com/artist/mock-artist-' + (i + 1)
+                        }
+                    ],
+                    featured_artists: [],
+                    artists: [
+                        {
+                            id: 'mock_artist_' + num,
+                            name: 'Mock Artist ' + (i + 1),
+                            role: 'music',
+                            image: '',
+                            type: 'artist',
+                            perma_url: 'https://music.example.com/artist/mock-artist-' + (i + 1)
+                        }
+                    ]
+                },
+                release_date: null,
+                label_url: '',
+                vcode: '',
+                vlink: '',
+                triller_available: false,
+                request_jiotune_flag: false,
+                webp: 'true',
+                lyrics_id: ''
+            },
+            button_tooltip_info: [],
+            pro_hva_campaigns: []
+        });
+    }
+    
+    // Return playlist with paginated songs
+    return {
+        id: baseData.id,
+        title: baseData.title,
+        subtitle: baseData.subtitle,
+        header_desc: baseData.header_desc || '',
+        type: 'playlist',
+        perma_url: baseData.perma_url || 'https://music.example.com/featured/mock-playlist/mock_playlist_001',
+        image: baseData.image || 'http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg',
+        language: baseData.language || 'english',
+        year: '',
+        play_count: '',
+        explicit_content: '0',
+        song_count: String(totalSongs),
+        list_count: String(totalSongs),
+        list_type: '',
+        list: songs
+    };
+}
+
+function getDetailsResponse(token, type, page, limit) {
     let dir;
     let tokens;
     
@@ -167,6 +286,11 @@ function getDetailsResponse(token, type) {
     // Check if token exists
     if (!tokens.includes(token)) {
         return null;
+    }
+    
+    // For playlist, handle pagination dynamically
+    if (type === 'playlist') {
+        return generatePlaylistResponse(token, page, limit);
     }
     
     const filePath = path.join(dir, token + '.json');
@@ -192,6 +316,8 @@ function handleRequest(req, res) {
     const token = params.get('token');
     const query = params.get('q');
     const type = params.get('type');
+    const page = params.get('p') || 1;
+    const limit = params.get('n') || 50;
 
     let responseData = null;
 
@@ -206,7 +332,7 @@ function handleRequest(req, res) {
         }
         responseData = getSearchResponse(query, searchType);
     } else if (call === 'webapi.get') {
-        responseData = getDetailsResponse(token, type);
+        responseData = getDetailsResponse(token, type, page, limit);
     }
 
     if (responseData) {
