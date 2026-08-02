@@ -26,14 +26,13 @@ check_dependencies() {
 api_request() {
     url="${API_URL}?${DEFAULTS}&${1}"
     response=$(curl -s "$url")
-
-    if ! echo "$response" | jq -e . >/dev/null 2>&1; then
+    if ! printf '%s' "$response" | jq -e . >/dev/null 2>&1; then
         printf '❌ Error: Failed to parse API response\n'
         printf '%s' "$response" | head -c 200
         printf '...\n'
         return 1
     fi
-    printf '%s\n' "$response"
+    printf '%s' "$response"
 }
 
 
@@ -43,8 +42,8 @@ api_request() {
 
 extract_token() {
     url="${1:-}"
-    [ -z "$url" ] && { echo ""; return 1; }
-    echo "$url" | sed 's#.*/##'
+    [ -z "$url" ] && { printf '%s' ""; return 1; }
+    printf '%s' "$url" | sed 's#.*/##'
 }
 
 decrypt_url() {
@@ -52,14 +51,12 @@ decrypt_url() {
 }
 
 encrypt_url() {
-    printf '%s' "$1" | \
-        openssl enc -provider legacy -des-ecb -K "3338333436353931" | \
-        base64 -w0
+    printf '%s' "$1" | openssl enc -provider legacy -des-ecb -K "3338333436353931" | base64 -w0
 }
 
 get_high_res_album_art() {
     url="${1:-}"
-    [ -z "$url" ] && { echo ""; return 1; }
+    [ -z "$url" ] && { printf '%s' ""; return 1; }
     printf '%s\n' "$url" | sed 's/150x150/500x500/g'
 }
 
@@ -73,12 +70,12 @@ json_val() {
     data="$1"
     query="$2"
     fallback="${3:-N/A}"
-    echo "$data" | jq -r "$query // \"$fallback\""
+    printf '%s' "$data" | jq -r "$query // \"$fallback\""
 }
 
 # Pretty print JSON response
 pretty_json() {
-    echo "$1" | jq -MC . 2>/dev/null || echo "$1"
+    printf '%s' "$1" | jq -MC . 2>/dev/null
 }
 
 # ============================================================
@@ -142,12 +139,12 @@ search_songs() {
 
     printf '🔍 Searching for songs: "%s" (limit: %s)\n\n' "$query" "$limit"
     response=$(api_request "__call=search.getResults&q=$(url_encode "$query")&n=$limit") || return 1
-pretty_json "$response" > search_songs.json
+    pretty_json "$response" > search_songs.json
 
-    total=$(echo "$response" | jq -r '.total // 0')
+    total=$(printf '%s' "$response" | jq -r '.total // 0')
     [ "$total" -eq 0 ] && { printf '❌ No songs found\n'; return 1; }
 
-    count=$(echo "$response" | jq '.results | length')
+    count=$(printf '%s' "$response" | jq '.results | length')
     printf '📊 Found %s songs\n\n' "$count"
 
     i=0
@@ -164,12 +161,12 @@ search_albums() {
 
     printf '🔍 Searching for albums: "%s" (limit: %s)\n\n' "$query" "$limit"
     response=$(api_request "__call=search.getAlbumResults&q=$(url_encode "$query")&n=$limit") || return 1
-pretty_json "$response" > search_albums.json
+    pretty_json "$response" > search_albums.json
 
-    total=$(echo "$response" | jq -r '.total // 0')
+    total=$(printf '%s' "$response" | jq -r '.total // 0')
     [ "$total" -eq 0 ] && { printf '❌ No albums found\n'; return 1; }
 
-    count=$(echo "$response" | jq '.results | length')
+    count=$(printf '%s' "$response" | jq '.results | length')
     printf '📊 Found %s albums\n\n' "$count"
 
     i=0
@@ -192,18 +189,97 @@ pretty_json "$response" > search_albums.json
     done
 }
 
+search_playlists() {
+    query="${1:-}"
+    limit="${2:-5}"
+    [ -z "$query" ] && { printf '❌ Error: Missing search query\n'; return 1; }
+
+    printf '🔍 Searching for playlist: "%s" (limit: %s)\n\n' "$query" "$limit"
+    response=$(api_request "__call=search.getPlaylistResults&q=$(url_encode "$query")&n=$limit") || return 1
+    pretty_json "$response" > search_playlists.json
+
+    total=$(printf '%s' "$response" | jq -r '.total // 0')
+    [ "$total" -eq 0 ] && { printf '❌ No playlists found\n'; return 1; }
+
+    count=$(printf '%s' "$response" | jq '.results | length')
+    printf '📊 Found %s playlists\n\n' "$count"
+
+    i=0
+    while [ "$i" -lt "$count" ] && [ "$i" -lt "$limit" ]; do
+        title=$(json_val "$response" ".results[$i].title")
+        song_count=$(json_val "$response" ".results[$i].more_info.song_count")
+        hi_res_img=$(get_high_res_album_art "$(json_val "$response" ".results[$i].image" "")")
+        token=$(extract_token "$(json_val "$response" ".results[$i].perma_url" "")")
+
+        printf '=== Playlist %d ===\n' "$((i+1))"
+        printf 'Title:      %s\n' "$title"
+        printf 'Songs:      %s\n' "$song_count"
+        printf 'Art URL:    %s\n' "$hi_res_img"
+        printf 'Token:      %s\n\n' "$token"
+        i=$((i + 1))
+    done
+}
+
+search_artists() {
+    query="${1:-}"
+    limit="${2:-5}"
+    [ -z "$query" ] && { printf '❌ Error: Missing search query\n'; return 1; }
+
+    printf '🔍 Searching for playlist: "%s" (limit: %s)\n\n' "$query" "$limit"
+    response=$(api_request "__call=search.getArtistResults&q=$(url_encode "$query")&n=$limit") || return 1
+    pretty_json "$response" > search_artists.json
+
+    total=$(printf '%s' "$response" | jq -r '.total // 0')
+    [ "$total" -eq 0 ] && { printf '❌ No playlists found\n'; return 1; }
+
+    count=$(printf '%s' "$response" | jq '.results | length')
+    printf '📊 Found %s playlists\n\n' "$count"
+
+    i=0
+    while [ "$i" -lt "$count" ] && [ "$i" -lt "$limit" ]; do
+        name=$(json_val "$response" ".results[$i].name")
+        is_radio_present=$(json_val "$response" ".results[$i].isRadioPresent")
+        hi_res_img=$(get_high_res_album_art "$(json_val "$response" ".results[$i].image" "")")
+        token=$(extract_token "$(json_val "$response" ".results[$i].perma_url" "")")
+
+        printf '=== Artist %d ===\n' "$((i+1))"
+        printf 'Name:      %s\n' "$name"
+        printf 'Radio:      %s\n' "$is_radio_present"
+        printf 'Art URL:    %s\n' "$hi_res_img"
+        printf 'Token:      %s\n\n' "$token"
+        i=$((i + 1))
+    done
+}
+
 get_song() {
     token="${1:-}"
     [ -z "$token" ] && { printf '❌ Error: Missing token\n'; return 1; }
 
     printf '🎵 Fetching song: %s\n\n' "$token"
     response=$(api_request "__call=webapi.get&token=$token&type=song") || return 1
-pretty_json "$response" > get_song.json
+    pretty_json "$response" > get_song.json
 
-    song=$(echo "$response" | jq -r '.songs[0] // null')
+    song=$(printf '%s' "$response" | jq -r '.songs[0] // null')
     [ "$song" = "null" ] && { printf '❌ Song not found\n'; return 1; }
 
     print_song_details "$response"
+}
+
+get_lyrics() {
+    token="${1:-}"
+    [ -z "$token" ] && { printf '❌ Error: Missing token\n'; return 1; }
+
+    printf '📜 Fetching lyrics: %s\n\n' "$token"
+    response=$(api_request "__call=webapi.get&token=$token&type=lyrics") || return 1
+
+    lyrics=$(printf '%s' "$response" | jq -r '.lyrics.lyrics // null')
+    [ "$lyrics" = "null" ] || [ -z "$lyrics" ] && { printf '❌ No lyrics found for this song\n'; return 1; }
+
+    printf '=== Lyrics ===\n'
+    printf '%s\n' "$lyrics" | head -c 500
+    printf '\n'
+    [ "$(printf '%s' "$lyrics" | wc -c)" -gt 500 ] && printf '... (truncated)\n'
+    printf '\n'
 }
 
 get_album() {
@@ -212,12 +288,12 @@ get_album() {
 
     printf '💿 Fetching album: %s\n\n' "$token"
     response=$(api_request "__call=webapi.get&token=$token&type=album") || return 1
-pretty_json "$response" > get_album.json
+    pretty_json "$response" > get_album.json
 
     title=$(json_val "$response" ".title")
     artist=$(json_val "$response" ".subtitle")
     year=$(json_val "$response" ".year")
-    song_count=$(echo "$response" | jq -r '.list // [] | length')
+    song_count=$(printf '%s' "$response" | jq -r '.list // [] | length')
     hi_res_img=$(get_high_res_album_art "$(json_val "$response" ".image" "")")
 
     printf '=== Album Details ===\n'
@@ -246,22 +322,77 @@ pretty_json "$response" > get_album.json
     fi
 }
 
-get_lyrics() {
+get_playlist() {
     token="${1:-}"
     [ -z "$token" ] && { printf '❌ Error: Missing token\n'; return 1; }
 
-    printf '📜 Fetching lyrics: %s\n\n' "$token"
-    response=$(api_request "__call=webapi.get&token=$token&type=lyrics") || return 1
+    printf '💿 Fetching playlist: %s\n\n' "$token"
+    response=$(api_request "__call=webapi.get&token=$token&type=playlist&p=1&n=100") || return 1
+    pretty_json "$response" > get_playlist.json
 
-    lyrics=$(echo "$response" | jq -r '.lyrics.lyrics // null')
-    [ "$lyrics" = "null" ] || [ -z "$lyrics" ] && { printf '❌ No lyrics found for this song\n'; return 1; }
+    title=$(json_val "$response" ".title")
+    song_count=$(printf '%s' "$response" | jq -r '.list // [] | length')
+    total=$(json_val "$response" ".list_count")
+    hi_res_img=$(get_high_res_album_art "$(json_val "$response" ".image" "")")
 
-    printf '=== Lyrics ===\n'
-    printf '%s\n' "$lyrics" | head -c 500
-    printf '\n'
-    [ "$(printf '%s' "$lyrics" | wc -c)" -gt 500 ] && printf '... (truncated)\n'
-    printf '\n'
+    printf '=== Playlist Details ===\n'
+    printf 'Title:          %s\n' "$title"
+    printf 'Songs:          %s\n' "$song_count"
+    printf 'Total Songs:    %s\n' "$total"
+    printf 'Art URL:  %s\n\n' "$hi_res_img"
+
+    if [ "$song_count" -gt 0 ]; then
+        printf '=== Songs ===\n'
+        i=0
+        while [ "$i" -lt "$song_count" ]; do
+            if [ "$i" -ge 10 ]; then
+                printf '... and %d more songs\n' "$((song_count - 10))"
+                break
+            fi
+            s_title=$(json_val "$response" ".list[$i].title")
+            s_artist=$(json_val "$response" ".list[$i].subtitle")
+            s_token=$(extract_token "$(json_val "$response" ".list[$i].perma_url" "")")
+
+            printf '%d. %s - %s (%s)\n' "$((i+1))" "$s_title" "$s_artist" "$s_token"
+            i=$((i + 1))
+        done
+        printf '\n'
+    fi
 }
+
+get_artist() {
+    token="${1:-}"
+    filter="${2:-}"
+    [ -z "$token" ] && { printf '❌ Error: Missing token\n'; return 1; }
+    if [ -z "$filter" ]; then filter="popular" && sorting="asc"
+    else sorting="asc"; fi
+    [ "$filter" != "popular" ] && filter="latest" && category="latest" && sorting="desc"
+
+    printf '💿 Fetching artist: %s\n\n' "$token"
+ #   response="$(api_request "__call=webapi.get&token=$token&type=artist&p=1&n_song=1&n_album=1&sub_type=&category=$category&sort_order=$sorting&includeMetaTags=0")"
+ #   pretty_json "$response" > get_artist.json
+    response="$(cat get_artist.json)"
+
+    name=$(json_val "$response" ".name")
+    top_song_count=$(printf '%s' "$response" | jq -r '.topSongs // [] | length')
+    top_album_count=$(printf '%s' "$response" | jq -r '.topAlbums // [] | length')
+    dedicated_artist_playlist=$(printf '%s' "$response" | jq -r '.dedicated_artist_playlist // [] | length')
+    featured_artist_playlist=$(printf '%s' "$response" | jq -r '.featured_artist_playlist // [] | length')
+    singles=$(printf '%s' "$response" | jq -r '.singles // [] | length')
+    latest_release=$(printf '%s' "$response" | jq -r '.latest_release // [] | length')
+    hi_res_img=$(get_high_res_album_art "$(json_val "$response" ".image" "")")
+
+    printf '=== Artist Details ===\n'
+    printf 'Name:                  %s\n' "$name"
+    printf 'Top Songs:             %s\n' "$top_song_count"
+    printf 'Top Albums:            %s\n' "$top_album_count"
+    printf 'Dedicated playlists:   %s\n' "$dedicated_artist_playlist"
+    printf 'Featured playlists:    %s\n' "$featured_artist_playlist"
+    printf 'Singles (Albums):      %s\n' "$singles"
+    printf 'Latest Releases:       %s\n' "$latest_release"
+    printf 'Art URL:  %s\n\n' "$hi_res_img"
+}
+
 
 usage() {
     printf '📖 Test JioSaavn API\n\n'
@@ -287,8 +418,12 @@ main() {
     case "$cmd" in
         search-songs) search_songs "$@" ;;
         search-albums) search_albums "$@" ;;
+        search-playlists) search_playlists "$@" ;;
+        search-artists) search_artists "$@" ;;
         get-song) get_song "$@" ;;
         get-album) get_album "$@" ;;
+        get-playlist) get_playlist "$@" ;;
+        get-artist) get_artist "$@" ;;
         get-lyrics) get_lyrics "$@" ;;
         encrypt-url) encrypt_url "$@" ;;
         decrypt-url) decrypt_url "$@" ;;
