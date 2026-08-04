@@ -233,16 +233,36 @@ function renderArtist(artist) {
 }
 
 // ============ VIEW ARTIST ============
-async function viewArtist(token) {
+async function viewArtist(token, category) {
+    console.log('[DEBUG] viewArtist called with:', { token, category });
+    
+    // If category is undefined, try to get it from the navigation stack
+    if (!category) {
+        var stack = window.Nav.getStack();
+        for (var i = stack.length - 1; i >= 0; i--) {
+            if (stack[i].type === 'artist') {
+                category = stack[i].data.category || 'popular';
+                console.log('[DEBUG] Found category from stack:', category);
+                break;
+            }
+        }
+        // If still no category, default to 'popular'
+        if (!category) {
+            category = 'popular';
+            console.log('[DEBUG] Using default category: popular');
+        }
+    }
+    
     console.log('[View] viewArtist called, isRestoring:', window._isRestoring);
+    category = category || 'popular';
 
     if (!window._isRestoring) {
-        window.Nav.push({ type: 'artist', data: { token: token, category: 'popular' } });
+        window.Nav.push({ type: 'artist', data: { token: token, category: category } });
     }
 
-    // Reset state
+    // Reset state with the category
     window._artistState.token = token;
-    window._artistState.category = 'popular';
+    window._artistState.category = category;
     window._artistState.songPage = 1;
     window._artistState.albumPage = 1;
     window._artistState.isLoadingSongs = false;
@@ -255,16 +275,19 @@ async function viewArtist(token) {
     DOM.results.innerHTML = '<div class="loading">🎤 Loading artist...</div>';
     DOM.stats.innerHTML = '';
 
-    var cacheKey = 'artist:' + token + ':popular';
+    var cacheKey = 'artist:' + token + ':' + category;
+    console.log('[DEBUG] Looking for cache key:', cacheKey);
     if (window.Cache.has(cacheKey)) {
-        console.log('[Display] Using cached artist:', token);
+        console.log('[DEBUG] Cache FOUND for key:', cacheKey);
         var artist = window.Cache.get(cacheKey);
         renderArtist(artist);
         return;
+    } else {
+        console.log('[DEBUG] Cache MISS for key:', cacheKey);
     }
 
     try {
-        var artist = await window.Services.Artist.getDetails(token, 'popular');
+        var artist = await window.Services.Artist.getDetails(token, category);
         window.Cache.set(cacheKey, artist);
         window._artistState.artistId = artist.artistId || artist.id;
         renderArtist(artist);
@@ -278,24 +301,27 @@ async function switchArtistCategory(category) {
     console.log('[Artist] Switching category:', category);
 
     // 1. Update state
-    var oldCategory = window._artistState.category;
     window._artistState.category = category;
     window._artistState.songPage = 1;
     window._artistState.albumPage = 1;
     window._artistSongPages = [];
     window._artistAlbumPages = [];
 
-    // 2. Set active tab (visual)
+    // 2. Update navigation stack entry with the new category
+    var currentStack = window.Nav.getStack();
+    for (var i = currentStack.length - 1; i >= 0; i--) {
+        if (currentStack[i].type === 'artist') {
+            currentStack[i].data.category = category;
+            console.log('[Nav] Updated artist stack category to:', category);
+            break;
+        }
+    }
+
+    // 3. Set active tab (visual)
     setActiveTab(category);
 
-    // 3. Check cache for this category
+    // 4. Check cache for this category
     var token = window._artistState.token;
-    var cacheKey = 'artist:' + token + ':' + category + ':songs';
-    
-    // We need to get the full artist data for this category
-    // We could fetch only songs/albums, but for simplicity we'll fetch the whole artist data
-    // and extract songs/albums. Later we can optimize to fetch only songs/albums.
-
     var fullCacheKey = 'artist:' + token + ':' + category;
     var artistData = window.Cache.get(fullCacheKey);
 
@@ -305,24 +331,24 @@ async function switchArtistCategory(category) {
         return;
     }
 
-    // 4. Fetch from API
-    DOM.results.querySelector('.artist-songs-section').innerHTML = '<div class="loading">🎤 Loading songs...</div>';
-    DOM.results.querySelector('.artist-albums-section').innerHTML = '<div class="loading">🎤 Loading albums...</div>';
+    // 5. Fetch from API
+    var songsContainer = document.getElementById('artist-dynamic-songs');
+    var albumsContainer = document.getElementById('artist-dynamic-albums');
+    if (songsContainer) songsContainer.innerHTML = '<div class="loading">🎤 Loading songs...</div>';
+    if (albumsContainer) albumsContainer.innerHTML = '<div class="loading">🎤 Loading albums...</div>';
 
     try {
         var artist = await window.Services.Artist.getDetails(token, category);
         window.Cache.set(fullCacheKey, artist);
 
-        // Update only dynamic parts
         updateDynamicParts(artist.songs, artist.albums, category);
 
-        // Also update total counts in state
         window._artistState.totalSongs = artist.totalSongs || 0;
         window._artistState.totalAlbums = artist.totalAlbums || 0;
 
     } catch (error) {
-        DOM.results.querySelector('.artist-songs-section').innerHTML = `<div class="error">❌ Error loading songs: ${error.message}</div>`;
-        DOM.results.querySelector('.artist-albums-section').innerHTML = `<div class="error">❌ Error loading albums: ${error.message}</div>`;
+        if (songsContainer) songsContainer.innerHTML = `<div class="error">❌ Error loading songs: ${error.message}</div>`;
+        if (albumsContainer) albumsContainer.innerHTML = `<div class="error">❌ Error loading albums: ${error.message}</div>`;
     }
 }
 
@@ -695,7 +721,8 @@ function appendArtistAlbums(albums, page, total) {
 // ============ RESTORE ARTIST ============
 function restoreArtist(data) {
     console.log('[Restore] Artist:', data);
-    viewArtist(data.token);
+    var category = data.category || 'popular';
+    viewArtist(data.token, category);
 }
 
 // ============ EXPOSE ============
