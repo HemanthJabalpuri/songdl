@@ -138,6 +138,9 @@ function restoreView(view) {
         case 'album':
             restoreAlbum(view.data);
             break;
+        case 'artist':
+            restoreArtist(view.data);
+            break;
         default:
             console.log('[Restore] Unknown type:', view.type);
             if (typeof window.search === 'function') {

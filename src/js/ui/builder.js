@@ -31,7 +31,7 @@ window.createUI = function() {
                 <button class="tab active" id="tab-songs">Songs</button>
                 <button class="tab" id="tab-albums">Albums</button>
                 <button class="tab" id="tab-playlists">Playlists</button>
-                <button class="tab disabled" id="tab-artists">Artists</button>
+                <button class="tab" id="tab-artists">Artists</button>
             </div>
 
             <div class="search-box">

@@ -94,6 +94,8 @@ window.Utils.formatters.formatSearchResults = function(data, type) {
         results = results.map(window.Utils.formatters.formatAlbum);
     } else if (type === 'playlist') {
         results = results.map(window.Utils.formatters.formatPlaylist);
+    } else if (type === 'artist') {
+        results = results.map(window.Utils.formatters.formatArtistSearch);
     }
     
     return {
@@ -189,6 +191,47 @@ window.Utils.formatters.formatPlaylistDetail = function(data) {
         songs: (data.list || []).map(function(song) {
             return window.Utils.formatters.formatSong(song);
         })
+    };
+};
+
+// ============ ARTIST SEARCH FORMATTER ============
+window.Utils.formatters.formatArtistSearch = function(artist) {
+console.log("formatArtistSearch");
+    return {
+        id: artist.id,
+        token: window.Utils.formatters.extractToken(artist.perma_url),
+        name: artist.name || '',
+        image: artist.image || '',
+        role: artist.role || 'Artist',
+        type: 'artist'
+    };
+};
+
+// ============ ARTIST DETAIL FORMATTER ============
+window.Utils.formatters.formatArtistDetail = function(data) {
+    return {
+        id: data.artistId,
+        token: window.Utils.formatters.extractToken(data.perma_url),
+        name: data.name || '',
+        image: data.image || '',
+        subtitle: data.subtitle || '',
+        follower_count: data.follower_count || '0',
+        fan_count: data.fan_count || '0',
+        isVerified: data.isVerified || false,
+        bio: data.bio || '',
+        // First page songs and albums
+        songs: (data.topSongs || []).map(window.Utils.formatters.formatSong),
+        albums: (data.topAlbums || []).map(window.Utils.formatters.formatAlbum),
+        // Other sections
+        dedicatedPlaylists: (data.dedicated_artist_playlist || []).map(window.Utils.formatters.formatPlaylist),
+        featuredPlaylists: (data.featured_artist_playlist || []).map(window.Utils.formatters.formatPlaylist),
+        singles: (data.singles || []).map(window.Utils.formatters.formatAlbum),
+        latestReleases: (data.latest_release || []).map(window.Utils.formatters.formatAlbum),
+        // Pagination info
+        totalSongs: data.topSongs ? data.topSongs.length : 0,
+        totalAlbums: data.topAlbums ? data.topAlbums.length : 0,
+        // Store artistId for more API calls
+        artistId: data.artistId
     };
 };
 

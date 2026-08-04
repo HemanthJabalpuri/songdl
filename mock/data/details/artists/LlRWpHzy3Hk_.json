@@ -1,0 +1,21 @@
+{
+  "artistId": "459320",
+  "name": "Arijit Singh",
+  "subtitle": "Artist • 10809051 Listeners",
+  "image": "http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg",
+  "follower_count": "105077111",
+  "type": "artist",
+  "isVerified": true,
+  "dominantLanguage": "hindi",
+  "dominantType": "singer",
+  "perma_url": "https://music.example.com/artist/arijit-singh-songs/LlRWpHzy3Hk_",
+  "topSongs": [],
+  "topAlbums": [],
+  "dedicated_artist_playlist": [],
+  "featured_artist_playlist": [],
+  "singles": [],
+  "latest_release": [],
+  "bio": "",
+  "fan_count": "10809051",
+  "is_followed": false
+}

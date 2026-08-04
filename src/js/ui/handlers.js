@@ -90,17 +90,13 @@ function setupEventListeners() {
         });
     }
 
-    // Artists tab - disabled, but still handle click to show message
+    // Artists tab
     var artistsTab = document.getElementById('tab-artists');
     if (artistsTab) {
         artistsTab.addEventListener('click', function(e) {
             e.stopPropagation();
             e.preventDefault();
-            // Don't switch, just show message
-            var results = document.getElementById('results');
-            var stats = document.getElementById('stats');
-            if (results) results.innerHTML = '<div class="info-message">🎤 Artists feature coming soon!</div>';
-            if (stats) stats.innerHTML = '';
+            switchTab('artists');
         });
     }
 
@@ -160,11 +156,6 @@ function switchTab(type) {
         playlistsTab.classList.add('active');
     } else if (type === 'artists' && artistsTab) {
         artistsTab.classList.add('active');
-        // Artists is disabled, so show "Coming soon" message
-        if (results) results.innerHTML = '<div class="info-message">🎤 Artists feature coming soon!</div>';
-        if (stats) stats.innerHTML = '';
-        if (player) player.innerHTML = '';
-        return;
     }
     
     // Clear results for other tabs

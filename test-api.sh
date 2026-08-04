@@ -362,16 +362,13 @@ get_playlist() {
 
 get_artist() {
     token="${1:-}"
-    filter="${2:-}"
+    filter="${2:-}" # popularity, latest, alphabetical
+    sorting="${3:-}" # asc, desc
     [ -z "$token" ] && { printf '❌ Error: Missing token\n'; return 1; }
-    if [ -z "$filter" ]; then filter="popular" && sorting="asc"
-    else sorting="asc"; fi
-    [ "$filter" != "popular" ] && filter="latest" && category="latest" && sorting="desc"
 
     printf '💿 Fetching artist: %s\n\n' "$token"
- #   response="$(api_request "__call=webapi.get&token=$token&type=artist&p=1&n_song=1&n_album=1&sub_type=&category=$category&sort_order=$sorting&includeMetaTags=0")"
- #   pretty_json "$response" > get_artist.json
-    response="$(cat get_artist.json)"
+    response="$(api_request "__call=webapi.get&token=$token&type=artist&p=1&n_song=10&n_album=10&sub_type=&category=$category&sort_order=$sorting&includeMetaTags=0")"
+    pretty_json "$response" > get_artist_${filter}_${sorting}_test1.json
 
     name=$(json_val "$response" ".name")
     top_song_count=$(printf '%s' "$response" | jq -r '.topSongs // [] | length')

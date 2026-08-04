@@ -51,6 +51,21 @@ function displayPlaylists(playlists) {
     attachPlaylistEvents(DOM.results);
 }
 
+// ============ DISPLAY ARTISTS ============
+function displayArtists(artists) {
+    var html = '<div class="results">';
+    
+    artists.forEach(function(artist) {
+        html += createArtistCard(artist);
+    });
+    
+    html += '</div>';
+    DOM.results.innerHTML = html;
+    
+    // Attach events to the results container
+    attachArtistEvents(DOM.results);
+}
+
 // ============ DISPLAY SEARCH RESULTS ============
 function displaySearchResults(results, type) {
     if (type === 'songs') {
@@ -59,6 +74,8 @@ function displaySearchResults(results, type) {
         displayAlbums(results);
     } else if (type === 'playlists') {
         displayPlaylists(results);
+    } else if (type === 'artists') {
+        displayArtists(results);
     }
 }
 
@@ -66,3 +83,4 @@ function displaySearchResults(results, type) {
 window.displaySongs = displaySongs;
 window.displayAlbums = displayAlbums;
 window.displayPlaylists = displayPlaylists;
+window.displayArtists = displayArtists;

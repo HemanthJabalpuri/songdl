@@ -1,0 +1,19 @@
+{
+  "total": 1,
+  "start": 1,
+  "results": [
+    {
+      "id": "459320",
+      "name": "Arijit Singh",
+      "ctr": 35587,
+      "entity": 1,
+      "image": "http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg",
+      "role": "Artist",
+      "perma_url": "https://music.example.com/artist/arijit-singh-songs/LlRWpHzy3Hk_",
+      "type": "artist",
+      "mini_obj": true,
+      "isRadioPresent": true,
+      "is_followed": false
+    }
+  ]
+}

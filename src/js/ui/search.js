@@ -141,6 +141,8 @@ async function search() {
             data = await window.Services.Album.search(query, limit, page);
         } else if (searchType === 'playlists') {
             data = await window.Services.Playlist.search(query, limit, page);
+        } else if (searchType === 'artists') {
+            data = await window.Services.Artist.search(query, limit, page);
         } else {
             data = await window.Services.Song.search(query, limit, page);
         }
@@ -222,7 +224,13 @@ async function loadMoreSearch() {
                     window._searchState.limit,
                     nextPage
                 );
-            }
+} else if (type === 'artists') {
+    data = await window.Services.Artist.search(
+        window._searchState.query,
+        window._searchState.limit,
+        nextPage
+    );
+}
             window.Cache.set(cacheKey, data);
         }
 
@@ -249,8 +257,11 @@ async function loadMoreSearch() {
                 data.results.forEach(function(playlist) {
                     resultsDiv.insertAdjacentHTML('beforeend', createPlaylistCard(playlist));
                 });
-            }
-
+} else if (type === 'artists') {
+    data.results.forEach(function(artist) {
+        resultsDiv.insertAdjacentHTML('beforeend', createArtistCard(artist));
+    });
+}
             // Update state
             window._searchState.currentPage = nextPage;
             window._searchLoadedPages.push(cacheKey);

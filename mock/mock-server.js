@@ -12,6 +12,8 @@ const DETAILS_SONGS_DIR = path.join(DATA_DIR, 'details', 'songs');
 const DETAILS_ALBUMS_DIR = path.join(DATA_DIR, 'details', 'albums');
 const DETAILS_LYRICS_DIR = path.join(DATA_DIR, 'details', 'lyrics');
 const DETAILS_PLAYLISTS_DIR = path.join(DATA_DIR, 'details', 'playlists');
+const SEARCH_ARTISTS_DIR = path.join(DATA_DIR, 'search', 'artists');
+const DETAILS_ARTISTS_DIR = path.join(DATA_DIR, 'details', 'artists');
 
 // ============ CACHE (loaded once at startup) ============
 
@@ -22,6 +24,8 @@ let songTokens = [];
 let albumTokens = [];
 let lyricsTokens = [];
 let playlistTokens = [];
+let searchArtistFiles = [];
+let artistTokens = [];
 
 function loadCache() {
     try {
@@ -79,15 +83,36 @@ function loadCache() {
     } catch (e) {
         lyricsTokens = [];
     }
-    
-    console.log('[Mock] Cache loaded:');
-    console.log('  - Song search files:', searchSongFiles.length);
-    console.log('  - Album search files:', searchAlbumFiles.length);
-    console.log('  - Playlist search files:', searchPlaylistFiles.length);
-    console.log('  - Song tokens:', songTokens.length);
-    console.log('  - Album tokens:', albumTokens.length);
-    console.log('  - Playlist tokens:', playlistTokens.length);
-    console.log('  - Lyrics tokens:', lyricsTokens.length);
+
+// Load artist search files
+try {
+    searchArtistFiles = fs.readdirSync(SEARCH_ARTISTS_DIR)
+        .filter(f => f.endsWith('.json') && f !== 'default.json')
+        .map(f => f.replace('.json', ''));
+} catch (e) {
+    searchArtistFiles = [];
+}
+
+// Load artist tokens
+try {
+    artistTokens = fs.readdirSync(DETAILS_ARTISTS_DIR)
+        .filter(f => f.endsWith('.json'))
+        .map(f => f.replace('.json', ''));
+} catch (e) {
+    artistTokens = [];
+}
+
+console.log('[Mock] Cache loaded:');
+console.log('  - Song search files:', searchSongFiles.length);
+console.log('  - Album search files:', searchAlbumFiles.length);
+console.log('  - Playlist search files:', searchPlaylistFiles.length);
+console.log('  - Artist search files:', searchArtistFiles.length);  // NEW
+console.log('  - Song tokens:', songTokens.length);
+console.log('  - Album tokens:', albumTokens.length);
+console.log('  - Playlist tokens:', playlistTokens.length);
+console.log('  - Artist tokens:', artistTokens.length);  // NEW
+console.log('  - Lyrics tokens:', lyricsTokens.length);
+
 }
 
 function loadJSON(filePath) {
@@ -113,6 +138,9 @@ function getSearchResponse(query, type) {
     } else if (type === 'playlist') {
         files = searchPlaylistFiles;
         searchDir = SEARCH_PLAYLISTS_DIR;
+    } else if (type === 'artist') {
+        files = searchArtistFiles;
+        searchDir = SEARCH_ARTISTS_DIR;
     } else {
         files = [];
         searchDir = null;
@@ -140,8 +168,8 @@ function getSearchResponse(query, type) {
 function getDetailsResponse(token, type, page, limit) {
     let dir;
     let tokens;
-    
-    if (type === 'song') {
+
+   if (type === 'song') {
         dir = DETAILS_SONGS_DIR;
         tokens = songTokens;
     } else if (type === 'album') {
@@ -150,6 +178,9 @@ function getDetailsResponse(token, type, page, limit) {
     } else if (type === 'playlist') {
         dir = DETAILS_PLAYLISTS_DIR;
         tokens = playlistTokens;
+    } else if (type === 'artist') {
+        dir = DETAILS_ARTISTS_DIR;
+        tokens = artistTokens;
     } else if (type === 'lyrics') {
         dir = DETAILS_LYRICS_DIR;
         tokens = lyricsTokens;
@@ -260,7 +291,7 @@ function handleRequest(req, res) {
 
     let responseData = null;
 
-    if (call === 'search.getResults' || call === 'search.getAlbumResults' || call === 'search.getPlaylistResults') {
+    if (call === 'search.getResults' || call === 'search.getAlbumResults' || call === 'search.getPlaylistResults' || call === 'search.getArtistResults') {
         let searchType;
         if (call === 'search.getResults') {
             searchType = 'song';
@@ -268,12 +299,88 @@ function handleRequest(req, res) {
             searchType = 'album';
         } else if (call === 'search.getPlaylistResults') {
             searchType = 'playlist';
+        } else if (call === 'search.getArtistResults') {
+            searchType = 'artist';
         }
         var rawData = getSearchResponse(query, searchType);
         responseData = paginateSearchResults(rawData, page, limit);
     } else if (call === 'webapi.get') {
         responseData = getDetailsResponse(token, type, page, limit);
+} else if (call === 'artist.getArtistMoreSong') {
+    // Return mock songs with pagination
+    var artistId = params.get('artistId');
+    var pag = parseInt(params.get('page')) || 1;
+    var category = params.get('category') || 'popular';
+    var limi = 10;
+    
+    var totalSongs = 25; // Mock total
+    var start = (pag - 1) * limi;
+    var end = Math.min(start + limi, totalSongs);
+    var songs = [];
+    
+    for (var i = start; i < end; i++) {
+        songs.push({
+            id: 'mock_song_' + String(i + 1).padStart(3, '0'),
+            title: 'Mock Song ' + (i + 1),
+            subtitle: 'Mock Artist ' + (i + 1),
+            type: 'song',
+            perma_url: 'https://music.example.com/song/mock-song-' + (i + 1) + '/mock_song_' + String(i + 1).padStart(3, '0'),
+            image: 'http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg',
+            language: 'english',
+            year: '2024',
+            more_info: {
+                duration: '180',
+                has_lyrics: Math.random() > 0.5 ? 'true' : 'false',
+                album: 'Mock Album ' + (i + 1),
+                encrypted_media_url: 'JKcIGVL+NOVwdDWakCj6fWGE8WcC+2iTTmjcVY5gjZcb6MwSnJjGC0KIVQL/LeFRb5cctSKeEIo='
+            }
+        });
     }
+    
+    responseData = {
+        topSongs: {
+            songs: songs,
+            total: totalSongs,
+            last_page: end >= totalSongs
+        }
+    };
+    
+} else if (call === 'artist.getArtistMoreAlbum') {
+    // Return mock albums with pagination
+    var artistId = params.get('artistId');
+    var pag = parseInt(params.get('page')) || 1;
+    var category = params.get('category') || 'popular';
+    var limi = 10;
+    
+    var totalAlbums = 15; // Mock total
+    var start = (pag - 1) * limi;
+    var end = Math.min(start + limi, totalAlbums);
+    var albums = [];
+    
+    for (var i = start; i < end; i++) {
+        albums.push({
+            id: 'mock_album_' + String(i + 1).padStart(3, '0'),
+            title: 'Mock Album ' + (i + 1),
+            subtitle: 'Mock Artist ' + (i + 1),
+            type: 'album',
+            perma_url: 'https://music.example.com/album/mock-album-' + (i + 1) + '/mock_album_' + String(i + 1).padStart(3, '0'),
+            image: 'http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg',
+            language: 'english',
+            year: '2024',
+            more_info: {
+                song_count: String(Math.floor(Math.random() * 10) + 1)
+            }
+        });
+    }
+    
+    responseData = {
+        topAlbums: {
+            albums: albums,
+            total: totalAlbums,
+            last_page: end >= totalAlbums
+        }
+    };
+}
 
     if (responseData) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
