@@ -27,16 +27,19 @@ function attachArtistEvents(container) {
             }
         });
     });
-    
+
     // View artist button click
     container.querySelectorAll('.btn-view-artist').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var token = this.dataset.token;
-            if (token && typeof window.viewArtist === 'function') {
-                window.viewArtist(token);
-            }
-        });
+btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    var token = this.dataset.token;
+    console.log('[ArtistCard] View Artist clicked, token:', token);
+    if (token && typeof window.viewArtist === 'function') {
+        window.viewArtist(token);
+    } else {
+        console.warn('[ArtistCard] viewArtist not found or token missing');
+    }
+});
     });
 }
 
