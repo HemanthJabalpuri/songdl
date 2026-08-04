@@ -209,16 +209,28 @@ console.log("formatArtistSearch");
 
 // ============ ARTIST DETAIL FORMATTER ============
 window.Utils.formatters.formatArtistDetail = function(data) {
+    // Parse bio
+    var bioText = '';
+    if (data.bio) {
+        try {
+            var bioArray = JSON.parse(data.bio);
+            if (Array.isArray(bioArray) && bioArray.length > 0) {
+                bioText = bioArray[0].text || '';
+            }
+        } catch (e) {
+            bioText = data.bio;
+        }
+    }
+
     return {
         id: data.artistId,
         token: window.Utils.formatters.extractToken(data.perma_url),
         name: data.name || '',
         image: data.image || '',
         subtitle: data.subtitle || '',
-        follower_count: data.follower_count || '0',
-        fan_count: data.fan_count || '0',
+        // fan_count removed (duplicate of subtitle)
         isVerified: data.isVerified || false,
-        bio: data.bio || '',
+        bio: bioText,  // Already parsed
         // First page songs and albums
         songs: (data.topSongs || []).map(window.Utils.formatters.formatSong),
         albums: (data.topAlbums || []).map(window.Utils.formatters.formatAlbum),

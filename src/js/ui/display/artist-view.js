@@ -16,14 +16,26 @@ window._artistAlbumPages = [];
 
 // ============ RENDER HEADER ============
 function renderHeader(artist) {
+    // Parse bio if it's a JSON string
+    var bioText = '';
+    if (artist.bio) {
+        try {
+            var bioArray = JSON.parse(artist.bio);
+            if (Array.isArray(bioArray) && bioArray.length > 0) {
+                bioText = bioArray[0].text || '';
+            }
+        } catch (e) {
+            bioText = artist.bio;
+        }
+    }
+
     var html = `
         <div class="artist-header">
             <img src="${artist.image || 'https://via.placeholder.com/200'}" alt="${artist.name}" />
             <div class="artist-header-info">
                 <h2>${escapeHtml(artist.name)} ${artist.isVerified ? '✅' : ''}</h2>
                 <p>${escapeHtml(artist.subtitle || '')}</p>
-                <p>${artist.fan_count ? artist.fan_count + ' Fans' : ''}</p>
-                ${artist.bio ? `<p class="artist-bio">${escapeHtml(artist.bio.substring(0, 200))}${artist.bio.length > 200 ? '...' : ''}</p>` : ''}
+                ${bioText ? `<p class="artist-bio">${escapeHtml(bioText.substring(0, 200))}${bioText.length > 200 ? '...' : ''}</p>` : ''}
                 <div class="artist-actions">
                     <button class="btn-back" id="btn-back">← Back</button>
                 </div>
@@ -166,11 +178,13 @@ function attachArtistViewEvents() {
     // Back button
     var backBtn = document.getElementById('btn-back');
     if (backBtn) {
-        // Remove old listeners to prevent duplicates
         var newBackBtn = backBtn.cloneNode(true);
         backBtn.parentNode.replaceChild(newBackBtn, backBtn);
-        newBackBtn.addEventListener('click', function() {
-            var prev = window.Nav.pop();
+        newBackBtn.addEventListener('click', function() {        
+            // Pop the current view
+            var current = window.Nav.pop();
+            // Get the new top (previous view)
+            var prev = window.Nav.peek();
             if (prev) {
                 restoreView(prev);
             } else {
