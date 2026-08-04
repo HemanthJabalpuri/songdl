@@ -94,87 +94,94 @@ function createSongCard(song, index, context) {
 
 // ============ ATTACH SONG EVENTS ============
 function attachSongEvents(container) {
-    var playBtns = container.querySelectorAll('.btn-play');
-    var downloadBtns = container.querySelectorAll('.btn-download');
-    
-    playBtns.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var songCard = this.closest('.song-card');
-            var songData = songCard ? songCard._songData : null;
-            if (songData && typeof window.playSong === 'function') {
-                window.playSong(songData);
-            }
-        });
-    });
-    
-    downloadBtns.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var songCard = this.closest('.song-card');
-            var songData = songCard ? songCard._songData : null;
-            if (songData && typeof window.downloadSong === 'function') {
-                window.downloadSong(songData);
-            }
-        });
-    });
-
-    // Lyrics buttons
-    var lyricsBtns = container.querySelectorAll('.btn-lyrics');
-    lyricsBtns.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var token = this.dataset.token;
-            var songId = this.dataset.songid;
-            if (token && typeof window.showLyrics === 'function') {
-                window.showLyrics(token, songId);
-            }
-        });
-    });
-
-    // More buttons - toggle menu
-    var moreBtns = container.querySelectorAll('.btn-more');
-    moreBtns.forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var songId = this.dataset.songid;
-            var menu = document.getElementById('more-menu-' + songId);
-            if (!menu) return;
+    if (!container._listenerAttached) {
+        container._listenerAttached = true;
+        
+        container.addEventListener('click', function(e) {
+            var target = e.target;
             
-            // Close all other menus
+            // Play button
+            if (target.classList && target.classList.contains('btn-play')) {
+                var songCard = target.closest('.song-card');
+                var songData = songCard ? songCard._songData : null;
+                if (songData && typeof window.playSong === 'function') {
+                    window.playSong(songData);
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            
+            // Download button
+            if (target.classList && target.classList.contains('btn-download')) {
+                var songCard = target.closest('.song-card');
+                var songData = songCard ? songCard._songData : null;
+                if (songData && typeof window.downloadSong === 'function') {
+                    window.downloadSong(songData);
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            
+            // Lyrics button
+            if (target.classList && target.classList.contains('btn-lyrics')) {
+                var token = target.dataset.token;
+                var songId = target.dataset.songid;
+                if (token && typeof window.showLyrics === 'function') {
+                    window.showLyrics(token, songId);
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            
+            // More button
+            if (target.classList && target.classList.contains('btn-more')) {
+                e.stopPropagation();
+                var songId = target.dataset.songid;
+                var menu = document.getElementById('more-menu-' + songId);
+                if (!menu) return;
+                
+                document.querySelectorAll('.more-menu').forEach(function(m) {
+                    if (m.id !== 'more-menu-' + songId) {
+                        m.style.display = 'none';
+                    }
+                });
+                
+                menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+                e.preventDefault();
+                return;
+            }
+            
+            // More menu items
+            if (target.classList && target.classList.contains('more-item')) {
+                e.stopPropagation();
+                var action = target.dataset.action;
+                var token = target.dataset.token;
+                var menu = target.closest('.more-menu');
+                if (menu) menu.style.display = 'none';
+                
+                if (action === 'album') {
+                    if (typeof window.viewAlbum === 'function') {
+                        window.viewAlbum(token);
+                    }
+                } else if (action === 'artist') {
+                    console.log('[More] View artist:', token);
+                }
+                e.preventDefault();
+                return;
+            }
+        });
+    }
+    
+    // Click outside to close all menus (only once)
+    if (!window._menuClickListenerAttached) {
+        window._menuClickListenerAttached = true;
+        document.addEventListener('click', function() {
             document.querySelectorAll('.more-menu').forEach(function(m) {
-                if (m.id !== 'more-menu-' + songId) {
-                    m.style.display = 'none';
-                }
+                m.style.display = 'none';
             });
-            
-            // Toggle this menu
-            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
         });
-    });
-    
-    // More menu items
-    var moreItems = container.querySelectorAll('.more-item');
-    moreItems.forEach(function(item) {
-        item.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var action = this.dataset.action;
-            var token = this.dataset.token;
-            var menu = this.closest('.more-menu');
-            if (menu) menu.style.display = 'none';
-            
-            if (action === 'album') {
-                if (typeof window.viewAlbum === 'function') {
-                    window.viewAlbum(token);
-                }
-            } else if (action === 'artist') {
-                // TODO: View artist (will implement later)
-                console.log('[More] View artist:', token);
-            }
-        });
-    });
-    
-    // Click outside to close all menus
-    document.addEventListener('click', function() {
-        document.querySelectorAll('.more-menu').forEach(function(m) {
-            m.style.display = 'none';
-        });
-    });
+    }
 }

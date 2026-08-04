@@ -140,7 +140,18 @@ function renderArtist(artist) {
     DOM.results.innerHTML = html;
     DOM.stats.innerHTML = '';
 
-    // Attach events to song cards
+    // ============ ATTACH SONG DATA ============
+    var cards = DOM.results.querySelectorAll('.song-card');
+    var allSongs = artist.songs || [];
+    cards.forEach(function(card, index) {
+        if (allSongs[index]) {
+            card._songData = allSongs[index];
+        } else {
+            console.log('[Debug] No song data for card', index);
+        }
+    });
+
+    // ============ ATTACH EVENTS ============
     attachSongEvents(DOM.results);
     attachAlbumEvents(DOM.results);
     attachPlaylistEvents(DOM.results);
@@ -312,7 +323,6 @@ async function loadMoreArtistSongs() {
         var songs = result.songs || [];
         var total = result.total || 0;
 
-        // Update total if available
         if (total > 0) {
             window._artistState.totalSongs = total;
         } else {
@@ -321,7 +331,6 @@ async function loadMoreArtistSongs() {
 
         // Append songs
         if (songs.length > 0) {
-            // Find the songs container
             var songsContainer = document.querySelector('.artist-songs-section .song-list');
             if (songsContainer) {
                 var artistContext = {
@@ -331,24 +340,36 @@ async function loadMoreArtistSongs() {
                     year: '',
                     title: window._artistState.token
                 };
-                var startIndex = window._artistSongPages.length * window._artistState.limit;
+        
+                // Get current card count BEFORE appending
+                var cardsBefore = songsContainer.querySelectorAll('.song-card').length;
+        
                 songs.forEach(function(song, idx) {
-                    var globalIndex = startIndex + idx;
+                    var globalIndex = cardsBefore + idx;
                     var songCard = createSongCard(song, globalIndex, artistContext);
                     songsContainer.insertAdjacentHTML('beforeend', songCard);
                 });
 
-                // Attach events to new cards
+                // Attach _songData to new cards
+                var allCards = songsContainer.querySelectorAll('.song-card');
+                var existingCardsCount = allCards.length - songs.length;
+                songs.forEach(function(song, idx) {
+                    var globalIndex = existingCardsCount + idx;
+                    var card = allCards[globalIndex];
+                    if (card) {
+                        card._songData = song;
+                        console.log('[Debug] Set _songData for loaded card', globalIndex, song.title);
+                    }
+                });
+
+                // THEN attach events for all cards
                 attachSongEvents(songsContainer);
 
                 // Update state
                 window._artistState.songPage = nextPage;
                 window._artistSongPages.push('artist_songs_' + artistId + '_' + nextPage);
-
-                // Update load more button
                 showArtistSongsLoadMore();
 
-                // Update stats
                 var h3 = document.querySelector('.artist-songs-section h3');
                 if (h3) {
                     var totalDisplay = window._artistState.totalSongs || songs.length;
@@ -356,7 +377,6 @@ async function loadMoreArtistSongs() {
                 }
             }
         } else {
-            // No more songs
             var container = document.getElementById('artist-songs-load-more');
             if (container) {
                 container.innerHTML = '<div class="end-of-results">🏁 End of songs</div>';
