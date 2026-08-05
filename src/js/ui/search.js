@@ -75,6 +75,20 @@ async function search() {
                 } else {
                     resultsDiv.innerHTML = '<div class="no-results">😕 Playlist not found</div>';
                 }
+            } else if (parsed.type === 'artist') {
+                // Switch to Artists tab if needed
+                if (window.currentSearchType !== 'artists') {
+                    switchTab('artists');
+                }
+
+                // Get artist details
+                var artistData = await window.API.getArtist(parsed.token);
+                if (artistData && artistData.artistId) {
+                    if (statsDiv) statsDiv.innerHTML = 'Found 1 artist';
+                    viewArtist(parsed.token);
+                } else {
+                    resultsDiv.innerHTML = '<div class="no-results">😕 Artist not found</div>';
+                }
             }
         } catch (error) {
             console.error('[Search] URL fetch error:', error);

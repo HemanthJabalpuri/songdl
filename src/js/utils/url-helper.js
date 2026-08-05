@@ -25,6 +25,8 @@ window.Utils.parseUrl = function(url) {
         type = 'lyrics';
     } else if (url.includes('/featured/')) {
         type = 'playlist';
+    } else if (url.includes('/artist/')) {
+        type = 'artist';
     } else {
         return { type: null, token: null };
     }
