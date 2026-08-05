@@ -16,7 +16,6 @@ const SEARCH_ARTISTS_DIR = path.join(DATA_DIR, 'search', 'artists');
 const DETAILS_ARTISTS_DIR = path.join(DATA_DIR, 'details', 'artists');
 
 // ============ CACHE (loaded once at startup) ============
-
 let searchSongFiles = [];
 let searchAlbumFiles = [];
 let searchPlaylistFiles = [];
@@ -84,35 +83,34 @@ function loadCache() {
         lyricsTokens = [];
     }
 
-// Load artist search files
-try {
-    searchArtistFiles = fs.readdirSync(SEARCH_ARTISTS_DIR)
-        .filter(f => f.endsWith('.json') && f !== 'default.json')
-        .map(f => f.replace('.json', ''));
-} catch (e) {
-    searchArtistFiles = [];
-}
+    // Load artist search files
+    try {
+        searchArtistFiles = fs.readdirSync(SEARCH_ARTISTS_DIR)
+            .filter(f => f.endsWith('.json') && f !== 'default.json')
+            .map(f => f.replace('.json', ''));
+    } catch (e) {
+        searchArtistFiles = [];
+    }
 
-// Load artist tokens
-try {
-    artistTokens = fs.readdirSync(DETAILS_ARTISTS_DIR)
-        .filter(f => f.endsWith('.json'))
-        .map(f => f.replace('.json', ''));
-} catch (e) {
-    artistTokens = [];
-}
+    // Load artist tokens
+    try {
+        artistTokens = fs.readdirSync(DETAILS_ARTISTS_DIR)
+            .filter(f => f.endsWith('.json'))
+            .map(f => f.replace('.json', ''));
+    } catch (e) {
+        artistTokens = [];
+    }
 
-console.log('[Mock] Cache loaded:');
-console.log('  - Song search files:', searchSongFiles.length);
-console.log('  - Album search files:', searchAlbumFiles.length);
-console.log('  - Playlist search files:', searchPlaylistFiles.length);
-console.log('  - Artist search files:', searchArtistFiles.length);  // NEW
-console.log('  - Song tokens:', songTokens.length);
-console.log('  - Album tokens:', albumTokens.length);
-console.log('  - Playlist tokens:', playlistTokens.length);
-console.log('  - Artist tokens:', artistTokens.length);  // NEW
-console.log('  - Lyrics tokens:', lyricsTokens.length);
-
+    console.log('[Mock] Cache loaded:');
+    console.log('  - Song search files:', searchSongFiles.length);
+    console.log('  - Album search files:', searchAlbumFiles.length);
+    console.log('  - Playlist search files:', searchPlaylistFiles.length);
+    console.log('  - Artist search files:', searchArtistFiles.length);
+    console.log('  - Song tokens:', songTokens.length);
+    console.log('  - Album tokens:', albumTokens.length);
+    console.log('  - Playlist tokens:', playlistTokens.length);
+    console.log('  - Artist tokens:', artistTokens.length);
+    console.log('  - Lyrics tokens:', lyricsTokens.length);
 }
 
 function loadJSON(filePath) {
@@ -165,9 +163,11 @@ function getSearchResponse(query, type) {
     return data || { total: 0, start: 0, results: [] };
 }
 
-function getDetailsResponse(token, type, page, limit) {
+function getDetailsResponse(token, type, page, limit, category) {
     let dir;
     let tokens;
+    let filePath;
+    let data;
 
    if (type === 'song') {
         dir = DETAILS_SONGS_DIR;
@@ -189,11 +189,30 @@ function getDetailsResponse(token, type, page, limit) {
     }
     
     if (!tokens.includes(token)) {
-        return null;
+        if (type === 'artist') {
+            console.log("skip");
+        } else {
+            return null;
+        }
     }
-    
-    const filePath = path.join(dir, token + '.json');
-    const data = loadJSON(filePath);
+
+    if (type === 'artist') {
+        if (category) {
+            filePath = path.join(DETAILS_ARTISTS_DIR, token + '_' + category + '.json');
+        } else {
+            filePath = path.join(DETAILS_ARTISTS_DIR, token + '.json');
+        }
+        data = loadJSON(filePath);
+        if (!data && category) {
+            // Fallback to base file without category
+            var fallbackPath = path.join(DETAILS_ARTISTS_DIR, token + '.json');
+            data = loadJSON(fallbackPath);
+        }
+        return data;
+    }
+
+    filePath = path.join(dir, token + '.json');
+    data = loadJSON(filePath);
     if (!data) return null;
     
     // For playlist, apply pagination
@@ -205,7 +224,6 @@ function getDetailsResponse(token, type, page, limit) {
 }
 
 // ============ PAGINATION HELPERS ============
-
 function paginatePlaylist(data, page, limit) {
     page = parseInt(page) || 1;
     limit = parseInt(limit) || 50;
@@ -271,7 +289,6 @@ function paginateSearchResults(data, page, limit) {
 loadCache();
 
 // ============ Handler ============
-
 function handleRequest(req, res) {
     const target = req.headers["x-proxy-url"];
     if (!target) {
@@ -302,85 +319,31 @@ function handleRequest(req, res) {
         } else if (call === 'search.getArtistResults') {
             searchType = 'artist';
         }
+
         var rawData = getSearchResponse(query, searchType);
         responseData = paginateSearchResults(rawData, page, limit);
     } else if (call === 'webapi.get') {
-        responseData = getDetailsResponse(token, type, page, limit);
-} else if (call === 'artist.getArtistMoreSong') {
-    // Return mock songs with pagination
-    var artistId = params.get('artistId');
-    var pag = parseInt(params.get('page')) || 1;
-    var category = params.get('category') || 'popular';
-    var limi = 10;
+        var category = params.get('category') || '';
+        responseData = getDetailsResponse(token, type, page, limit, category);
+    } else if (call === 'artist.getArtistMoreSong' || call === 'artist.getArtistMoreAlbum') {
+        var artistId = params.get('artistId');
+        var artist_page = parseInt(params.get('page')) || 1;
+        var category = params.get('category') || 'popular';
     
-    var totalSongs = 25; // Mock total
-    var start = (pag - 1) * limi;
-    var end = Math.min(start + limi, totalSongs);
-    var songs = [];
-    
-    for (var i = start; i < end; i++) {
-        songs.push({
-            id: 'mock_song_' + String(i + 1).padStart(3, '0'),
-            title: 'Mock Song ' + (i + 1),
-            subtitle: 'Mock Artist ' + (i + 1),
-            type: 'song',
-            perma_url: 'https://music.example.com/song/mock-song-' + (i + 1) + '/mock_song_' + String(i + 1).padStart(3, '0'),
-            image: 'http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg',
-            language: 'english',
-            year: '2024',
-            more_info: {
-                duration: '180',
-                has_lyrics: Math.random() > 0.5 ? 'true' : 'false',
-                album: 'Mock Album ' + (i + 1),
-                encrypted_media_url: 'JKcIGVL+NOVwdDWakCj6fWGE8WcC+2iTTmjcVY5gjZcb6MwSnJjGC0KIVQL/LeFRb5cctSKeEIo='
-            }
-        });
-    }
-    
-    responseData = {
-        topSongs: {
-            songs: songs,
-            total: totalSongs,
-            last_page: end >= totalSongs
+        var filePath = path.join(DETAILS_ARTISTS_DIR, artistId + '_' + category + '_songs_' + artist_page + '.json');
+        var fileData = loadJSON(filePath);
+        if (fileData) {
+            responseData = fileData;
+        } else {
+            responseData = {
+                topSongs: {
+                    songs: [],
+                    total: 0,
+                    last_page: true
+                }
+            };
         }
-    };
-    
-} else if (call === 'artist.getArtistMoreAlbum') {
-    // Return mock albums with pagination
-    var artistId = params.get('artistId');
-    var pag = parseInt(params.get('page')) || 1;
-    var category = params.get('category') || 'popular';
-    var limi = 10;
-    
-    var totalAlbums = 15; // Mock total
-    var start = (pag - 1) * limi;
-    var end = Math.min(start + limi, totalAlbums);
-    var albums = [];
-    
-    for (var i = start; i < end; i++) {
-        albums.push({
-            id: 'mock_album_' + String(i + 1).padStart(3, '0'),
-            title: 'Mock Album ' + (i + 1),
-            subtitle: 'Mock Artist ' + (i + 1),
-            type: 'album',
-            perma_url: 'https://music.example.com/album/mock-album-' + (i + 1) + '/mock_album_' + String(i + 1).padStart(3, '0'),
-            image: 'http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg',
-            language: 'english',
-            year: '2024',
-            more_info: {
-                song_count: String(Math.floor(Math.random() * 10) + 1)
-            }
-        });
     }
-    
-    responseData = {
-        topAlbums: {
-            albums: albums,
-            total: totalAlbums,
-            last_page: end >= totalAlbums
-        }
-    };
-}
 
     if (responseData) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
