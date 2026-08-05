@@ -167,7 +167,11 @@ function attachSongEvents(container) {
                         window.viewAlbum(token);
                     }
                 } else if (action === 'artist') {
-                    console.log('[More] View artist:', token);
+                    if (typeof window.viewArtist === 'function') {
+                        window.viewArtist(token);
+                    } else {
+                        console.warn('[More] viewArtist not found');
+                    }
                 }
                 e.preventDefault();
                 return;

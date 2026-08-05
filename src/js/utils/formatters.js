@@ -25,6 +25,12 @@ window.Utils.formatters.getHighResAlbumArt = function(url) {
 };
 
 
+// ============ HIGH RES ARTIST IMAGE ============
+window.Utils.formatters.getHighResArtistImage = function(url) {
+    if (!url) return '';
+    return url.replace(/_50x50\.jpg$/, '_150x150.jpg');
+};
+
 window.Utils.formatters.formatLyrics = function(rawLyrics) {
     return rawLyrics.replace(/<br>/g, '\n');
 };
@@ -196,12 +202,11 @@ window.Utils.formatters.formatPlaylistDetail = function(data) {
 
 // ============ ARTIST SEARCH FORMATTER ============
 window.Utils.formatters.formatArtistSearch = function(artist) {
-console.log("formatArtistSearch");
     return {
         id: artist.id,
         token: window.Utils.formatters.extractToken(artist.perma_url),
         name: artist.name || '',
-        image: artist.image || '',
+        image: window.Utils.formatters.getHighResArtistImage(artist.image) || '',
         role: artist.role || 'Artist',
         type: 'artist'
     };
