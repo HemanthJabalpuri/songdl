@@ -1,6 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 
+// Read version from package.json
+const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf8'));
+const VERSION = pkg.version;
+
 const ROOT_DIR = path.join(__dirname, 'src');
 const CSS_DIR = path.join(ROOT_DIR, 'css');
 const OUTPUT_DIR = path.join(__dirname, 'dist');
@@ -59,7 +63,7 @@ function build() {
     combined += `// ==UserScript==
 // @name         JioSaavn Song Downloader
 // @namespace    https://github.com/HemanthJabalpuri/songdl
-// @version      1.0.1
+// @version      ${VERSION}
 // @description  Download songs and albums with metadata
 // @author       HemanthJabalpuri
 // @match        https://www.jiosaavn.com/*
