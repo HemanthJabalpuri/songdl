@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JioSaavn Song Downloader
 // @namespace    https://github.com/HemanthJabalpuri/songdl
-// @version      1.0.1
+// @version      1.2.0
 // @description  Download songs and albums with metadata
 // @author       HemanthJabalpuri
 // @match        https://www.jiosaavn.com/*
@@ -19,7 +19,7 @@
     // ============================================================
     // EMBEDDED CSS
     // ============================================================
-    var UI_CSS = "/* ===== Floating Toggle Button ===== */\n#ui-toggle-btn {\n    position: fixed;\n    bottom: 20px;\n    right: 20px;\n    z-index: 2147483647;\n    background: #1db954;\n    color: white;\n    border: none;\n    border-radius: 50%;\n    width: 56px;\n    height: 56px;\n    font-size: 24px;\n    cursor: pointer;\n    box-shadow: 0 4px 12px rgba(0,0,0,0.3);\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: transform 0.2s;\n    touch-action: manipulation;\n}\n#ui-toggle-btn:hover {\n    transform: scale(1.1);\n}\n#ui-toggle-btn:active {\n    transform: scale(0.95);\n}\n\n/* ===== Fullscreen Overlay ===== */\n#ui-overlay {\n    position: fixed;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n    z-index: 2147483646;\n    background: #111;\n    color: #fff;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;\n    display: none;\n    flex-direction: column;\n    overflow-y: auto;\n    padding: 20px;\n}\n#ui-overlay.active {\n    display: flex;\n}\n\n/* ===== Overlay Content ===== */\n#ui-overlay .container {\n    max-width: 900px;\n    margin: 0 auto;\n    width: 100%;\n}\n#ui-overlay h1 {\n    color: #1db954;\n    font-size: 24px;\n    margin-bottom: 20px;\n    display: flex;\n    align-items: center;\n    gap: 12px;\n}\n\n/* Search Tabs */\n#ui-overlay .search-tabs {\n    display: flex;\n    gap: 10px;\n    margin-bottom: 20px;\n}\n#ui-overlay .tab {\n    padding: 10px 24px;\n    background: #282828;\n    color: #888;\n    border: none;\n    border-radius: 8px;\n    font-size: 15px;\n    cursor: pointer;\n    transition: all 0.2s;\n}\n#ui-overlay .tab:hover {\n    background: #333;\n}\n#ui-overlay .tab.active {\n    background: #1db954;\n    color: #111;\n    font-weight: bold;\n}\n\n/* Search Box */\n#ui-overlay .search-box {\n    display: flex;\n    gap: 10px;\n    margin-bottom: 20px;\n}\n#ui-overlay .search-box input {\n    flex: 1;\n    padding: 12px;\n    border: 2px solid #333;\n    border-radius: 8px;\n    background: #222;\n    color: #fff;\n    font-size: 16px;\n    outline: none;\n}\n#ui-overlay .search-box input:focus {\n    border-color: #1db954;\n}\n#ui-overlay .search-box input::placeholder {\n    color: #666;\n}\n#ui-overlay .btn-search {\n    padding: 12px 24px;\n    background: #1db954;\n    color: #111;\n    border: none;\n    border-radius: 8px;\n    font-size: 16px;\n    font-weight: bold;\n    cursor: pointer;\n}\n#ui-overlay .btn-search:hover {\n    background: #1ed760;\n}\n\n/* Stats */\n#ui-overlay .stats {\n    margin: 10px 0 20px 0;\n    color: #888;\n    font-size: 14px;\n}\n\n/* Results */\n#ui-overlay .results {\n    display: grid;\n    gap: 15px;\n}\n\n/* Song Cards */\n#ui-overlay .song-card {\n    background: #1a1a1a;\n    padding: 15px;\n    border-radius: 8px;\n    display: flex;\n    gap: 15px;\n    align-items: center;\n    border: 1px solid #222;\n}\n#ui-overlay .song-card img {\n    width: 80px;\n    height: 80px;\n    border-radius: 4px;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .song-info {\n    flex: 1;\n}\n#ui-overlay .song-title {\n    font-size: 18px;\n    font-weight: bold;\n    color: #fff;\n}\n#ui-overlay .song-artist {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .song-details {\n    color: #666;\n    font-size: 14px;\n}\n#ui-overlay .song-actions {\n    display: flex;\n    gap: 8px;\n    margin-top: 8px;\n    flex-wrap: wrap;\n}\n#ui-overlay .btn-download {\n    padding: 6px 16px;\n    background: #1db954;\n    color: #111;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    font-weight: bold;\n    cursor: pointer;\n}\n#ui-overlay .btn-download:hover {\n    background: #1ed760;\n}\n#ui-overlay .btn-download:disabled {\n    background: #555;\n    cursor: not-allowed;\n}\n#ui-overlay .btn-play {\n    padding: 6px 16px;\n    background: #007bff;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    cursor: pointer;\n}\n#ui-overlay .btn-play:hover {\n    background: #0056b3;\n}\n#ui-overlay .btn-play:disabled {\n    background: #555;\n    cursor: not-allowed;\n}\n\n/* Album Cards */\n#ui-overlay .album-card {\n    background: #1a1a1a;\n    padding: 15px;\n    border-radius: 8px;\n    display: flex;\n    gap: 15px;\n    align-items: center;\n    cursor: pointer;\n    border: 1px solid #222;\n}\n#ui-overlay .album-card:hover {\n    background: #222;\n}\n#ui-overlay .album-card img {\n    width: 100px;\n    height: 100px;\n    border-radius: 4px;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .album-info {\n    flex: 1;\n}\n#ui-overlay .album-title {\n    font-size: 18px;\n    font-weight: bold;\n    color: #fff;\n}\n#ui-overlay .album-artist {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .album-details {\n    color: #666;\n    font-size: 14px;\n}\n#ui-overlay .btn-view-album {\n    margin-top: 8px;\n    padding: 6px 16px;\n    background: #6c757d;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    cursor: pointer;\n}\n#ui-overlay .btn-view-album:hover {\n    background: #5a6268;\n}\n\n/* Album Detail View */\n#ui-overlay .album-header {\n    background: #1a1a1a;\n    padding: 20px;\n    border-radius: 8px;\n    display: flex;\n    gap: 20px;\n    margin-bottom: 20px;\n    border: 1px solid #222;\n}\n#ui-overlay .album-header img {\n    width: 200px;\n    height: 200px;\n    border-radius: 4px;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .album-header-info {\n    flex: 1;\n}\n#ui-overlay .album-header-info h2 {\n    margin-bottom: 5px;\n    color: #fff;\n}\n#ui-overlay .album-header-info p {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .album-actions {\n    margin-top: 15px;\n    display: flex;\n    gap: 10px;\n    flex-wrap: wrap;\n}\n#ui-overlay .btn-back {\n    padding: 8px 20px;\n    background: #6c757d;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    cursor: pointer;\n}\n#ui-overlay .btn-back:hover {\n    background: #5a6268;\n}\n\n/* Song List in Album */\n#ui-overlay .song-list {\n    display: grid;\n    gap: 8px;\n}\n#ui-overlay .song-item {\n    background: #1a1a1a;\n    padding: 12px 15px;\n    border-radius: 4px;\n    display: flex;\n    align-items: center;\n    gap: 15px;\n    border: 1px solid #222;\n}\n#ui-overlay .song-item .song-title {\n    flex: 2;\n    font-weight: 500;\n    font-size: 15px;\n    color: #fff;\n}\n#ui-overlay .song-item .song-artist {\n    flex: 2;\n    color: #aaa;\n    font-size: 14px;\n}\n#ui-overlay .song-item .song-duration {\n    color: #666;\n    font-size: 13px;\n    min-width: 50px;\n}\n\n/* Loading & Error */\n#ui-overlay .loading {\n    text-align: center;\n    padding: 40px;\n    color: #888;\n}\n#ui-overlay .error {\n    color: #ff4444;\n    padding: 20px;\n    background: #2a1a1a;\n    border-radius: 8px;\n    border: 1px solid #661111;\n}\n#ui-overlay .no-results {\n    text-align: center;\n    padding: 40px;\n    color: #666;\n}\n\n/* Progress */\n#ui-overlay .download-progress,\n#ui-overlay .play-progress {\n    display: none;\n    margin-top: 5px;\n    font-size: 12px;\n    color: #1db954;\n}\n#ui-overlay .download-progress.active,\n#ui-overlay .play-progress.active {\n    display: block;\n}\n\n/* Player */\n#ui-overlay audio {\n    width: 100%;\n    margin-top: 20px;\n    border-radius: 8px;\n}\n\n/* Lyrics Button */\n#ui-overlay .btn-lyrics {\n    padding: 6px 16px;\n    background: #6c757d;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    cursor: pointer;\n}\n#ui-overlay .btn-lyrics:hover {\n    background: #5a6268;\n}\n\n/* Responsive */\n@media (max-width: 600px) {\n    #ui-overlay .album-header {\n        flex-direction: column;\n        align-items: center;\n        text-align: center;\n    }\n    #ui-overlay .album-header img {\n        width: 150px;\n        height: 150px;\n    }\n    #ui-overlay .song-item {\n        flex-wrap: wrap;\n    }\n    #ui-overlay .song-item .song-title {\n        flex: 1 1 100%;\n    }\n    #ui-overlay .song-item .song-artist {\n        flex: 1 1 100%;\n    }\n    #ui-overlay .search-tabs {\n        flex-wrap: wrap;\n    }\n    #ui-overlay .tab {\n        flex: 1;\n        text-align: center;\n        padding: 8px 12px;\n        font-size: 13px;\n    }\n}";
+    var UI_CSS = "/* ===== Floating Toggle Button ===== */\n#ui-toggle-btn {\n    position: fixed;\n    bottom: 20px;\n    right: 20px;\n    z-index: 2147483647;\n    background: #1db954;\n    color: white;\n    border: none;\n    border-radius: 50%;\n    width: 56px;\n    height: 56px;\n    font-size: 24px;\n    cursor: pointer;\n    box-shadow: 0 4px 12px rgba(0,0,0,0.3);\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: transform 0.2s;\n    touch-action: manipulation;\n}\n#ui-toggle-btn:hover {\n    transform: scale(1.1);\n}\n#ui-toggle-btn:active {\n    transform: scale(0.95);\n}\n\n/* ===== Fullscreen Overlay ===== */\n#ui-overlay {\n    position: fixed;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n    z-index: 2147483646;\n    background: #111;\n    color: #fff;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;\n    display: none;\n    flex-direction: column;\n    overflow-y: auto;\n    padding: 20px;\n}\n#ui-overlay.active {\n    display: flex;\n}\n\n/* ===== Overlay Content ===== */\n#ui-overlay .container {\n    max-width: 900px;\n    margin: 0 auto;\n    width: 100%;\n}\n#ui-overlay h1 {\n    color: #1db954;\n    font-size: 24px;\n    margin-bottom: 20px;\n    display: flex;\n    align-items: center;\n    gap: 12px;\n}\n\n/* Search Tabs */\n#ui-overlay .search-tabs {\n    display: flex;\n    gap: 10px;\n    margin-bottom: 20px;\n}\n#ui-overlay .tab {\n    padding: 10px 24px;\n    background: #282828;\n    color: #888;\n    border: none;\n    border-radius: 8px;\n    font-size: 15px;\n    cursor: pointer;\n    transition: all 0.2s;\n}\n#ui-overlay .tab:hover {\n    background: #333;\n}\n#ui-overlay .tab.active {\n    background: #1db954;\n    color: #111;\n    font-weight: bold;\n}\n\n/* Disabled tab */\n#ui-overlay .tab.disabled {\n    opacity: 0.4;\n    cursor: not-allowed;\n    pointer-events: none;\n}\n\n/* Search Box */\n#ui-overlay .search-box {\n    display: flex;\n    gap: 10px;\n    margin-bottom: 20px;\n}\n#ui-overlay .search-box input {\n    flex: 1;\n    padding: 12px;\n    border: 2px solid #333;\n    border-radius: 8px;\n    background: #222;\n    color: #fff;\n    font-size: 16px;\n    outline: none;\n}\n#ui-overlay .search-box input:focus {\n    border-color: #1db954;\n}\n#ui-overlay .search-box input::placeholder {\n    color: #666;\n}\n#ui-overlay .btn-search {\n    padding: 12px 24px;\n    background: #1db954;\n    color: #111;\n    border: none;\n    border-radius: 8px;\n    font-size: 16px;\n    font-weight: bold;\n    cursor: pointer;\n}\n#ui-overlay .btn-search:hover {\n    background: #1ed760;\n}\n\n/* Stats */\n#ui-overlay .stats {\n    margin: 10px 0 20px 0;\n    color: #888;\n    font-size: 14px;\n}\n\n/* Results */\n#ui-overlay .results {\n    display: grid;\n    gap: 15px;\n}\n\n/* Song Cards */\n#ui-overlay .song-card {\n    background: #1a1a1a;\n    padding: 15px;\n    border-radius: 8px;\n    display: flex;\n    gap: 15px;\n    align-items: center;\n    border: 1px solid #222;\n}\n#ui-overlay .song-card img {\n    width: 80px;\n    height: 80px;\n    border-radius: 4px;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .song-info {\n    flex: 1;\n}\n#ui-overlay .song-title {\n    font-size: 18px;\n    font-weight: bold;\n    color: #fff;\n}\n#ui-overlay .song-artist {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .song-details {\n    color: #666;\n    font-size: 14px;\n}\n#ui-overlay .song-actions {\n    display: flex;\n    gap: 8px;\n    margin-top: 8px;\n    flex-wrap: wrap;\n}\n#ui-overlay .btn-download {\n    padding: 6px 16px;\n    background: #1db954;\n    color: #111;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    font-weight: bold;\n    cursor: pointer;\n}\n#ui-overlay .btn-download:hover {\n    background: #1ed760;\n}\n#ui-overlay .btn-download:disabled {\n    background: #555;\n    cursor: not-allowed;\n}\n#ui-overlay .btn-play {\n    padding: 6px 16px;\n    background: #007bff;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    cursor: pointer;\n}\n#ui-overlay .btn-play:hover {\n    background: #0056b3;\n}\n#ui-overlay .btn-play:disabled {\n    background: #555;\n    cursor: not-allowed;\n}\n\n/* Album Cards */\n#ui-overlay .album-card {\n    background: #1a1a1a;\n    padding: 15px;\n    border-radius: 8px;\n    display: flex;\n    gap: 15px;\n    align-items: center;\n    cursor: pointer;\n    border: 1px solid #222;\n}\n#ui-overlay .album-card:hover {\n    background: #222;\n}\n#ui-overlay .album-card img {\n    width: 100px;\n    height: 100px;\n    border-radius: 4px;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .album-info {\n    flex: 1;\n}\n#ui-overlay .album-title {\n    font-size: 18px;\n    font-weight: bold;\n    color: #fff;\n}\n#ui-overlay .album-artist {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .album-details {\n    color: #666;\n    font-size: 14px;\n}\n#ui-overlay .btn-view-album {\n    margin-top: 8px;\n    padding: 6px 16px;\n    background: #6c757d;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    cursor: pointer;\n}\n#ui-overlay .btn-view-album:hover {\n    background: #5a6268;\n}\n\n/* Album Detail View */\n#ui-overlay .album-header {\n    background: #1a1a1a;\n    padding: 20px;\n    border-radius: 8px;\n    display: flex;\n    gap: 20px;\n    margin-bottom: 20px;\n    border: 1px solid #222;\n}\n#ui-overlay .album-header img {\n    width: 200px;\n    height: 200px;\n    border-radius: 4px;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .album-header-info {\n    flex: 1;\n}\n#ui-overlay .album-header-info h2 {\n    margin-bottom: 5px;\n    color: #fff;\n}\n#ui-overlay .album-header-info p {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .album-actions {\n    margin-top: 15px;\n    display: flex;\n    gap: 10px;\n    flex-wrap: wrap;\n}\n#ui-overlay .btn-back {\n    padding: 8px 20px;\n    background: #6c757d;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    cursor: pointer;\n}\n#ui-overlay .btn-back:hover {\n    background: #5a6268;\n}\n\n/* Song List in Album */\n#ui-overlay .song-list {\n    display: grid;\n    gap: 8px;\n}\n#ui-overlay .song-item {\n    background: #1a1a1a;\n    padding: 12px 15px;\n    border-radius: 4px;\n    display: flex;\n    align-items: center;\n    gap: 15px;\n    border: 1px solid #222;\n}\n#ui-overlay .song-item .song-title {\n    flex: 2;\n    font-weight: 500;\n    font-size: 15px;\n    color: #fff;\n}\n#ui-overlay .song-item .song-artist {\n    flex: 2;\n    color: #aaa;\n    font-size: 14px;\n}\n#ui-overlay .song-item .song-duration {\n    color: #666;\n    font-size: 13px;\n    min-width: 50px;\n}\n\n/* Playlist Cards */\n#ui-overlay .playlist-card {\n    background: #1a1a1a;\n    padding: 15px;\n    border-radius: 8px;\n    display: flex;\n    gap: 15px;\n    align-items: center;\n    cursor: pointer;\n    border: 1px solid #222;\n}\n#ui-overlay .playlist-card:hover {\n    background: #222;\n}\n#ui-overlay .playlist-card img {\n    width: 100px;\n    height: 100px;\n    border-radius: 4px;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .playlist-info {\n    flex: 1;\n}\n#ui-overlay .playlist-title {\n    font-size: 18px;\n    font-weight: bold;\n    color: #fff;\n}\n#ui-overlay .playlist-artist {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .playlist-details {\n    color: #666;\n    font-size: 14px;\n}\n#ui-overlay .btn-view-playlist {\n    margin-top: 8px;\n    padding: 6px 16px;\n    background: #6c757d;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    cursor: pointer;\n}\n#ui-overlay .btn-view-playlist:hover {\n    background: #5a6268;\n}\n\n/* Playlist Header */\n#ui-overlay .playlist-header {\n    background: #1a1a1a;\n    padding: 20px;\n    border-radius: 8px;\n    display: flex;\n    gap: 20px;\n    margin-bottom: 20px;\n    border: 1px solid #222;\n}\n#ui-overlay .playlist-header img {\n    width: 200px;\n    height: 200px;\n    border-radius: 4px;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .playlist-header-info {\n    flex: 1;\n}\n#ui-overlay .playlist-header-info h2 {\n    margin-bottom: 5px;\n    color: #fff;\n}\n#ui-overlay .playlist-header-info p {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .playlist-description {\n    color: #888 !important;\n    font-style: italic;\n    margin-top: 10px !important;\n}\n#ui-overlay .playlist-actions {\n    margin-top: 15px;\n    display: flex;\n    gap: 10px;\n    flex-wrap: wrap;\n}\n\n/* Loading & Error */\n#ui-overlay .loading {\n    text-align: center;\n    padding: 40px;\n    color: #888;\n}\n#ui-overlay .error {\n    color: #ff4444;\n    padding: 20px;\n    background: #2a1a1a;\n    border-radius: 8px;\n    border: 1px solid #661111;\n}\n#ui-overlay .no-results {\n    text-align: center;\n    padding: 40px;\n    color: #666;\n}\n\n/* Progress */\n#ui-overlay .download-progress,\n#ui-overlay .play-progress {\n    display: none;\n    margin-top: 5px;\n    font-size: 12px;\n    color: #1db954;\n}\n#ui-overlay .download-progress.active,\n#ui-overlay .play-progress.active {\n    display: block;\n}\n\n/* Player */\n#ui-overlay audio {\n    width: 100%;\n    margin-top: 20px;\n    border-radius: 8px;\n}\n\n/* Lyrics Button */\n#ui-overlay .btn-lyrics {\n    padding: 6px 16px;\n    background: #6c757d;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    cursor: pointer;\n}\n#ui-overlay .btn-lyrics:hover {\n    background: #5a6268;\n}\n\n/* ===== More Button ===== */\n#ui-overlay .btn-more {\n    padding: 6px 12px;\n    background: transparent;\n    color: #aaa;\n    border: none;\n    border-radius: 4px;\n    font-size: 18px;\n    cursor: pointer;\n    line-height: 1;\n}\n#ui-overlay .btn-more:hover {\n    color: #fff;\n    background: #282828;\n}\n\n/* ===== More Menu ===== */\n#ui-overlay .more-menu {\n    position: absolute;\n    right: 0;\n    top: 100%;\n    min-width: 160px;\n    max-width: 250px;\n    background: #1a1a1a;\n    border: 1px solid #333;\n    border-radius: 8px;\n    padding: 4px 0;\n    z-index: 100;\n    box-shadow: 0 4px 12px rgba(0,0,0,0.5);\n    margin-top: 4px;\n}\n\n#ui-overlay .more-item {\n    display: block;\n    width: 100%;\n    padding: 8px 16px;\n    background: transparent;\n    color: #ddd;\n    border: none;\n    text-align: left;\n    font-size: 14px;\n    cursor: pointer;\n    white-space: nowrap;\n    overflow: hidden;\n    text-overflow: ellipsis;\n}\n#ui-overlay .more-item:hover {\n    background: #282828;\n    color: #fff;\n}\n\n/* Song card needs position relative for menu positioning */\n#ui-overlay .song-card {\n    position: relative;\n}\n\n/* ===== Load More Button ===== */\n#ui-overlay .btn-load-more {\n    display: block;\n    width: 100%;\n    padding: 12px 20px;\n    margin-top: 15px;\n    background: #282828;\n    color: #fff;\n    border: 1px solid #444;\n    border-radius: 8px;\n    font-size: 14px;\n    font-weight: 500;\n    cursor: pointer;\n    transition: all 0.2s;\n    text-align: center;\n}\n\n#ui-overlay .btn-load-more:hover {\n    background: #333;\n    border-color: #1db954;\n}\n\n#ui-overlay .btn-load-more:disabled {\n    opacity: 0.5;\n    cursor: not-allowed;\n}\n\n#ui-overlay .btn-load-more:disabled:hover {\n    background: #282828;\n    border-color: #444;\n}\n\n/* ===== End of Results ===== */\n#ui-overlay .end-of-results {\n    display: block;\n    width: 100%;\n    padding: 12px 20px;\n    margin-top: 15px;\n    color: #666;\n    font-size: 14px;\n    text-align: center;\n    border-top: 1px solid #333;\n}\n\n/* ===== Artist Header ===== */\n#ui-overlay .artist-header {\n    background: #1a1a1a;\n    padding: 20px;\n    border-radius: 8px;\n    display: flex;\n    gap: 20px;\n    margin-bottom: 20px;\n    border: 1px solid #222;\n}\n#ui-overlay .artist-header img {\n    width: 150px;\n    height: 150px;\n    border-radius: 50%;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .artist-header-info {\n    flex: 1;\n}\n#ui-overlay .artist-header-info h2 {\n    margin-bottom: 5px;\n    color: #fff;\n    font-size: 24px;\n}\n#ui-overlay .artist-header-info p {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .artist-bio {\n    color: #888 !important;\n    font-size: 14px;\n    margin-top: 10px !important;\n    line-height: 1.6;\n}\n#ui-overlay .artist-actions {\n    margin-top: 15px;\n    display: flex;\n    gap: 10px;\n    flex-wrap: wrap;\n}\n\n/* ===== Artist Tabs ===== */\n#ui-overlay .artist-tabs {\n    display: flex;\n    gap: 10px;\n    margin-bottom: 20px;\n    border-bottom: 1px solid #333;\n    padding-bottom: 10px;\n}\n#ui-overlay .artist-tab {\n    padding: 8px 16px;\n    background: transparent;\n    color: #888;\n    border: none;\n    border-radius: 4px;\n    font-size: 14px;\n    cursor: pointer;\n    transition: all 0.2s;\n}\n#ui-overlay .artist-tab:hover {\n    color: #fff;\n    background: #282828;\n}\n#ui-overlay .artist-tab.active {\n    color: #1db954;\n    background: rgba(29, 185, 84, 0.1);\n    font-weight: bold;\n}\n\n/* ===== Artist Sections ===== */\n#ui-overlay .artist-songs-section,\n#ui-overlay .artist-albums-section,\n#ui-overlay .artist-playlists-section {\n    margin-top: 20px;\n}\n#ui-overlay .artist-songs-section h3,\n#ui-overlay .artist-albums-section h3,\n#ui-overlay .artist-playlists-section h3 {\n    color: #fff;\n    font-size: 18px;\n    margin-bottom: 12px;\n    padding-bottom: 8px;\n    border-bottom: 1px solid #333;\n}\n\n/* ===== Artist Cards (Search Results) ===== */\n#ui-overlay .artist-card {\n    background: #1a1a1a;\n    padding: 15px;\n    border-radius: 8px;\n    display: flex;\n    gap: 15px;\n    align-items: center;\n    cursor: pointer;\n    border: 1px solid #222;\n}\n#ui-overlay .artist-card:hover {\n    background: #222;\n}\n#ui-overlay .artist-card img {\n    width: 80px;\n    height: 80px;\n    border-radius: 50%;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .artist-info {\n    flex: 1;\n}\n#ui-overlay .artist-name {\n    font-size: 18px;\n    font-weight: bold;\n    color: #fff;\n}\n#ui-overlay .artist-role {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .btn-view-artist {\n    margin-top: 8px;\n    padding: 6px 16px;\n    background: #6c757d;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    cursor: pointer;\n}\n#ui-overlay .btn-view-artist:hover {\n    background: #5a6268;\n}\n\n/* ===== Responsive ===== */\n@media (max-width: 600px) {\n    #ui-overlay .artist-header {\n        flex-direction: column;\n        align-items: center;\n        text-align: center;\n    }\n    #ui-overlay .artist-header img {\n        width: 120px;\n        height: 120px;\n    }\n    #ui-overlay .artist-tabs {\n        flex-wrap: wrap;\n        justify-content: center;\n    }\n    #ui-overlay .artist-tab {\n        flex: 1;\n        text-align: center;\n        padding: 8px 12px;\n        font-size: 13px;\n    }\n}\n\n/* Responsive */\n@media (max-width: 600px) {\n    #ui-overlay .album-header {\n        flex-direction: column;\n        align-items: center;\n        text-align: center;\n    }\n    #ui-overlay .album-header img {\n        width: 150px;\n        height: 150px;\n    }\n    #ui-overlay .song-item {\n        flex-wrap: wrap;\n    }\n    #ui-overlay .song-item .song-title {\n        flex: 1 1 100%;\n    }\n    #ui-overlay .song-item .song-artist {\n        flex: 1 1 100%;\n    }\n    #ui-overlay .search-tabs {\n        flex-wrap: wrap;\n    }\n    #ui-overlay .tab {\n        flex: 1;\n        text-align: center;\n        padding: 8px 12px;\n        font-size: 13px;\n    }\n}";
     
     // Add CSS to page
     var styleEl = document.createElement('style');
@@ -1121,6 +1121,12 @@ window.Utils.formatters.getHighResAlbumArt = function(url) {
 };
 
 
+// ============ HIGH RES ARTIST IMAGE ============
+window.Utils.formatters.getHighResArtistImage = function(url) {
+    if (!url) return '';
+    return url.replace(/_50x50\.jpg$/, '_150x150.jpg');
+};
+
 window.Utils.formatters.formatLyrics = function(rawLyrics) {
     return rawLyrics.replace(/<br>/g, '\n');
 };
@@ -1140,12 +1146,10 @@ window.Utils.formatters.formatUrlWithQuality = function(url, quality) {
 
 // ============ EXTRACT ARTISTS ============
 window.Utils.formatters.extractArtists = function(songData) {
-    var primaryArtists = (songData.more_info && songData.more_info.artistMap) 
-        ? songData.more_info.artistMap.primary_artists || [] 
-        : [];
-    var featuredArtists = (songData.more_info && songData.more_info.artistMap) 
-        ? songData.more_info.artistMap.featured_artists || [] 
-        : [];
+    var artistMap = songData.more_info ? songData.more_info.artistMap : null;
+    
+    var primaryArtists = (artistMap && artistMap.primary_artists) ? artistMap.primary_artists : [];
+    var featuredArtists = (artistMap && artistMap.featured_artists) ? artistMap.featured_artists : [];
     
     var primaryNames = primaryArtists.map(function(a) { return a.name; });
     var featuredNames = featuredArtists.map(function(a) { return a.name; });
@@ -1190,6 +1194,10 @@ window.Utils.formatters.formatSearchResults = function(data, type) {
         results = results.map(window.Utils.formatters.formatSong);
     } else if (type === 'album') {
         results = results.map(window.Utils.formatters.formatAlbum);
+    } else if (type === 'playlist') {
+        results = results.map(window.Utils.formatters.formatPlaylist);
+    } else if (type === 'artist') {
+        results = results.map(window.Utils.formatters.formatArtistSearch);
     }
     
     return {
@@ -1201,7 +1209,7 @@ window.Utils.formatters.formatSearchResults = function(data, type) {
 
 // ============ SONG FORMATTER ============
 window.Utils.formatters.formatSong = function(song) {
-    var formatted = {
+    return {
         id: song.id,
         token: window.Utils.formatters.extractToken(song.perma_url),
         title: window.Utils.formatters.decode(song.title),
@@ -1213,16 +1221,13 @@ window.Utils.formatters.formatSong = function(song) {
         more_info: {
             duration: song.more_info ? song.more_info.duration || 'N/A' : 'N/A',
             encrypted_media_url: song.more_info ? song.more_info.encrypted_media_url || '' : '',
-            album: song.more_info ? window.Utils.formatters.decode(song.more_info.album || '') : ''
+            album: song.more_info ? window.Utils.formatters.decode(song.more_info.album || '') : '',
+            album_url: song.more_info ? song.more_info.album_url || '' : '',
+            artistMap: song.more_info ? song.more_info.artistMap || null : null
         },
         has_stream: song.more_info ? !!song.more_info.encrypted_media_url : false,
         has_lyrics: !!(song.more_info && song.more_info.has_lyrics === 'true')
     };
-    
-    // Store raw data for metadata extraction
-    formatted._raw = song;
-    
-    return formatted;
 };
 
 // ============ ALBUM FORMATTER ============
@@ -1257,18 +1262,103 @@ window.Utils.formatters.formatAlbumDetail = function(data) {
     };
 };
 
+// ============ PLAYLIST FORMATTER ============
+window.Utils.formatters.formatPlaylist = function(playlist) {
+    return {
+        id: playlist.id,
+        token: window.Utils.formatters.extractToken(playlist.perma_url),
+        title: window.Utils.formatters.decode(playlist.title),
+        subtitle: window.Utils.formatters.decode(playlist.subtitle || ''),
+        image: playlist.image || '',
+        language: playlist.more_info ? playlist.more_info.language || '' : '',
+        year: '',
+        more_info: {
+            song_count: playlist.more_info ? playlist.more_info.song_count || '0' : '0'
+        }
+    };
+};
+
+// ============ PLAYLIST DETAIL FORMATTER ============
+window.Utils.formatters.formatPlaylistDetail = function(data) {
+    return {
+        id: data.id,
+        token: window.Utils.formatters.extractToken(data.perma_url),
+        title: window.Utils.formatters.decode(data.title),
+        image: data.image || '',
+        language: data.language || '',
+        year: '',
+        list_count: parseInt(data.list_count) || 0,
+        song_count: parseInt(data.song_count) || parseInt(data.list_count) || data.list ? data.list.length : 0,
+        description: data.header_desc || '',
+        songs: (data.list || []).map(function(song) {
+            return window.Utils.formatters.formatSong(song);
+        })
+    };
+};
+
+// ============ ARTIST SEARCH FORMATTER ============
+window.Utils.formatters.formatArtistSearch = function(artist) {
+    return {
+        id: artist.id,
+        token: window.Utils.formatters.extractToken(artist.perma_url),
+        name: artist.name || '',
+        image: window.Utils.formatters.getHighResArtistImage(artist.image) || '',
+        role: artist.role || 'Artist',
+        type: 'artist'
+    };
+};
+
+// ============ ARTIST DETAIL FORMATTER ============
+window.Utils.formatters.formatArtistDetail = function(data) {
+    // Parse bio
+    var bioText = '';
+    if (data.bio) {
+        try {
+            var bioArray = JSON.parse(data.bio);
+            if (Array.isArray(bioArray) && bioArray.length > 0) {
+                bioText = bioArray[0].text || '';
+            }
+        } catch (e) {
+            bioText = data.bio;
+        }
+    }
+
+    return {
+        id: data.artistId,
+        token: window.Utils.formatters.extractToken(data.perma_url),
+        name: data.name || '',
+        image: data.image || '',
+        subtitle: data.subtitle || '',
+        // fan_count removed (duplicate of subtitle)
+        isVerified: data.isVerified || false,
+        bio: bioText,  // Already parsed
+        // First page songs and albums
+        songs: (data.topSongs || []).map(window.Utils.formatters.formatSong),
+        albums: (data.topAlbums || []).map(window.Utils.formatters.formatAlbum),
+        // Other sections
+        dedicatedPlaylists: (data.dedicated_artist_playlist || []).map(window.Utils.formatters.formatPlaylist),
+        featuredPlaylists: (data.featured_artist_playlist || []).map(window.Utils.formatters.formatPlaylist),
+        singles: (data.singles || []).map(window.Utils.formatters.formatAlbum),
+        latestReleases: (data.latest_release || []).map(window.Utils.formatters.formatAlbum),
+        // Pagination info
+        totalSongs: data.topSongs ? data.topSongs.length : 0,
+        totalAlbums: data.topAlbums ? data.topAlbums.length : 0,
+        // Store artistId for more API calls
+        artistId: data.artistId
+    };
+};
+
 // ============ DECRYPTED SONG FORMATTER ============
 window.Utils.formatters.formatDecryptedSong = function(songData, decryptedUrl) {
-    // Get raw data (if available)
-    var rawData = songData._raw || songData;
+    var rawData = songData;
     
-    // Extract artist info from raw data
+    // Extract artist info from songData
     var artists = window.Utils.formatters.extractArtists(rawData);
     
-    // Get album name from raw data
+    // Get album name from songData
     var albumName = window.Utils.formatters.getAlbumName(rawData);
     
-    // Get copyright from raw data
+    // Get copyright from songData
     var copyright = window.Utils.formatters.getCopyright(rawData);
     
     return {
@@ -1319,6 +1409,10 @@ window.Utils.parseUrl = function(url) {
         type = 'album';
     } else if (url.includes('/lyrics/')) {
         type = 'lyrics';
+    } else if (url.includes('/featured/')) {
+        type = 'playlist';
+    } else if (url.includes('/artist/')) {
+        type = 'artist';
     } else {
         return { type: null, token: null };
     }
@@ -1420,15 +1514,12 @@ window.API = window.API || {};
 window.API.constants = window.API.constants || {};
 
 // API endpoints
-window.API.constants.API_HOST = 'https://www.jiosaavn.com';
-window.API.constants.API_BASE = 'https://www.jiosaavn.com/api.php';
-window.API.constants.REFERER = 'https://www.jiosaavn.com/';
-
-// CDN domains for audio and album art
-window.API.constants.CDN_DOMAINS = [
-    'aac.saavncdn.com',
-    'saavncdn.com'
-];
+const HOST = 'https://www.jiosaavn.com';
+Object.assign(window.API.constants, {
+  API_HOST: HOST,
+  API_BASE: `${HOST}/api.php`,
+  REFERER: `${HOST}/`,
+});
 
 // Default headers for all requests
 window.API.constants.DEFAULT_HEADERS = {
@@ -1582,6 +1673,114 @@ window.API.getAlbum = async function(token) {
 console.log('[API] Albums loaded');
 
     // ============================================================
+    // FILE: /js/api/playlists.js
+    // ============================================================
+
+// src/js/api/playlists.js
+// Pure API calls - no formatting or business logic
+
+window.API = window.API || {};
+
+/**
+ * Search for playlists - returns raw API response
+ */
+window.API.searchPlaylists = async function(query, limit, page) {
+    return await window.API.callAPI('search.getPlaylistResults', {
+        q: query,
+        p: page || 1,
+        n: limit || 20
+    });
+};
+
+/**
+ * Get playlist details by token - returns raw API response
+ * Supports pagination for large playlists
+ */
+window.API.getPlaylist = async function(token, page, limit) {
+    return await window.API.callAPI('webapi.get', {
+        token: token,
+        type: 'playlist',
+        includeMetaTags: 0,
+        p: page || 1,
+        n: limit || 50
+    });
+};
+
+console.log('[API] Playlists loaded');
+
+
+    // ============================================================
+    // FILE: /js/api/artists.js
+    // ============================================================
+
+// src/js/api/artists.js
+// Pure API calls - no formatting or business logic
+
+window.API = window.API || {};
+
+/**
+ * Search for artists - returns raw API response
+ */
+window.API.searchArtists = async function(query, limit, page) {
+    return await window.API.callAPI('search.getArtistResults', {
+        q: query,
+        p: page || 1,
+        n: limit || 20
+    });
+};
+
+/**
+ * Get artist details by token - returns raw API response
+ * @param {string} token - Artist token from perma_url
+ * @param {string} category - 'popular' or 'latest'
+ */
+window.API.getArtist = async function(token, category) {
+    return await window.API.callAPI('webapi.get', {
+        token: token,
+        type: 'artist',
+        p: 1,
+        n_song: 10,
+        n_album: 10,
+        sub_type: '',
+        category: category || 'popular',
+        sort_order: category === 'latest' ? 'desc' : 'asc'
+    });
+};
+
+/**
+ * Get more songs by artist - returns raw API response
+ * @param {string} artistId - Artist ID (not token)
+ * @param {number} page - Page number
+ * @param {string} category - 'popular' or 'latest'
+ */
+window.API.getArtistMoreSongs = async function(artistId, page, category) {
+    return await window.API.callAPI('artist.getArtistMoreSong', {
+        artistId: artistId,
+        page: page || 1,
+        category: category || 'popular',
+        sort_order: category === 'latest' ? 'desc' : 'asc'
+    });
+};
+
+/**
+ * Get more albums by artist - returns raw API response
+ * @param {string} artistId - Artist ID (not token)
+ * @param {number} page - Page number
+ * @param {string} category - 'popular' or 'latest'
+ */
+window.API.getArtistMoreAlbums = async function(artistId, page, category) {
+    return await window.API.callAPI('artist.getArtistMoreAlbum', {
+        artistId: artistId,
+        page: page || 1,
+        category: category || 'popular',
+        sort_order: category === 'latest' ? 'desc' : 'asc'
+    });
+};
+
+console.log('[API] Artists loaded');
+
+
+    // ============================================================
     // FILE: /js/services/song.js
     // ============================================================
 
@@ -1703,11 +1902,13 @@ window.Services.Download = {
  */
 window.Services.Download.songFromData = async function(songData, filename) {
     console.log('[Services] Downloading song from data:', songData.title);
-    
-    if (!songData.url) throw new Error('No stream URL available');
+
+    var songUrl = songData.url;
+    if (!songUrl) throw new Error('No stream URL available');
     
     // 1. Fetch audio
-    var audioBuffer = await window.Utils.fetchResource(songData.url, 'arraybuffer');
+    songUrl = window.Utils.formatters.formatUrlWithQuality(songUrl, window.currentQuality || 96);
+    var audioBuffer = await window.Utils.fetchResource(songUrl, 'arraybuffer');
     var audioBytes = new Uint8Array(audioBuffer);
     console.log('[Services] Audio fetched:', (audioBytes.length / 1024 / 1024).toFixed(2) + ' MB');
     
@@ -1727,16 +1928,28 @@ window.Services.Download.songFromData = async function(songData, filename) {
     // 3. Fetch lyrics if available
     var lyricsText = null;
     if (songData.has_lyrics) {
-        try {
-            var token = songData.token || songData.id;
-            var lyricsData = await window.API.getLyrics(token);
-            if (lyricsData && lyricsData.lyrics && lyricsData.lyrics.lyrics) {
-                lyricsText = lyricsData.lyrics.lyrics;
-                lyricsText = window.Utils.formatters.formatLyrics(lyricsText);
-                console.log('[Services] Lyrics fetched');
+        var token = songData.token || songData.id;
+    
+        // Check cache first
+        if (window.lyricsCache && window.lyricsCache[token]) {
+            lyricsText = window.lyricsCache[token];
+            console.log('[Services] Using cached lyrics for metadata');
+        } else {
+            try {
+                var lyricsData = await window.API.getLyrics(token);
+                if (lyricsData && lyricsData.lyrics && lyricsData.lyrics.lyrics) {
+                    lyricsText = lyricsData.lyrics.lyrics;
+                    lyricsText = window.Utils.formatters.formatLyrics(lyricsText);
+                    // Store in cache
+                    if (!window.lyricsCache) {
+                        window.lyricsCache = {};
+                    }
+                    window.lyricsCache[token] = lyricsText;
+                    console.log('[Services] Lyrics fetched and cached');
+                }
+            } catch (e) {
+                console.warn('[Services] Failed to fetch lyrics:', e.message);
             }
-        } catch (e) {
-            console.warn('[Services] Failed to fetch lyrics:', e.message);
         }
     }
     
@@ -1766,6 +1979,2015 @@ window.Services.Download.songFromData = async function(songData, filename) {
 };
 
 console.log('[Services] Download loaded');
+
+    // ============================================================
+    // FILE: /js/services/playlist.js
+    // ============================================================
+
+// src/js/services/playlist.js
+// Playlist business logic - orchestrates API calls and formatting
+
+window.Services = window.Services || {};
+
+window.Services.Playlist = {
+    /**
+     * Search for playlists and format results
+     */
+    search: async function(query, limit, page) {
+        var rawData = await window.API.searchPlaylists(query, limit, page);
+        return window.Utils.formatters.formatSearchResults(rawData, 'playlist');
+    },
+    
+    /**
+    * Get playlist details with formatted songs
+    * Supports pagination
+    */
+    getDetails: async function(token, page, limit) {
+        var rawData = await window.API.getPlaylist(token, page, limit);
+        return window.Utils.formatters.formatPlaylistDetail(rawData);
+    }
+};
+
+console.log('[Services] Playlist loaded');
+
+
+    // ============================================================
+    // FILE: /js/services/artist.js
+    // ============================================================
+
+// src/js/services/artist.js
+// Artist business logic - orchestrates API calls and formatting
+
+window.Services = window.Services || {};
+
+window.Services.Artist = {
+    /**
+     * Search for artists and format results
+     */
+    search: async function(query, limit, page) {
+        var rawData = await window.API.searchArtists(query, limit, page);
+        return window.Utils.formatters.formatSearchResults(rawData, 'artist');
+    },
+    
+    /**
+     * Get artist details with formatted songs and albums
+     * @param {string} token - Artist token from perma_url
+     * @param {string} category - 'popular' or 'latest'
+     */
+    getDetails: async function(token, category) {
+        var rawData = await window.API.getArtist(token, category);
+        return window.Utils.formatters.formatArtistDetail(rawData);
+    },
+    
+    /**
+     * Get more songs by artist
+     * @param {string} artistId - Artist ID (not token)
+     * @param {number} page - Page number
+     * @param {string} category - 'popular' or 'latest'
+     */
+    getMoreSongs: async function(artistId, page, category) {
+        var rawData = await window.API.getArtistMoreSongs(artistId, page, category);
+        // rawData.topSongs.songs contains the songs array
+        var songs = rawData.topSongs && rawData.topSongs.songs ? rawData.topSongs.songs : [];
+        return {
+            songs: songs.map(window.Utils.formatters.formatSong),
+            total: rawData.topSongs ? rawData.topSongs.total || 0 : 0,
+            last_page: rawData.topSongs ? rawData.topSongs.last_page !== false : true
+        };
+    },
+    
+    /**
+     * Get more albums by artist
+     * @param {string} artistId - Artist ID (not token)
+     * @param {number} page - Page number
+     * @param {string} category - 'popular' or 'latest'
+     */
+    getMoreAlbums: async function(artistId, page, category) {
+        var rawData = await window.API.getArtistMoreAlbums(artistId, page, category);
+        // rawData.topAlbums.albums contains the albums array
+        var albums = rawData.topAlbums && rawData.topAlbums.albums ? rawData.topAlbums.albums : [];
+        return {
+            albums: albums.map(window.Utils.formatters.formatAlbum),
+            total: rawData.topAlbums ? rawData.topAlbums.total || 0 : 0,
+            last_page: rawData.topAlbums ? rawData.topAlbums.last_page !== false : true
+        };
+    }
+};
+
+console.log('[Services] Artist loaded');
+
+
+    // ============================================================
+    // FILE: /js/ui/display/song-card.js
+    // ============================================================
+
+// ============ CREATE SONG CARD ============
+function createSongCard(song, index, context) {
+    var hasStream = song.has_stream;
+    var songId = song.id || song.token || 'song-' + (index || 0);
+    var playCount = song.play_count ? parseInt(song.play_count).toLocaleString() : '0';
+    var duration = formatDuration(song.duration || song.more_info?.duration);
+    var image = song.image || (context && context.image ? context.image : 'https://via.placeholder.com/80');
+    var contextLanguage = context ? context.language : '';
+    var contextYear = context ? context.year : '';
+    var titlePrefix = (index !== undefined && context) ? (index + 1) + '. ' : '';
+    var hasLyrics = song.has_lyrics || false;
+    
+    // Determine context type
+    var isAlbumView = context && context.type === 'album';
+    var isPlaylistView = context && context.type === 'playlist';
+    
+    // Extract album token and name for more menu
+    var albumToken = null;
+    var albumName = '';
+    if (song.more_info && song.more_info.album_url) {
+        albumToken = window.Utils.formatters.extractToken(song.more_info.album_url);
+        albumName = song.more_info.album || 'Album';
+    }
+    
+    // Extract artists from artistMap
+    var artists = [];
+    if (song.more_info && song.more_info.artistMap && song.more_info.artistMap.primary_artists) {
+        artists = song.more_info.artistMap.primary_artists.map(function(artist) {
+            return {
+                name: artist.name,
+                token: window.Utils.formatters.extractToken(artist.perma_url)
+            };
+        });
+    }
+    
+    // Show album in menu only if NOT in album view (playlist view should show album)
+    var showAlbumInMenu = albumToken && !isAlbumView;
+    var hasMoreActions = showAlbumInMenu || artists.length > 0;
+    
+    // Context-specific display
+    var artistDisplay = song.subtitle || '';
+    if (isAlbumView && artistDisplay.includes(' - ')) {
+        var parts = artistDisplay.split(' - ');
+        artistDisplay = parts[0];
+    }
+    
+    // Album view: compact details (no language/year)
+    var detailsHtml;
+    if (isAlbumView) {
+        detailsHtml = `${playCount} plays • ${duration}`;
+    } else {
+        detailsHtml = `${escapeHtml(contextLanguage || song.language || 'Unknown')} • 
+                       ${song.year || contextYear || 'N/A'} • 
+                       ${playCount} plays • 
+                       ${duration}`;
+    }
+    
+    var html = `
+        <div class="song-card" data-token="${song.token || song.id}">
+            <img src="${image}" alt="${escapeHtml(song.title)}" />
+            <div class="song-info">
+                <div class="song-title">${titlePrefix}${escapeHtml(song.title)}</div>
+                <div class="song-artist">${escapeHtml(artistDisplay)}</div>
+                <div class="song-details">${detailsHtml}</div>
+                <div class="song-actions">
+                    <button class="btn-play" data-token="${song.token || song.id}" data-songid="${songId}" 
+                        ${!hasStream ? 'disabled' : ''}>
+                        ▶
+                    </button>
+                    <button class="btn-download" data-token="${song.token || song.id}" data-songid="${songId}" 
+                        ${!hasStream ? 'disabled' : ''}>
+                        ⬇
+                    </button>
+                    ${hasLyrics ? `<button class="btn-lyrics" data-token="${song.token}" data-songid="${songId}">📜</button>` : ''}
+                    ${hasMoreActions ? `<button class="btn-more" data-token="${song.token}" data-songid="${songId}">⋮</button>` : ''}
+                    <div class="play-progress" id="play-progress-${songId}">⏳ Decrypting...</div>
+                    <div class="download-progress" id="download-progress-${songId}">⏳ Downloading...</div>
+                    ${!hasStream ? '<span style="color:#999;font-size:12px;">No stream</span>' : ''}
+                </div>
+                ${hasMoreActions ? `
+                <div class="more-menu" id="more-menu-${songId}" style="display:none;">
+                    ${showAlbumInMenu ? `<button class="more-item" data-action="album" data-token="${albumToken}">💿 ${escapeHtml(albumName)}</button>` : ''}
+                    ${artists.map(function(artist) {
+                        return `<button class="more-item" data-action="artist" data-token="${artist.token}">🎤 ${escapeHtml(artist.name)}</button>`;
+                    }).join('')}
+                </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+    
+    return html;
+}
+
+// ============ ATTACH SONG EVENTS ============
+function attachSongEvents(container) {
+    if (!container._listenerAttached) {
+        container._listenerAttached = true;
+        
+        container.addEventListener('click', function(e) {
+            var target = e.target;
+            
+            // Play button
+            if (target.classList && target.classList.contains('btn-play')) {
+                var songCard = target.closest('.song-card');
+                var songData = songCard ? songCard._songData : null;
+                if (songData && typeof window.playSong === 'function') {
+                    window.playSong(songData);
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            
+            // Download button
+            if (target.classList && target.classList.contains('btn-download')) {
+                var songCard = target.closest('.song-card');
+                var songData = songCard ? songCard._songData : null;
+                if (songData && typeof window.downloadSong === 'function') {
+                    window.downloadSong(songData);
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            
+            // Lyrics button
+            if (target.classList && target.classList.contains('btn-lyrics')) {
+                var token = target.dataset.token;
+                var songId = target.dataset.songid;
+                if (token && typeof window.showLyrics === 'function') {
+                    window.showLyrics(token, songId);
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            
+            // More button
+            if (target.classList && target.classList.contains('btn-more')) {
+                e.stopPropagation();
+                var songId = target.dataset.songid;
+                var menu = document.getElementById('more-menu-' + songId);
+                if (!menu) return;
+                
+                document.querySelectorAll('.more-menu').forEach(function(m) {
+                    if (m.id !== 'more-menu-' + songId) {
+                        m.style.display = 'none';
+                    }
+                });
+                
+                menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+                e.preventDefault();
+                return;
+            }
+            
+            // More menu items
+            if (target.classList && target.classList.contains('more-item')) {
+                e.stopPropagation();
+                var action = target.dataset.action;
+                var token = target.dataset.token;
+                var menu = target.closest('.more-menu');
+                if (menu) menu.style.display = 'none';
+                
+                if (action === 'album') {
+                    if (typeof window.viewAlbum === 'function') {
+                        window.viewAlbum(token);
+                    }
+                } else if (action === 'artist') {
+                    if (typeof window.viewArtist === 'function') {
+                        window.viewArtist(token);
+                    } else {
+                        console.warn('[More] viewArtist not found');
+                    }
+                }
+                e.preventDefault();
+                return;
+            }
+        });
+    }
+    
+    // Click outside to close all menus (only once)
+    if (!window._menuClickListenerAttached) {
+        window._menuClickListenerAttached = true;
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.more-menu').forEach(function(m) {
+                m.style.display = 'none';
+            });
+        });
+    }
+}
+
+
+    // ============================================================
+    // FILE: /js/ui/display/album-card.js
+    // ============================================================
+
+// ============ CREATE ALBUM CARD ============
+function createAlbumCard(album) {
+    var songCount = album.more_info?.song_count || 0;
+    
+    var html = `
+        <div class="album-card" data-token="${album.token}">
+            <img src="${album.image || 'https://via.placeholder.com/100'}" alt="${album.title}" />
+            <div class="album-info">
+                <div class="album-title">${escapeHtml(album.title)}</div>
+                <div class="album-artist">${escapeHtml(album.subtitle)}</div>
+                <div class="album-details">
+                    ${songCount} songs • 
+                    ${escapeHtml(album.language || 'Unknown')} • 
+                    ${album.year || 'N/A'}
+                </div>
+                <button class="btn-view-album" data-token="${album.token}">
+                    📂 View Album
+                </button>
+            </div>
+        </div>
+    `;
+    
+    return html;
+}
+
+// ============ ATTACH ALBUM EVENTS ============
+function attachAlbumEvents(container) {
+    // Album card click (open album)
+    container.querySelectorAll('.album-card').forEach(function(card) {
+        card.addEventListener('click', function() {
+            var token = this.dataset.token;
+            if (token && typeof window.viewAlbum === 'function') {
+                window.viewAlbum(token);
+            }
+        });
+    });
+    
+    // View album button click
+    container.querySelectorAll('.btn-view-album').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var token = this.dataset.token;
+            if (token && typeof window.viewAlbum === 'function') {
+                window.viewAlbum(token);
+            }
+        });
+    });
+}
+
+
+    // ============================================================
+    // FILE: /js/ui/display/playlist-card.js
+    // ============================================================
+
+// ============ CREATE PLAYLIST CARD ============
+function createPlaylistCard(playlist) {
+    var songCount = playlist.more_info?.song_count || playlist.song_count || '0';
+    
+    var html = `
+        <div class="playlist-card" data-token="${playlist.token}">
+            <img src="${playlist.image || 'https://via.placeholder.com/100'}" alt="${playlist.title}" />
+            <div class="playlist-info">
+                <div class="playlist-title">${escapeHtml(playlist.title)}</div>
+                <div class="playlist-artist">${escapeHtml(playlist.subtitle || '')}</div>
+                <div class="playlist-details">
+                    ${songCount} songs • 
+                    ${escapeHtml(playlist.language || 'Unknown')}
+                </div>
+                <button class="btn-view-playlist" data-token="${playlist.token}">
+                    📂 View Playlist
+                </button>
+            </div>
+        </div>
+    `;
+    
+    return html;
+}
+
+// ============ ATTACH PLAYLIST EVENTS ============
+function attachPlaylistEvents(container) {
+    // Playlist card click (open playlist)
+    container.querySelectorAll('.playlist-card').forEach(function(card) {
+        card.addEventListener('click', function() {
+            var token = this.dataset.token;
+            if (token && typeof window.viewPlaylist === 'function') {
+                window.viewPlaylist(token);
+            }
+        });
+    });
+    
+    // View playlist button click
+    container.querySelectorAll('.btn-view-playlist').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var token = this.dataset.token;
+            if (token && typeof window.viewPlaylist === 'function') {
+                window.viewPlaylist(token);
+            }
+        });
+    });
+}
+
+
+    // ============================================================
+    // FILE: /js/ui/display/artist-card.js
+    // ============================================================
+
+// ============ CREATE ARTIST CARD ============
+function createArtistCard(artist) {
+    var html = `
+        <div class="artist-card" data-token="${artist.token}">
+            <img src="${artist.image || 'https://via.placeholder.com/100'}" alt="${artist.name}" />
+            <div class="artist-info">
+                <div class="artist-name">${escapeHtml(artist.name)}</div>
+                <div class="artist-role">${escapeHtml(artist.role || 'Artist')}</div>
+                <button class="btn-view-artist" data-token="${artist.token}">
+                    🎤 View Artist
+                </button>
+            </div>
+        </div>
+    `;
+    
+    return html;
+}
+
+// ============ ATTACH ARTIST EVENTS ============
+function attachArtistEvents(container) {
+    // Artist card click (open artist)
+    container.querySelectorAll('.artist-card').forEach(function(card) {
+        card.addEventListener('click', function() {
+            var token = this.dataset.token;
+            if (token && typeof window.viewArtist === 'function') {
+                window.viewArtist(token);
+            }
+        });
+    });
+
+    // View artist button click
+    container.querySelectorAll('.btn-view-artist').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var token = this.dataset.token;
+            console.log('[ArtistCard] View Artist clicked, token:', token);
+            if (token && typeof window.viewArtist === 'function') {
+                window.viewArtist(token);
+            } else {
+                console.warn('[ArtistCard] viewArtist not found or token missing');
+            }
+        });
+    });
+}
+
+// ============ EXPOSE ============
+window.createArtistCard = createArtistCard;
+window.attachArtistEvents = attachArtistEvents;
+
+    // ============================================================
+    // FILE: /js/ui/display/display-results.js
+    // ============================================================
+
+// ============ DISPLAY SONGS ============
+function displaySongs(songs) {
+    var html = '<div class="results">';
+    
+    songs.forEach(function(song, index) {
+        html += createSongCard(song, index);
+    });
+    
+    html += '</div>';
+    DOM.results.innerHTML = html;
+    
+    // Attach song data to cards
+    var cards = DOM.results.querySelectorAll('.song-card');
+    cards.forEach(function(card, index) {
+        if (songs[index]) {
+            card._songData = songs[index];
+        }
+    });
+    
+    // Attach events to the results container
+    attachSongEvents(DOM.results);
+}
+
+// ============ DISPLAY ALBUMS ============
+function displayAlbums(albums) {
+    var html = '<div class="results">';
+    
+    albums.forEach(function(album) {
+        html += createAlbumCard(album);
+    });
+    
+    html += '</div>';
+    DOM.results.innerHTML = html;
+    
+    // Attach events to the results container
+    attachAlbumEvents(DOM.results);
+}
+
+// ============ DISPLAY PLAYLISTS ============
+function displayPlaylists(playlists) {
+    var html = '<div class="results">';
+    
+    playlists.forEach(function(playlist) {
+        html += createPlaylistCard(playlist);
+    });
+    
+    html += '</div>';
+    DOM.results.innerHTML = html;
+    
+    // Attach events to the results container
+    attachPlaylistEvents(DOM.results);
+}
+
+// ============ DISPLAY ARTISTS ============
+function displayArtists(artists) {
+    var html = '<div class="results">';
+    
+    artists.forEach(function(artist) {
+        html += createArtistCard(artist);
+    });
+    
+    html += '</div>';
+    DOM.results.innerHTML = html;
+    
+    // Attach events to the results container
+    attachArtistEvents(DOM.results);
+}
+
+// ============ DISPLAY SEARCH RESULTS ============
+function displaySearchResults(results, type) {
+    if (type === 'songs') {
+        displaySongs(results);
+    } else if (type === 'albums') {
+        displayAlbums(results);
+    } else if (type === 'playlists') {
+        displayPlaylists(results);
+    } else if (type === 'artists') {
+        displayArtists(results);
+    }
+}
+
+// ============ EXPOSE ============
+window.displaySongs = displaySongs;
+window.displayAlbums = displayAlbums;
+window.displayPlaylists = displayPlaylists;
+window.displayArtists = displayArtists;
+
+
+    // ============================================================
+    // FILE: /js/ui/display/album-view.js
+    // ============================================================
+
+// Extract rendering logic to a separate function
+function renderAlbum(album) {
+    var html = `
+        <div class="album-header">
+            <img src="${album.image || 'https://via.placeholder.com/200'}" alt="${album.title}" />
+            <div class="album-header-info">
+                <h2>${escapeHtml(album.title)}</h2>
+                <p>${escapeHtml(album.subtitle || '')}</p>
+                <p>${album.song_count || album.songs?.length || 0} songs • ${escapeHtml(album.language || 'Unknown')} • ${album.year || 'N/A'}</p>
+                <div class="album-actions">
+                    <button class="btn-back" id="btn-back-search">← Back</button>
+                </div>
+            </div>
+        </div>
+        <div class="song-list">
+    `;
+
+    var albumContext = {
+        type: 'album',
+        image: album.image,
+        language: album.language,
+        year: album.year,
+        title: album.title
+    };
+
+    if (album.songs && album.songs.length > 0) {
+        album.songs.forEach(function(song, index) {
+            html += createSongCard(song, index, albumContext);
+        });
+    } else {
+        html += `<div class="no-results">No songs found in this album.</div>`;
+    }
+
+    html += '</div>';
+    DOM.results.innerHTML = html;
+    
+    // Attach song data to cards
+    var cards = DOM.results.querySelectorAll('.song-card');
+    if (album.songs && album.songs.length > 0) {
+        cards.forEach(function(card, index) {
+            if (album.songs[index]) {
+                card._songData = album.songs[index];
+            }
+        });
+    }
+    
+    // Attach events
+    attachSongEvents(DOM.results);
+
+    var backBtn = document.getElementById('btn-back-search');
+    backBtn.addEventListener('click', function() {
+        console.log('[Back] Button clicked');
+    
+        // Pop the current view
+        var current = window.Nav.pop();
+        console.log('[Back] Popped:', current ? current.type : 'none');
+    
+        // Get the new top (previous view)
+        var prev = window.Nav.peek();
+        console.log('[Back] Previous view:', prev ? prev.type : 'none');
+    
+        if (prev) {
+            restoreView(prev);
+        } else {
+            console.log('[Back] No previous view, going to search');
+            if (typeof window.search === 'function') {
+                window.search();
+            }
+        }
+    });
+}
+
+// ============ VIEW ALBUM ============
+async function viewAlbum(token) {
+    console.log('[View] viewAlbum called, isRestoring:', window._isRestoring);
+    
+    // Only push if not restoring
+    if (!window._isRestoring) {
+        window.Nav.push({ type: 'album', data: { token: token } });
+    }
+    
+    var cacheKey = window.Cache.getDetailKey('album', token);
+    
+    // Check cache first
+    if (window.Cache.has(cacheKey)) {
+        console.log('[Display] Using cached album:', token);
+        var album = window.Cache.get(cacheKey);
+        renderAlbum(album);
+        return;
+    }
+    
+    DOM.results.innerHTML = '<div class="loading">📂 Loading album...</div>';
+    DOM.stats.innerHTML = '';
+
+    try {
+        var album = await window.Services.Album.getDetails(token);
+        
+        // Store in cache
+        window.Cache.set(cacheKey, album);
+        renderAlbum(album);
+        
+    } catch (error) {
+        DOM.results.innerHTML = `<div class="error">❌ Error loading album: ${error.message}</div>`;
+    }
+}
+
+// ============ EXPOSE ============
+window.viewAlbum = viewAlbum;
+
+
+    // ============================================================
+    // FILE: /js/ui/display/playlist-view.js
+    // ============================================================
+
+// ============ LOAD MORE PLAYLIST ============
+async function loadMorePlaylist() {
+    if (window._playlistState.isLoading) return;
+    window._playlistState.isLoading = true;
+
+    var btn = document.getElementById('playlist-load-more-btn');
+    if (btn) {
+        btn.textContent = 'Loading...';
+        btn.disabled = true;
+    }
+
+    var nextPage = window._playlistState.currentPage + 1;
+    var cacheKey = window.Cache.getDetailKey('playlist', window._playlistState.token) + ':' + nextPage + ':' + window._playlistState.limit;
+
+    try {
+        var data;
+        
+        // Check cache first
+        if (window.Cache.has(cacheKey)) {
+            console.log('[Display] Using cached playlist page:', nextPage);
+            data = window.Cache.get(cacheKey);
+        } else {
+            data = await window.Services.Playlist.getDetails(
+                window._playlistState.token,
+                nextPage,
+                window._playlistState.limit
+            );
+            window.Cache.set(cacheKey, data);
+        }
+
+        // Append songs
+        if (data.songs && data.songs.length > 0) {
+            var resultsDiv = document.getElementById('results');
+            
+            // Remove load more button
+            var oldBtn = document.getElementById('playlist-load-more-btn');
+            if (oldBtn) oldBtn.remove();
+
+            // Calculate starting index for this page (global)
+            var startIndex = (nextPage - 1) * window._playlistState.limit;
+
+            // Append new songs with correct global numbering
+            data.songs.forEach(function(song, idx) {
+                var globalIndex = startIndex + idx;
+                var songCard = createSongCard(song, globalIndex, data);
+                resultsDiv.insertAdjacentHTML('beforeend', songCard);
+            });
+
+            // Update state
+            window._playlistState.currentPage = nextPage;
+            window._playlistLoadedPages.push(cacheKey);
+
+            // ============ UPDATE STACK WITH LOADED PAGES ============
+            var currentStack = window.Nav.getStack();
+            for (var i = currentStack.length - 1; i >= 0; i--) {
+                if (currentStack[i].type === 'playlist') {
+                    currentStack[i].data.loadedPages = window._playlistLoadedPages.slice();
+                    console.log('[Nav] Updated playlist stack with loaded pages:', window._playlistLoadedPages.length);
+                    break;
+                }
+            }
+
+            // Attach events to new cards
+            attachSongEvents(resultsDiv);
+            
+            // Attach song data to new cards
+            var cards = resultsDiv.querySelectorAll('.song-card');
+            cards.forEach(function(card, idx) {
+                var globalIdx = startIndex + idx;
+                if (idx >= startIndex && data.songs[idx - startIndex]) {
+                    card._songData = data.songs[idx - startIndex];
+                }
+            });
+
+            // Show load more button again
+            showPlaylistLoadMoreButton();
+        } else {
+            var endMsg = document.createElement('div');
+            endMsg.className = 'end-of-results';
+            endMsg.id = 'playlist-load-more-btn';
+            endMsg.textContent = '🏁 End of playlist';
+            document.getElementById('results').appendChild(endMsg);
+        }
+    } catch (error) {
+        console.error('[Display] Load more playlist error:', error);
+        var btn = document.getElementById('playlist-load-more-btn');
+        if (btn) {
+            btn.textContent = 'Retry';
+            btn.disabled = false;
+        }
+    } finally {
+        window._playlistState.isLoading = false;
+    }
+}
+
+// ============ SHOW PLAYLIST LOAD MORE BUTTON ============
+function showPlaylistLoadMoreButton() {
+    var resultsDiv = document.getElementById('results');
+    if (!resultsDiv) return;
+    
+    // Remove existing load more button
+    var existingBtn = document.getElementById('playlist-load-more-btn');
+    if (existingBtn) existingBtn.remove();
+    
+    // Check if more results exist
+    var hasMore = false;
+    if (window._playlistState.total > 0) {
+        var loadedCount = window._playlistLoadedPages.length * window._playlistState.limit;
+        hasMore = loadedCount < window._playlistState.total;
+    } else {
+        var lastData = window.Cache.get(window._playlistLoadedPages[window._playlistLoadedPages.length - 1]);
+        if (lastData && lastData.songs) {
+            hasMore = lastData.songs.length >= window._playlistState.limit;
+        }
+    }
+    
+    if (!hasMore) {
+        var endMsg = document.createElement('div');
+        endMsg.className = 'end-of-results';
+        endMsg.id = 'playlist-load-more-btn';
+        endMsg.textContent = '🏁 End of playlist';
+        resultsDiv.appendChild(endMsg);
+        return;
+    }
+    
+    var btn = document.createElement('button');
+    btn.id = 'playlist-load-more-btn';
+    btn.className = 'btn-load-more';
+    btn.textContent = 'Load ' + window._playlistState.limit + ' More Songs';
+    btn.addEventListener('click', function() {
+        loadMorePlaylist();
+    });
+    resultsDiv.appendChild(btn);
+}
+
+// ============ RENDER PLAYLIST ============
+function renderPlaylist(playlist) {
+    var html = `
+        <div class="playlist-header">
+            <img src="${playlist.image || 'https://via.placeholder.com/200'}" alt="${playlist.title}" />
+            <div class="playlist-header-info">
+                <h2>${escapeHtml(playlist.title)}</h2>
+                <p>${escapeHtml(playlist.subtitle || '')}</p>
+                <p>${playlist.list_count || playlist.song_count || 0} songs • ${escapeHtml(playlist.language || 'Unknown')}</p>
+                ${playlist.description ? `<p class="playlist-description">${escapeHtml(playlist.description)}</p>` : ''}
+                <div class="playlist-actions">
+                    <button class="btn-back" id="btn-back-search">← Back</button>
+                </div>
+            </div>
+        </div>
+        <div class="song-list">
+    `;
+
+    var playlistContext = {
+        type: 'playlist',
+        image: playlist.image,
+        language: playlist.language,
+        year: playlist.year,
+        title: playlist.title
+    };
+
+    if (playlist.songs && playlist.songs.length > 0) {
+        // For page 1, index starts at 0, so it's correct
+        playlist.songs.forEach(function(song, index) {
+            html += createSongCard(song, index, playlistContext);
+        });
+    } else {
+        html += `<div class="no-results">No songs found in this playlist.</div>`;
+    }
+
+    html += '</div>';
+    DOM.results.innerHTML = html;
+    
+    // Attach song data to cards
+    var cards = DOM.results.querySelectorAll('.song-card');
+    if (playlist.songs && playlist.songs.length > 0) {
+        cards.forEach(function(card, index) {
+            if (playlist.songs[index]) {
+                card._songData = playlist.songs[index];
+            }
+        });
+    }
+    
+    // Attach events
+    attachSongEvents(DOM.results);
+
+    var backBtn = document.getElementById('btn-back-search');
+    backBtn.addEventListener('click', function() {
+        console.log('[Back] Button clicked');
+    
+        // Pop the current view
+        var current = window.Nav.pop();
+        console.log('[Back] Popped:', current ? current.type : 'none');
+    
+        // Get the new top (previous view)
+        var prev = window.Nav.peek();
+        console.log('[Back] Previous view:', prev ? prev.type : 'none');
+    
+        if (prev) {
+            restoreView(prev);
+        } else {
+            console.log('[Back] No previous view, going to search');
+            if (typeof window.search === 'function') {
+                window.search();
+            }
+        }
+    });
+}
+
+async function viewPlaylist(token) {
+    console.log('[View] viewPlaylist called, isRestoring:', window._isRestoring);
+    
+    // Only push if not restoring
+    if (!window._isRestoring) {
+        window.Nav.push({ type: 'playlist', data: { token: token, page: 1, loadedPages: [] } });
+    }
+    
+    // Reset playlist state
+    window._playlistState.token = token;
+    window._playlistState.currentPage = 1;
+    window._playlistState.limit = 50;
+    window._playlistState.total = 0;
+    window._playlistState.isLoading = false;
+    window._playlistLoadedPages = [];
+
+    var page = window._playlistState.currentPage;
+    var limit = window._playlistState.limit;
+    var cacheKey = 'playlist:' + token + ':' + page + ':' + limit;
+
+    DOM.results.innerHTML = '<div class="loading">📂 Loading playlist...</div>';
+    DOM.stats.innerHTML = '';
+
+    // Check cache first
+    if (window.Cache.has(cacheKey)) {
+        console.log('[Display] Using cached playlist page 1:', token);
+        var playlist = window.Cache.get(cacheKey);
+        window._playlistState.total = parseInt(playlist.list_count) || parseInt(playlist.song_count) || 0;
+        window._playlistLoadedPages.push(cacheKey);
+        
+        // Update stack entry with the first page
+        var currentStack = window.Nav.getStack();
+        for (var i = currentStack.length - 1; i >= 0; i--) {
+            if (currentStack[i].type === 'playlist') {
+                currentStack[i].data.loadedPages = window._playlistLoadedPages.slice();
+                console.log('[Nav] Updated playlist stack with first page');
+                break;
+            }
+        }
+        
+        renderPlaylist(playlist);
+        showPlaylistLoadMoreButton();
+        return;
+    }
+
+    try {
+        var playlist = await window.Services.Playlist.getDetails(token, page, limit);
+        
+        // Store in cache
+        window.Cache.set(cacheKey, playlist);
+        window._playlistState.total = parseInt(playlist.list_count) || parseInt(playlist.song_count) || 0;
+        window._playlistLoadedPages.push(cacheKey);
+        
+        // Update stack entry with the first page
+        var currentStack = window.Nav.getStack();
+        for (var i = currentStack.length - 1; i >= 0; i--) {
+            if (currentStack[i].type === 'playlist') {
+                currentStack[i].data.loadedPages = window._playlistLoadedPages.slice();
+                console.log('[Nav] Updated playlist stack with first page');
+                break;
+            }
+        }
+        
+        renderPlaylist(playlist);
+        showPlaylistLoadMoreButton();
+        
+    } catch (error) {
+        DOM.results.innerHTML = `<div class="error">❌ Error loading playlist: ${error.message}</div>`;
+    }
+}
+
+// ============ EXPOSE ============
+window.viewPlaylist = viewPlaylist;
+window.loadMorePlaylist = loadMorePlaylist;
+window.renderPlaylist = renderPlaylist;
+window.showPlaylistLoadMoreButton = showPlaylistLoadMoreButton;
+
+
+    // ============================================================
+    // FILE: /js/ui/display/artist-view.js
+    // ============================================================
+
+// ============ ARTIST STATE ============
+window._artistState = {
+    token: '',
+    artistId: '',
+    category: 'popular',  // 'popular' | 'latest'
+    songPage: 1,
+    albumPage: 1,
+    limit: 10,
+    isLoadingSongs: false,
+    isLoadingAlbums: false,
+    totalSongs: 0,
+    totalAlbums: 0
+};
+window._artistSongPages = [];
+window._artistAlbumPages = [];
+
+// ============ RENDER HEADER ============
+function renderHeader(artist) {
+    // Parse bio if it's a JSON string
+    var bioText = '';
+    if (artist.bio) {
+        try {
+            var bioArray = JSON.parse(artist.bio);
+            if (Array.isArray(bioArray) && bioArray.length > 0) {
+                bioText = bioArray[0].text || '';
+            }
+        } catch (e) {
+            bioText = artist.bio;
+        }
+    }
+
+    var html = `
+        <div class="artist-header">
+            <img src="${artist.image || 'https://via.placeholder.com/200'}" alt="${artist.name}" />
+            <div class="artist-header-info">
+                <h2>${escapeHtml(artist.name)} ${artist.isVerified ? '✅' : ''}</h2>
+                <p>${escapeHtml(artist.subtitle || '')}</p>
+                ${bioText ? `<p class="artist-bio">${escapeHtml(bioText.substring(0, 200))}${bioText.length > 200 ? '...' : ''}</p>` : ''}
+                <div class="artist-actions">
+                    <button class="btn-back" id="btn-back">← Back</button>
+                </div>
+            </div>
+        </div>
+        <div class="artist-tabs">
+            <button class="artist-tab active" data-category="popular">🔥 Popular</button>
+            <button class="artist-tab" data-category="latest">🕐 Latest</button>
+        </div>
+    `;
+    return html;
+}
+
+// ============ RENDER FOOTER (Static Sections) ============
+function renderFooter(artist) {
+    var html = '';
+
+    if (artist.dedicatedPlaylists && artist.dedicatedPlaylists.length > 0) {
+        html += `
+            <div class="artist-playlists-section" id="artist-dedicated-playlists">
+                <h3>Dedicated Playlists</h3>
+                <div class="playlist-list">
+                    ${artist.dedicatedPlaylists.map(function(playlist) {
+                        return createPlaylistCard(playlist);
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    if (artist.featuredPlaylists && artist.featuredPlaylists.length > 0) {
+        html += `
+            <div class="artist-playlists-section" id="artist-featured-playlists">
+                <h3>Featured In</h3>
+                <div class="playlist-list">
+                    ${artist.featuredPlaylists.map(function(playlist) {
+                        return createPlaylistCard(playlist);
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    if (artist.singles && artist.singles.length > 0) {
+        html += `
+            <div class="artist-albums-section" id="artist-singles">
+                <h3>Singles</h3>
+                <div class="album-list">
+                    ${artist.singles.map(function(single) {
+                        return createAlbumCard(single);
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    if (artist.latestReleases && artist.latestReleases.length > 0) {
+        html += `
+            <div class="artist-albums-section" id="artist-latest-releases">
+                <h3>Latest Releases</h3>
+                <div class="album-list">
+                    ${artist.latestReleases.map(function(release) {
+                        return createAlbumCard(release);
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    return html;
+}
+
+// ============ RENDER DYNAMIC SONGS SECTION ============
+function renderSongsSectionHTML(songs, category, totalSongs) {
+    var html = `
+        <div class="artist-songs-section" id="artist-dynamic-songs" data-category="${category}">
+            <h3>Top Songs (${songs ? songs.length : 0})</h3>
+            <div class="song-list">
+    `;
+
+    if (songs && songs.length > 0) {
+        var artistContext = {
+            type: 'artist',
+            image: '',
+            language: '',
+            year: '',
+            title: window._artistState.token
+        };
+        songs.forEach(function(song, index) {
+            html += createSongCard(song, index, artistContext);
+        });
+    } else {
+        html += `<div class="no-results">No songs found</div>`;
+    }
+
+    html += `
+            </div>
+            <div id="artist-songs-load-more"></div>
+        </div>
+    `;
+
+    return html;
+}
+
+// ============ RENDER DYNAMIC ALBUMS SECTION ============
+function renderAlbumsSectionHTML(albums, category, totalAlbums) {
+    var html = `
+        <div class="artist-albums-section" id="artist-dynamic-albums" data-category="${category}">
+            <h3>Top Albums (${albums ? albums.length : 0})</h3>
+            <div class="album-list">
+    `;
+
+    if (albums && albums.length > 0) {
+        albums.forEach(function(album) {
+            html += createAlbumCard(album);
+        });
+    } else {
+        html += `<div class="no-results">No albums found</div>`;
+    }
+
+    html += `
+            </div>
+            <div id="artist-albums-load-more"></div>
+        </div>
+    `;
+
+    return html;
+}
+
+// ============ SET ACTIVE TAB ============
+function setActiveTab(category) {
+    var tabs = document.querySelectorAll('.artist-tab');
+    tabs.forEach(function(tab) {
+        tab.classList.toggle('active', tab.dataset.category === category);
+    });
+}
+
+// ============ ATTACH ARTIST EVENTS ============
+function attachArtistViewEvents() {
+    // Back button
+    var backBtn = document.getElementById('btn-back');
+    if (backBtn) {
+        var newBackBtn = backBtn.cloneNode(true);
+        backBtn.parentNode.replaceChild(newBackBtn, backBtn);
+        newBackBtn.addEventListener('click', function() {        
+            // Pop the current view
+            var current = window.Nav.pop();
+            // Get the new top (previous view)
+            var prev = window.Nav.peek();
+            if (prev) {
+                restoreView(prev);
+            } else {
+                if (typeof window.search === 'function') {
+                    window.search();
+                }
+            }
+        });
+    }
+
+    // Tab clicks
+    var tabs = document.querySelectorAll('.artist-tab');
+    tabs.forEach(function(tab) {
+        // Remove old listeners
+        var newTab = tab.cloneNode(true);
+        tab.parentNode.replaceChild(newTab, tab);
+        newTab.addEventListener('click', function() {
+            var category = this.dataset.category;
+            switchArtistCategory(category);
+        });
+    });
+}
+
+
+// ============ RENDER ARTIST ============
+function renderArtist(artist) {
+    // 1. Build full HTML with correct order
+    var headerHtml = renderHeader(artist);
+    var songsHtml = renderSongsSectionHTML(artist.songs, window._artistState.category || 'popular', artist.totalSongs);
+    var albumsHtml = renderAlbumsSectionHTML(artist.albums, window._artistState.category || 'popular', artist.totalAlbums);
+    var footerHtml = renderFooter(artist); // Static sections at the bottom
+
+    var fullHtml = headerHtml + songsHtml + albumsHtml + footerHtml;
+    DOM.results.innerHTML = fullHtml;
+    DOM.stats.innerHTML = '';
+
+    // 2. Attach _songData to song cards
+    var cards = DOM.results.querySelectorAll('.song-card');
+    var allSongs = artist.songs || [];
+    cards.forEach(function(card, index) {
+        if (allSongs[index]) {
+            card._songData = allSongs[index];
+        }
+    });
+
+    // 3. Attach events
+    attachSongEvents(DOM.results);
+    attachAlbumEvents(DOM.results);
+    attachPlaylistEvents(DOM.results);
+
+    // 4. Show load more buttons
+    showArtistSongsLoadMore();
+    showArtistAlbumsLoadMore();
+
+    // 5. Attach back button and tab events
+    attachArtistViewEvents();
+
+    // 6. Set active tab
+    setActiveTab(window._artistState.category || 'popular');
+}
+
+// ============ VIEW ARTIST ============
+async function viewArtist(token, category) {
+    console.log('[DEBUG] viewArtist called with:', { token, category });
+    
+    // If category is undefined, try to get it from the navigation stack
+    if (!category) {
+        var stack = window.Nav.getStack();
+        for (var i = stack.length - 1; i >= 0; i--) {
+            if (stack[i].type === 'artist') {
+                category = stack[i].data.category || 'popular';
+                console.log('[DEBUG] Found category from stack:', category);
+                break;
+            }
+        }
+        // If still no category, default to 'popular'
+        if (!category) {
+            category = 'popular';
+            console.log('[DEBUG] Using default category: popular');
+        }
+    }
+    
+    console.log('[View] viewArtist called, isRestoring:', window._isRestoring);
+    category = category || 'popular';
+
+    if (!window._isRestoring) {
+        window.Nav.push({ type: 'artist', data: { token: token, category: category } });
+    }
+
+    // Reset state with the category
+    window._artistState.token = token;
+    window._artistState.category = category;
+    window._artistState.songPage = 1;
+    window._artistState.albumPage = 1;
+    window._artistState.isLoadingSongs = false;
+    window._artistState.isLoadingAlbums = false;
+    window._artistState.totalSongs = 0;
+    window._artistState.totalAlbums = 0;
+    window._artistSongPages = [];
+    window._artistAlbumPages = [];
+
+    DOM.results.innerHTML = '<div class="loading">🎤 Loading artist...</div>';
+    DOM.stats.innerHTML = '';
+
+    var cacheKey = 'artist:' + token + ':' + category;
+    console.log('[DEBUG] Looking for cache key:', cacheKey);
+    if (window.Cache.has(cacheKey)) {
+        console.log('[DEBUG] Cache FOUND for key:', cacheKey);
+        var artist = window.Cache.get(cacheKey);
+        renderArtist(artist);
+        return;
+    } else {
+        console.log('[DEBUG] Cache MISS for key:', cacheKey);
+    }
+
+    try {
+        var artist = await window.Services.Artist.getDetails(token, category);
+        window.Cache.set(cacheKey, artist);
+        window._artistState.artistId = artist.artistId || artist.id;
+        renderArtist(artist);
+    } catch (error) {
+        DOM.results.innerHTML = `<div class="error">❌ Error loading artist: ${error.message}</div>`;
+    }
+}
+
+// ============ SWITCH ARTIST CATEGORY ============
+async function switchArtistCategory(category) {
+    console.log('[Artist] Switching category:', category);
+
+    // 1. Update state
+    window._artistState.category = category;
+    window._artistState.songPage = 1;
+    window._artistState.albumPage = 1;
+    window._artistSongPages = [];
+    window._artistAlbumPages = [];
+
+    // 2. Update navigation stack entry with the new category
+    var currentStack = window.Nav.getStack();
+    for (var i = currentStack.length - 1; i >= 0; i--) {
+        if (currentStack[i].type === 'artist') {
+            currentStack[i].data.category = category;
+            console.log('[Nav] Updated artist stack category to:', category);
+            break;
+        }
+    }
+
+    // 3. Set active tab (visual)
+    setActiveTab(category);
+
+    // 4. Check cache for this category
+    var token = window._artistState.token;
+    var fullCacheKey = 'artist:' + token + ':' + category;
+    var artistData = window.Cache.get(fullCacheKey);
+
+    if (artistData) {
+        console.log('[Display] Using cached artist data for category:', category);
+        updateDynamicParts(artistData.songs, artistData.albums, category);
+        return;
+    }
+
+    // 5. Fetch from API
+    var songsContainer = document.getElementById('artist-dynamic-songs');
+    var albumsContainer = document.getElementById('artist-dynamic-albums');
+    if (songsContainer) songsContainer.innerHTML = '<div class="loading">🎤 Loading songs...</div>';
+    if (albumsContainer) albumsContainer.innerHTML = '<div class="loading">🎤 Loading albums...</div>';
+
+    try {
+        var artist = await window.Services.Artist.getDetails(token, category);
+        window.Cache.set(fullCacheKey, artist);
+
+        updateDynamicParts(artist.songs, artist.albums, category);
+
+        window._artistState.totalSongs = artist.totalSongs || 0;
+        window._artistState.totalAlbums = artist.totalAlbums || 0;
+
+    } catch (error) {
+        if (songsContainer) songsContainer.innerHTML = `<div class="error">❌ Error loading songs: ${error.message}</div>`;
+        if (albumsContainer) albumsContainer.innerHTML = `<div class="error">❌ Error loading albums: ${error.message}</div>`;
+    }
+}
+
+// ============ UPDATE DYNAMIC PARTS ============
+function updateDynamicParts(songs, albums, category) {
+    console.log('[Artist] updateDynamicParts called');
+    console.log('[Artist] songs count:', songs ? songs.length : 0);
+    console.log('[Artist] albums count:', albums ? albums.length : 0);
+    console.log('[Artist] category:', category);
+
+    // 1. Update songs section (using ID)
+    var songsContainer = document.getElementById('artist-dynamic-songs');
+    if (songsContainer) {
+        var songsHtml = renderSongsSectionHTML(songs, category);
+        songsContainer.outerHTML = songsHtml;
+    }
+
+    // 2. Update albums section (using ID)
+    var albumsContainer = document.getElementById('artist-dynamic-albums');
+    console.log('[Artist] albumsContainer found:', albumsContainer ? 'YES' : 'NO');
+    if (albumsContainer) {
+        var albumsHtml = renderAlbumsSectionHTML(albums, category);
+        albumsContainer.outerHTML = albumsHtml;
+    }
+
+    // 3. Attach _songData to new cards
+    var cards = DOM.results.querySelectorAll('.song-card');
+    var allSongs = songs || [];
+    cards.forEach(function(card, index) {
+        if (allSongs[index]) {
+            card._songData = allSongs[index];
+        }
+    });
+
+    // 4. Attach events
+    attachSongEvents(DOM.results);
+    attachAlbumEvents(DOM.results);
+    attachPlaylistEvents(DOM.results);
+
+    // 5. Show load more buttons
+    showArtistSongsLoadMore();
+    showArtistAlbumsLoadMore();
+}
+
+// ============ SHOW ARTIST SONGS LOAD MORE ============
+function showArtistSongsLoadMore() {
+    var container = document.getElementById('artist-songs-load-more');
+    if (!container) return;
+
+    var totalSongs = window._artistState.totalSongs || 0;
+    var loadedCount = window._artistSongPages.length * window._artistState.limit;
+    var hasMore = totalSongs === 0 || loadedCount < totalSongs;
+
+    // Also check if we have a last_page flag from the API
+    // For now, assume more if totalSongs > loadedCount
+
+    if (!hasMore && totalSongs > 0) {
+        container.innerHTML = '<div class="end-of-results">🏁 End of songs</div>';
+        return;
+    }
+
+    if (!hasMore && totalSongs === 0) {
+        // If we don't know total, check if we got less than limit
+        // For now, show button if we have songs
+        var lastData = window.Cache.get(window._artistSongPages[window._artistSongPages.length - 1]);
+        if (lastData && lastData.length < window._artistState.limit) {
+            container.innerHTML = '<div class="end-of-results">🏁 End of songs</div>';
+            return;
+        }
+    }
+
+    container.innerHTML = `
+        <button class="btn-load-more" id="artist-songs-load-more-btn">
+            Load ${window._artistState.limit} More Songs
+        </button>
+    `;
+
+    var btn = document.getElementById('artist-songs-load-more-btn');
+    if (btn) {
+        btn.addEventListener('click', function() {
+            loadMoreArtistSongs();
+        });
+    }
+}
+
+// ============ LOAD MORE ARTIST SONGS ============
+async function loadMoreArtistSongs() {
+    if (window._artistState.isLoadingSongs) return;
+    window._artistState.isLoadingSongs = true;
+
+    var btn = document.getElementById('artist-songs-load-more-btn');
+    if (btn) {
+        btn.textContent = 'Loading...';
+        btn.disabled = true;
+    }
+
+    var nextPage = window._artistState.songPage + 1;
+    var artistId = window._artistState.artistId;
+    var category = window._artistState.category;
+
+    // ============ CHECK CACHE ============
+    var cacheKey = 'artist:' + artistId + ':' + category + ':songs:page:' + nextPage;
+    if (window.Cache.has(cacheKey)) {
+        console.log('[Artist] Using cached songs page:', nextPage);
+        var cachedData = window.Cache.get(cacheKey);
+        var songs = cachedData.songs || [];
+        var total = cachedData.total || 0;
+
+        // Append songs
+        if (songs.length > 0) {
+            appendArtistSongs(songs, nextPage, total);
+        } else {
+            var container = document.getElementById('artist-songs-load-more');
+            if (container) {
+                container.innerHTML = '<div class="end-of-results">🏁 End of songs</div>';
+            }
+        }
+        window._artistState.isLoadingSongs = false;
+        if (btn) {
+            btn.textContent = 'Load ' + window._artistState.limit + ' More Songs';
+            btn.disabled = false;
+        }
+        return;
+    }
+
+    try {
+        var result = await window.Services.Artist.getMoreSongs(artistId, nextPage, category);
+        var songs = result.songs || [];
+        var total = result.total || 0;
+
+        // ============ STORE IN CACHE ============
+        window.Cache.set(cacheKey, { songs: songs, total: total });
+
+        if (total > 0) {
+            window._artistState.totalSongs = total;
+        } else {
+            window._artistState.totalSongs += songs.length;
+        }
+
+        // Append songs
+        if (songs.length > 0) {
+            appendArtistSongs(songs, nextPage, total);
+        } else {
+            var container = document.getElementById('artist-songs-load-more');
+            if (container) {
+                container.innerHTML = '<div class="end-of-results">🏁 End of songs</div>';
+            }
+        }
+    } catch (error) {
+        console.error('[Artist] Load more songs error:', error);
+        var container = document.getElementById('artist-songs-load-more');
+        if (container) {
+            container.innerHTML = '<button class="btn-load-more" id="artist-songs-load-more-btn">Retry</button>';
+            var newBtn = document.getElementById('artist-songs-load-more-btn');
+            if (newBtn) {
+                newBtn.addEventListener('click', function() {
+                    loadMoreArtistSongs();
+                });
+            }
+        }
+    } finally {
+        window._artistState.isLoadingSongs = false;
+        if (btn) {
+            btn.textContent = 'Load ' + window._artistState.limit + ' More Songs';
+            btn.disabled = false;
+        }
+    }
+}
+
+// ============ APPEND ARTIST SONGS ============
+function appendArtistSongs(songs, page, total) {
+    var songsContainer = document.querySelector('.artist-songs-section .song-list');
+    if (!songsContainer) return;
+
+    var artistContext = {
+        type: 'artist',
+        image: '',
+        language: '',
+        year: '',
+        title: window._artistState.token
+    };
+
+    // Get current card count BEFORE appending
+    var cardsBefore = songsContainer.querySelectorAll('.song-card').length;
+
+    songs.forEach(function(song, idx) {
+        var globalIndex = cardsBefore + idx;
+        var songCard = createSongCard(song, globalIndex, artistContext);
+        songsContainer.insertAdjacentHTML('beforeend', songCard);
+    });
+
+    // Attach _songData to new cards
+    var allCards = songsContainer.querySelectorAll('.song-card');
+    var existingCardsCount = allCards.length - songs.length;
+    songs.forEach(function(song, idx) {
+        var globalIndex = existingCardsCount + idx;
+        var card = allCards[globalIndex];
+        if (card) {
+            card._songData = song;
+        }
+    });
+
+    // Attach events
+    attachSongEvents(songsContainer);
+
+    // Update state
+    window._artistState.songPage = page;
+    window._artistSongPages.push('artist_songs_' + window._artistState.artistId + '_' + page);
+
+    // Update load more button
+    showArtistSongsLoadMore();
+
+    // Update stats
+    var h3 = document.querySelector('.artist-songs-section h3');
+    if (h3) {
+        var totalDisplay = window._artistState.totalSongs || songs.length;
+        h3.textContent = 'Top Songs (' + totalDisplay + ')';
+    }
+}
+
+// ============ SHOW ARTIST ALBUMS LOAD MORE ============
+function showArtistAlbumsLoadMore() {
+    var container = document.getElementById('artist-albums-load-more');
+    if (!container) return;
+
+    var totalAlbums = window._artistState.totalAlbums || 0;
+    var loadedCount = window._artistAlbumPages.length * window._artistState.limit;
+    var hasMore = totalAlbums === 0 || loadedCount < totalAlbums;
+
+    if (!hasMore && totalAlbums > 0) {
+        container.innerHTML = '<div class="end-of-results">🏁 End of albums</div>';
+        return;
+    }
+
+    if (!hasMore && totalAlbums === 0) {
+        var lastData = window.Cache.get(window._artistAlbumPages[window._artistAlbumPages.length - 1]);
+        if (lastData && lastData.length < window._artistState.limit) {
+            container.innerHTML = '<div class="end-of-results">🏁 End of albums</div>';
+            return;
+        }
+    }
+
+    container.innerHTML = `
+        <button class="btn-load-more" id="artist-albums-load-more-btn">
+            Load ${window._artistState.limit} More Albums
+        </button>
+    `;
+
+    var btn = document.getElementById('artist-albums-load-more-btn');
+    if (btn) {
+        btn.addEventListener('click', function() {
+            loadMoreArtistAlbums();
+        });
+    }
+}
+
+// ============ LOAD MORE ARTIST ALBUMS ============
+async function loadMoreArtistAlbums() {
+    if (window._artistState.isLoadingAlbums) return;
+    window._artistState.isLoadingAlbums = true;
+
+    var btn = document.getElementById('artist-albums-load-more-btn');
+    if (btn) {
+        btn.textContent = 'Loading...';
+        btn.disabled = true;
+    }
+
+    var nextPage = window._artistState.albumPage + 1;
+    var artistId = window._artistState.artistId;
+    var category = window._artistState.category;
+
+    // ============ CHECK CACHE ============
+    var cacheKey = 'artist:' + artistId + ':' + category + ':albums:page:' + nextPage;
+    if (window.Cache.has(cacheKey)) {
+        console.log('[Artist] Using cached albums page:', nextPage);
+        var cachedData = window.Cache.get(cacheKey);
+        var albums = cachedData.albums || [];
+        var total = cachedData.total || 0;
+
+        if (albums.length > 0) {
+            appendArtistAlbums(albums, nextPage, total);
+        } else {
+            var container = document.getElementById('artist-albums-load-more');
+            if (container) {
+                container.innerHTML = '<div class="end-of-results">🏁 End of albums</div>';
+            }
+        }
+        window._artistState.isLoadingAlbums = false;
+        if (btn) {
+            btn.textContent = 'Load ' + window._artistState.limit + ' More Albums';
+            btn.disabled = false;
+        }
+        return;
+    }
+
+    try {
+        var result = await window.Services.Artist.getMoreAlbums(artistId, nextPage, category);
+        var albums = result.albums || [];
+        var total = result.total || 0;
+
+        // ============ STORE IN CACHE ============
+        window.Cache.set(cacheKey, { albums: albums, total: total });
+
+        if (total > 0) {
+            window._artistState.totalAlbums = total;
+        } else {
+            window._artistState.totalAlbums += albums.length;
+        }
+
+        if (albums.length > 0) {
+            appendArtistAlbums(albums, nextPage, total);
+        } else {
+            var container = document.getElementById('artist-albums-load-more');
+            if (container) {
+                container.innerHTML = '<div class="end-of-results">🏁 End of albums</div>';
+            }
+        }
+    } catch (error) {
+        console.error('[Artist] Load more albums error:', error);
+        var container = document.getElementById('artist-albums-load-more');
+        if (container) {
+            container.innerHTML = '<button class="btn-load-more" id="artist-albums-load-more-btn">Retry</button>';
+            var newBtn = document.getElementById('artist-albums-load-more-btn');
+            if (newBtn) {
+                newBtn.addEventListener('click', function() {
+                    loadMoreArtistAlbums();
+                });
+            }
+        }
+    } finally {
+        window._artistState.isLoadingAlbums = false;
+        if (btn) {
+            btn.textContent = 'Load ' + window._artistState.limit + ' More Albums';
+            btn.disabled = false;
+        }
+    }
+}
+
+// ============ APPEND ARTIST ALBUMS ============
+function appendArtistAlbums(albums, page, total) {
+    var albumsContainer = document.getElementById('artist-dynamic-albums');
+    if (!albumsContainer) return;
+
+    var albumList = albumsContainer.querySelector('.album-list');
+    if (!albumList) return;
+
+    albums.forEach(function(album) {
+        var albumCard = createAlbumCard(album);
+        albumList.insertAdjacentHTML('beforeend', albumCard);
+    });
+
+    // Attach events to new cards
+    attachAlbumEvents(albumList);
+
+    // Update state
+    window._artistState.albumPage = page;
+    window._artistAlbumPages.push('artist_albums_' + window._artistState.artistId + '_' + page);
+
+    // Update load more button
+    showArtistAlbumsLoadMore();
+
+    // Update stats
+    var h3 = albumsContainer.querySelector('h3');
+    if (h3) {
+        var totalDisplay = window._artistState.totalAlbums || albums.length;
+        h3.textContent = 'Top Albums (' + totalDisplay + ')';
+    }
+}
+
+// ============ RESTORE ARTIST ============
+function restoreArtist(data) {
+    console.log('[Restore] Artist:', data);
+    var category = data.category || 'popular';
+    viewArtist(data.token, category);
+}
+
+// ============ EXPOSE ============
+window.viewArtist = viewArtist;
+window.loadMoreArtistSongs = loadMoreArtistSongs;
+window.loadMoreArtistAlbums = loadMoreArtistAlbums;
+window.renderArtist = renderArtist;
+
+
+    // ============================================================
+    // FILE: /js/ui/display/lyrics.js
+    // ============================================================
+
+// ============ SHOW LYRICS ============
+async function showLyrics(token, songId) {
+    console.log('[Display] Fetching lyrics for:', token);
+    
+    // Check if lyrics overlay already exists
+    var existingOverlay = document.getElementById('lyrics-overlay');
+    if (existingOverlay) {
+        existingOverlay.remove();
+    }
+    
+    // Check cache first
+    if (window.lyricsCache && window.lyricsCache[token]) {
+        console.log('[Display] Using cached lyrics for:', token);
+        var cachedLyrics = window.lyricsCache[token];
+        displayLyricsOverlay(cachedLyrics);
+        return;
+    }
+    
+    try {
+        var data = await window.API.getLyrics(token);
+        var lyricsText = data.lyrics && data.lyrics.lyrics ? data.lyrics.lyrics : 'No lyrics available';
+        
+        // Format lyrics (replace <br> with newlines)
+        lyricsText = window.Utils.formatters.formatLyrics(lyricsText);
+        
+        // Store in cache
+        if (!window.lyricsCache) {
+            window.lyricsCache = {};
+        }
+        window.lyricsCache[token] = lyricsText;
+        console.log('[Display] Lyrics cached for:', token);
+        
+        // Display lyrics overlay
+        displayLyricsOverlay(lyricsText);
+        
+    } catch (error) {
+        console.error('[Display] Lyrics fetch error:', error);
+        alert('Failed to fetch lyrics: ' + error.message);
+    }
+}
+
+// ============ DISPLAY LYRICS OVERLAY ============
+function displayLyricsOverlay(lyricsText) {
+    // Create overlay
+    var overlay = document.createElement('div');
+    overlay.id = 'lyrics-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 2147483647;
+        background: rgba(17, 17, 17, 0.95);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    `;
+    
+    overlay.innerHTML = `
+        <div style="
+            max-width: 600px;
+            width: 100%;
+            max-height: 80vh;
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+        ">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="color: #1db954; margin: 0; font-size: 20px;">📜 Lyrics</h2>
+                <button id="lyrics-close-btn" style="
+                    background: #333;
+                    color: #fff;
+                    border: none;
+                    border-radius: 50%;
+                    width: 36px;
+                    height: 36px;
+                    font-size: 18px;
+                    cursor: pointer;
+                ">✕</button>
+            </div>
+            <div id="lyrics-content" style="
+                overflow-y: auto;
+                max-height: 60vh;
+                color: #ddd;
+                font-size: 15px;
+                line-height: 1.8;
+                white-space: pre-wrap;
+                padding-right: 8px;
+            ">
+${lyricsText}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    // Close button event listener
+    var closeBtn = document.getElementById('lyrics-close-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+            closeLyricsOverlay();
+        });
+    }
+    
+    // Click outside to close
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            closeLyricsOverlay();
+        }
+    });
+    
+    // ESC key to close (using a single listener)
+    var escHandler = function(e) {
+        if (e.key === 'Escape') {
+            var overlayEl = document.getElementById('lyrics-overlay');
+            if (overlayEl) {
+                closeLyricsOverlay();
+                document.removeEventListener('keydown', escHandler);
+            }
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+}
+
+function closeLyricsOverlay() {
+    var overlay = document.getElementById('lyrics-overlay');
+    if (overlay) {
+        overlay.remove();
+        console.log('[Display] Lyrics overlay closed');
+    }
+}
+
+// ============ EXPOSE ============
+window.showLyrics = showLyrics;
+window.closeLyricsOverlay = closeLyricsOverlay;
+
+
+    // ============================================================
+    // FILE: /js/ui/display/navigation.js
+    // ============================================================
+
+// ============ RESTORE SEARCH ============
+function restoreSearch(data) {
+    console.log('[Restore] Search:', data);
+    
+    var searchType = data.type || 'songs';
+    var query = data.query;
+    var loadedPages = data.loadedPages || [];
+    
+    // Get first page from cache
+    var firstPageKey = window.Cache.getSearchKey(searchType, query, 1, 20);
+    
+    if (!window.Cache.has(firstPageKey)) {
+        console.log('[Restore] No cache for search, falling back to search');
+        if (typeof window.search === 'function') {
+            window.search();
+        }
+        return;
+    }
+    
+    // Collect all results from all loaded pages
+    var allResults = [];
+    if (loadedPages.length > 0) {
+        loadedPages.forEach(function(pageKey) {
+            var pageData = window.Cache.get(pageKey);
+            if (pageData && pageData.results) {
+                allResults = allResults.concat(pageData.results);
+            }
+        });
+    } else {
+        var data = window.Cache.get(firstPageKey);
+        allResults = data.results || [];
+        loadedPages = [firstPageKey];
+    }
+    
+    if (allResults.length === 0) {
+        console.log('[Restore] No results found, falling back to search');
+        if (typeof window.search === 'function') {
+            window.search();
+        }
+        return;
+    }
+    
+    // Restore state
+    window._searchState.type = searchType;
+    window._searchState.query = query;
+    window._searchState.currentPage = loadedPages.length;
+    window._searchLoadedPages = loadedPages.slice();
+    
+    // Display results
+    displaySearchResults(allResults, searchType);
+    showLoadMoreButton('search');
+    
+    var statsDiv = document.getElementById('stats');
+    if (statsDiv) statsDiv.innerHTML = 'Found ' + allResults.length + ' ' + searchType + ' (cached)';
+    
+    console.log('[Restore] Search restored with', allResults.length, 'results');
+}
+
+// ============ RESTORE PLAYLIST ============
+function restorePlaylist(data) {
+    console.log('[Restore] Playlist:', data);
+    
+    var token = data.token;
+    var loadedPages = data.loadedPages || [];
+    
+    // Get first page from cache
+    var firstPageKey = 'playlist:' + token + ':' + 1 + ':' + 50;
+    
+    if (!window.Cache.has(firstPageKey)) {
+        console.log('[Restore] No cache for playlist, falling back to viewPlaylist');
+        window._isRestoring = false; // Temporarily allow push
+        viewPlaylist(token);
+        window._isRestoring = true;
+        return;
+    }
+    
+    // Collect all songs from all loaded pages
+    var allSongs = [];
+    var playlistData = null;
+    
+    if (loadedPages.length > 0) {
+        loadedPages.forEach(function(pageKey) {
+            var pageData = window.Cache.get(pageKey);
+            if (pageData && pageData.songs) {
+                if (!playlistData) playlistData = pageData;
+                allSongs = allSongs.concat(pageData.songs);
+            }
+        });
+    } else {
+        var data = window.Cache.get(firstPageKey);
+        playlistData = data;
+        allSongs = data.songs || [];
+        loadedPages = [firstPageKey];
+    }
+    
+    if (allSongs.length === 0) {
+        console.log('[Restore] No songs found, falling back to viewPlaylist');
+        window._isRestoring = false;
+        viewPlaylist(token);
+        window._isRestoring = true;
+        return;
+    }
+    
+    // Restore state
+    if (playlistData) {
+        playlistData.songs = allSongs;
+    }
+    window._playlistState.token = token;
+    window._playlistState.currentPage = loadedPages.length;
+    window._playlistLoadedPages = loadedPages.slice();
+    
+    // Display playlist
+    renderPlaylist(playlistData);
+    showPlaylistLoadMoreButton();
+    
+    console.log('[Restore] Playlist restored with', allSongs.length, 'songs');
+}
+
+// ============ RESTORE ALBUM ============
+function restoreAlbum(data) {
+    console.log('[Restore] Album:', data);
+    viewAlbum(data.token);
+}
+
+// ============ RESTORE VIEW ============
+function restoreView(view) {
+    console.log('[Restore] Restoring:', view.type, 'Data:', view.data);
+    
+    window._isRestoring = true;
+    
+    switch(view.type) {
+        case 'search':
+            restoreSearch(view.data);
+            break;
+        case 'playlist':
+            restorePlaylist(view.data);
+            break;
+        case 'album':
+            restoreAlbum(view.data);
+            break;
+        case 'artist':
+            restoreArtist(view.data);
+            break;
+        default:
+            console.log('[Restore] Unknown type:', view.type);
+            if (typeof window.search === 'function') {
+                window.search();
+            }
+    }
+    
+    window._isRestoring = false;
+    console.log('[Restore] Done, isRestoring:', window._isRestoring);
+}
+
 
     // ============================================================
     // FILE: /js/ui/search.js
@@ -1832,6 +4054,36 @@ async function search() {
                 } else {
                     resultsDiv.innerHTML = '<div class="no-results">😕 Album not found</div>';
                 }
+
+            } else if (parsed.type === 'playlist') {
+                // Switch to Playlists tab if needed
+                if (window.currentSearchType !== 'playlists') {
+                    switchTab('playlists');
+                }
+    
+                // Get playlist details
+                var playlistData = await window.API.getPlaylist(parsed.token);
+    
+                if (playlistData && playlistData.id) {
+                    if (statsDiv) statsDiv.innerHTML = 'Found 1 playlist';
+                    viewPlaylist(parsed.token);
+                } else {
+                    resultsDiv.innerHTML = '<div class="no-results">😕 Playlist not found</div>';
+                }
+            } else if (parsed.type === 'artist') {
+                // Switch to Artists tab if needed
+                if (window.currentSearchType !== 'artists') {
+                    switchTab('artists');
+                }
+
+                // Get artist details
+                var artistData = await window.API.getArtist(parsed.token);
+                if (artistData && artistData.artistId) {
+                    if (statsDiv) statsDiv.innerHTML = 'Found 1 artist';
+                    viewArtist(parsed.token);
+                } else {
+                    resultsDiv.innerHTML = '<div class="no-results">😕 Artist not found</div>';
+                }
             }
         } catch (error) {
             console.error('[Search] URL fetch error:', error);
@@ -1842,27 +4094,89 @@ async function search() {
     }
 
     var searchType = window.currentSearchType || 'songs';
+    
+    // Reset search state for new search
+    window._searchState.type = searchType;
+    window._searchState.query = query;
+    window._searchState.currentPage = 1;
+    window._searchState.limit = 20;
+    window._searchState.total = 0;
+    window._searchState.isLoading = false;
+    window._searchLoadedPages = [];
+
+    var page = window._searchState.currentPage;
+    var limit = window._searchState.limit;
+    var cacheKey = window.Cache.getSearchKey(searchType, query, page, limit);
+    
     console.log('[Search] Searching for:', query, 'Type:', searchType);
 
     resultsDiv.innerHTML = '<div class="loading">🔍 Searching</div>';
     if (statsDiv) statsDiv.innerHTML = '';
     if (playerDiv) playerDiv.innerHTML = '';
 
+    // Check cache for page 1
+    if (window.Cache.has(cacheKey)) {
+        // Clear navigation stack and push search view
+        window.Nav.clear();
+        window.Nav.push({ 
+            type: 'search', 
+            data: { 
+                type: searchType, 
+                query: query,
+                page: 1,
+                loadedPages: window._searchLoadedPages ? window._searchLoadedPages.slice() : []
+            } 
+        });
+        console.log('[Search] Using cached results for page 1');
+        var data = window.Cache.get(cacheKey);
+        window._searchState.total = data.total || 0;
+        window._searchLoadedPages.push(cacheKey);
+
+        if (data.results && data.results.length > 0) {
+            if (statsDiv) statsDiv.innerHTML = 'Found ' + data.results.length + ' ' + searchType + ' (cached)';
+            displaySearchResults(data.results, searchType);
+            showLoadMoreButton('search');
+        } else {
+            resultsDiv.innerHTML = '<div class="no-results">😕 No results found. Try a different search term.</div>';
+        }
+        return;
+    }
+
     try {
         var data;
         if (searchType === 'songs') {
-            data = await window.Services.Song.search(query, 20);
+            data = await window.Services.Song.search(query, limit, page);
+        } else if (searchType === 'albums') {
+            data = await window.Services.Album.search(query, limit, page);
+        } else if (searchType === 'playlists') {
+            data = await window.Services.Playlist.search(query, limit, page);
+        } else if (searchType === 'artists') {
+            data = await window.Services.Artist.search(query, limit, page);
         } else {
-            data = await window.Services.Album.search(query, 20);
+            data = await window.Services.Song.search(query, limit, page);
         }
+
+        // Store in cache
+        window.Cache.set(cacheKey, data);
+        window._searchState.total = data.total || 0;
+        window._searchLoadedPages.push(cacheKey);
+
+        // Clear navigation stack and push search view
+        window.Nav.clear();
+        window.Nav.push({ 
+            type: 'search', 
+            data: { 
+                type: searchType, 
+                query: query,
+                page: window._searchState.currentPage || 1,
+                loadedPages: window._searchLoadedPages ? window._searchLoadedPages.slice() : []
+            } 
+        });
 
         if (data.results && data.results.length > 0) {
             if (statsDiv) statsDiv.innerHTML = 'Found ' + data.results.length + ' ' + searchType;
-            if (searchType === 'songs') {
-                displaySongs(data.results);
-            } else {
-                displayAlbums(data.results);
-            }
+            displaySearchResults(data.results, searchType);
+            showLoadMoreButton('search');
         } else {
             resultsDiv.innerHTML = '<div class="no-results">😕 No results found. Try a different search term.</div>';
         }
@@ -1873,369 +4187,160 @@ async function search() {
     }
 }
 
-window.search = search;
+// ============ LOAD MORE SEARCH ============
+async function loadMoreSearch() {
+    if (window._searchState.isLoading) return;
+    window._searchState.isLoading = true;
 
-    // ============================================================
-    // FILE: /js/ui/display.js
-    // ============================================================
+    var btn = document.getElementById('load-more-btn');
+    if (btn) {
+        btn.textContent = 'Loading...';
+        btn.disabled = true;
+    }
 
-// ui/js/display.js
-
-// ============ CREATE SONG CARD ============
-function createSongCard(song, index, albumContext) {
-    var hasStream = song.has_stream;
-    var songId = song.id || song.token || 'song-' + (index || 0);
-    var playCount = song.play_count ? parseInt(song.play_count).toLocaleString() : '0';
-    var duration = formatDuration(song.duration || song.more_info?.duration);
-    var image = song.image || (albumContext ? albumContext.image : 'https://via.placeholder.com/80');
-    var albumLanguage = albumContext ? albumContext.language : '';
-    var albumYear = albumContext ? albumContext.year : '';
-    
-    // For album view, show index number
-    var titlePrefix = (index !== undefined && albumContext) ? (index + 1) + '. ' : '';
-    
-    var html = `
-        <div class="song-card" data-token="${song.token || song.id}">
-            <img src="${image}" alt="${escapeHtml(song.title)}" />
-            <div class="song-info">
-                <div class="song-title">${titlePrefix}${escapeHtml(song.title)}</div>
-                <div class="song-artist">${escapeHtml(song.subtitle)}</div>
-                <div class="song-details">
-                    ${escapeHtml(albumLanguage || song.language || 'Unknown')} • 
-                    ${song.year || albumYear || 'N/A'} • 
-                    ${playCount} plays • 
-                    ${duration}
-                </div>
-                <div class="song-actions">
-                    <button class="btn-play" data-token="${song.token || song.id}" data-songid="${songId}" 
-                        ${!hasStream ? 'disabled' : ''}>
-                        ▶ Play
-                    </button>
-                    <button class="btn-download" data-token="${song.token || song.id}" data-songid="${songId}" 
-                        ${!hasStream ? 'disabled' : ''}>
-                        ⬇ Download
-                    </button>
-                    ${song.has_lyrics ? `<button class="btn-lyrics" data-token="${song.token}" data-songid="${songId}">📜</button>` : ''}
-                    <div class="play-progress" id="play-progress-${songId}">⏳ Decrypting stream...</div>
-                    <div class="download-progress" id="download-progress-${songId}">⏳ Downloading with metadata...</div>
-                    ${!hasStream ? '<span style="color:#999;font-size:12px;">No stream available</span>' : ''}
-                </div>
-            </div>
-        </div>
-    `;
-    
-    return html;
-}
-
-// ============ ATTACH SONG EVENTS ============
-function attachSongEvents(container) {
-    var playBtns = container.querySelectorAll('.btn-play');
-    var downloadBtns = container.querySelectorAll('.btn-download');
-    
-    playBtns.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var songCard = this.closest('.song-card');
-            var songData = songCard ? songCard._songData : null;
-            if (songData && typeof window.playSong === 'function') {
-                window.playSong(songData);
-            }
-        });
-    });
-    
-    downloadBtns.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var songCard = this.closest('.song-card');
-            var songData = songCard ? songCard._songData : null;
-            if (songData && typeof window.downloadSong === 'function') {
-                window.downloadSong(songData);
-            }
-        });
-    });
-
-    // Lyrics buttons
-    var lyricsBtns = container.querySelectorAll('.btn-lyrics');
-    lyricsBtns.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var token = this.dataset.token;
-            var songId = this.dataset.songid;
-            if (token && typeof window.showLyrics === 'function') {
-                window.showLyrics(token, songId);
-            }
-        });
-    });
-}
-
-// ============ CREATE ALBUM CARD ============
-function createAlbumCard(album) {
-    var songCount = album.more_info?.song_count || 0;
-    
-    var html = `
-        <div class="album-card" data-token="${album.token}">
-            <img src="${album.image || 'https://via.placeholder.com/100'}" alt="${album.title}" />
-            <div class="album-info">
-                <div class="album-title">${escapeHtml(album.title)}</div>
-                <div class="album-artist">${escapeHtml(album.subtitle)}</div>
-                <div class="album-details">
-                    ${songCount} songs • 
-                    ${escapeHtml(album.language || 'Unknown')} • 
-                    ${album.year || 'N/A'}
-                </div>
-                <button class="btn-view-album" data-token="${album.token}">
-                    📂 View Album
-                </button>
-            </div>
-        </div>
-    `;
-    
-    return html;
-}
-
-// ============ ATTACH ALBUM EVENTS ============
-function attachAlbumEvents(container) {
-    // Album card click (open album)
-    container.querySelectorAll('.album-card').forEach(function(card) {
-        card.addEventListener('click', function() {
-            var token = this.dataset.token;
-            if (token && typeof window.viewAlbum === 'function') {
-                window.viewAlbum(token);
-            }
-        });
-    });
-    
-    // View album button click
-    container.querySelectorAll('.btn-view-album').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var token = this.dataset.token;
-            if (token && typeof window.viewAlbum === 'function') {
-                window.viewAlbum(token);
-            }
-        });
-    });
-}
-
-// ============ DISPLAY SONGS ============
-function displaySongs(songs) {
-    var html = '<div class="results">';
-    
-    songs.forEach(function(song, index) {
-        html += createSongCard(song, index);
-    });
-    
-    html += '</div>';
-    DOM.results.innerHTML = html;
-    
-    // Attach song data to cards
-    var cards = DOM.results.querySelectorAll('.song-card');
-    cards.forEach(function(card, index) {
-        if (songs[index]) {
-            card._songData = songs[index];
-        }
-    });
-    
-    // Attach events to the results container
-    attachSongEvents(DOM.results);
-}
-
-// ============ DISPLAY ALBUMS ============
-function displayAlbums(albums) {
-    var html = '<div class="results">';
-    
-    albums.forEach(function(album) {
-        html += createAlbumCard(album);
-    });
-    
-    html += '</div>';
-    DOM.results.innerHTML = html;
-    
-    // Attach events to the results container
-    attachAlbumEvents(DOM.results);
-}
-
-// ============ VIEW ALBUM ============
-async function viewAlbum(token) {
-    DOM.results.innerHTML = '<div class="loading">📂 Loading album...</div>';
-    DOM.stats.innerHTML = '';
+    var nextPage = window._searchState.currentPage + 1;
+    var cacheKey = window.Cache.getSearchKey(
+        window._searchState.type,
+        window._searchState.query,
+        nextPage,
+        window._searchState.limit
+    );
 
     try {
-        var album = await window.Services.Album.getDetails(token);
+        var data;
+        var type = window._searchState.type;
 
-        var html = `
-            <div class="album-header">
-                <img src="${album.image || 'https://via.placeholder.com/200'}" alt="${album.title}" />
-                <div class="album-header-info">
-                    <h2>${escapeHtml(album.title)}</h2>
-                    <p>${escapeHtml(album.subtitle || '')}</p>
-                    <p>${album.song_count || album.songs?.length || 0} songs • ${escapeHtml(album.language || 'Unknown')} • ${album.year || 'N/A'}</p>
-                    <div class="album-actions">
-                        <button class="btn-back" id="btn-back-search">← Back to Search</button>
-                    </div>
-                </div>
-            </div>
-            <div class="song-list">
-        `;
-
-        if (album.songs && album.songs.length > 0) {
-            album.songs.forEach(function(song, index) {
-                html += createSongCard(song, index, album);
-            });
+        // Check cache first
+        if (window.Cache.has(cacheKey)) {
+            console.log('[Search] Using cached page:', nextPage);
+            data = window.Cache.get(cacheKey);
         } else {
-            html += `<div class="no-results">No songs found in this album.</div>`;
+            if (type === 'songs') {
+                data = await window.Services.Song.search(
+                    window._searchState.query,
+                    window._searchState.limit,
+                    nextPage
+                );
+            } else if (type === 'albums') {
+                data = await window.Services.Album.search(
+                    window._searchState.query,
+                    window._searchState.limit,
+                    nextPage
+                );
+            } else if (type === 'playlists') {
+                data = await window.Services.Playlist.search(
+                    window._searchState.query,
+                    window._searchState.limit,
+                    nextPage
+                );
+} else if (type === 'artists') {
+    data = await window.Services.Artist.search(
+        window._searchState.query,
+        window._searchState.limit,
+        nextPage
+    );
+}
+            window.Cache.set(cacheKey, data);
         }
 
-        html += '</div>';
-        DOM.results.innerHTML = html;
-        
-        // Attach song data to cards
-        var cards = DOM.results.querySelectorAll('.song-card');
-        if (album.songs && album.songs.length > 0) {
-            cards.forEach(function(card, index) {
-                if (album.songs[index]) {
-                    card._songData = album.songs[index];
-                }
-            });
+        // Append results
+        if (data.results && data.results.length > 0) {
+            // Get existing results container
+            var resultsDiv = document.getElementById('results');
+            var existingCards = resultsDiv.querySelectorAll('.song-card, .album-card, .playlist-card');
+            
+            // Remove load more button
+            var oldBtn = document.getElementById('load-more-btn');
+            if (oldBtn) oldBtn.remove();
+
+            // Append new results
+            if (type === 'songs') {
+                data.results.forEach(function(song) {
+                    resultsDiv.insertAdjacentHTML('beforeend', createSongCard(song));
+                });
+            } else if (type === 'albums') {
+                data.results.forEach(function(album) {
+                    resultsDiv.insertAdjacentHTML('beforeend', createAlbumCard(album));
+                });
+            } else if (type === 'playlists') {
+                data.results.forEach(function(playlist) {
+                    resultsDiv.insertAdjacentHTML('beforeend', createPlaylistCard(playlist));
+                });
+} else if (type === 'artists') {
+    data.results.forEach(function(artist) {
+        resultsDiv.insertAdjacentHTML('beforeend', createArtistCard(artist));
+    });
+}
+            // Update state
+            window._searchState.currentPage = nextPage;
+            window._searchLoadedPages.push(cacheKey);
+
+            // Show load more button again
+            showLoadMoreButton('search');
+        } else {
+            // No more results
+            var endMsg = document.createElement('div');
+            endMsg.className = 'end-of-results';
+            endMsg.id = 'load-more-btn';
+            endMsg.textContent = '🏁 End of results';
+            document.getElementById('results').appendChild(endMsg);
         }
-        
-        // Attach events to the results container
-        attachSongEvents(DOM.results);
-        
-        // Back button
-        var backBtn = document.getElementById('btn-back-search');
-        if (backBtn) {
-            backBtn.addEventListener('click', function() {
-                if (typeof window.search === 'function') {
-                    window.search();
-                }
-            });
-        }
-        
     } catch (error) {
-        DOM.results.innerHTML = `<div class="error">❌ Error loading album: ${error.message}</div>`;
-    }
-}
-
-// ============ SHOW LYRICS ============
-async function showLyrics(token, songId) {
-    console.log('[Display] Fetching lyrics for:', token);
-    
-    // Check if lyrics overlay already exists
-    var existingOverlay = document.getElementById('lyrics-overlay');
-    if (existingOverlay) {
-        existingOverlay.remove();
-    }
-    
-    try {
-        var data = await window.API.getLyrics(token);
-        var lyricsText = data.lyrics && data.lyrics.lyrics ? data.lyrics.lyrics : 'No lyrics available';
-        
-        // Format lyrics (replace <br> with newlines)
-        lyricsText = window.Utils.formatters.formatLyrics(lyricsText);
-        
-        // Create overlay
-        var overlay = document.createElement('div');
-        overlay.id = 'lyrics-overlay';
-        overlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 2147483647;
-            background: rgba(17, 17, 17, 0.95);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        `;
-        
-        overlay.innerHTML = `
-            <div style="
-                max-width: 600px;
-                width: 100%;
-                max-height: 80vh;
-                background: #1a1a1a;
-                border-radius: 12px;
-                padding: 24px;
-                border: 1px solid #333;
-                display: flex;
-                flex-direction: column;
-            ">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <h2 style="color: #1db954; margin: 0; font-size: 20px;">📜 Lyrics</h2>
-                    <button id="lyrics-close-btn" style="
-                        background: #333;
-                        color: #fff;
-                        border: none;
-                        border-radius: 50%;
-                        width: 36px;
-                        height: 36px;
-                        font-size: 18px;
-                        cursor: pointer;
-                    ">✕</button>
-                </div>
-                <div id="lyrics-content" style="
-                    overflow-y: auto;
-                    max-height: 60vh;
-                    color: #ddd;
-                    font-size: 15px;
-                    line-height: 1.8;
-                    white-space: pre-wrap;
-                    padding-right: 8px;
-                ">
-${lyricsText}
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(overlay);
-        
-        // Close button event listener
-        var closeBtn = document.getElementById('lyrics-close-btn');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', function() {
-                closeLyricsOverlay();
-            });
+        console.error('[Search] Load more error:', error);
+        var btn = document.getElementById('load-more-btn');
+        if (btn) {
+            btn.textContent = 'Retry';
+            btn.disabled = false;
         }
-        
-        // Click outside to close
-        overlay.addEventListener('click', function(e) {
-            if (e.target === overlay) {
-                closeLyricsOverlay();
-            }
-        });
-        
-        // ESC key to close
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                var overlayEl = document.getElementById('lyrics-overlay');
-                if (overlayEl) {
-                    closeLyricsOverlay();
-                }
-            }
-        });
-        
-    } catch (error) {
-        console.error('[Display] Lyrics fetch error:', error);
-        alert('Failed to fetch lyrics: ' + error.message);
+    } finally {
+        window._searchState.isLoading = false;
     }
 }
 
-function closeLyricsOverlay() {
-    var overlay = document.getElementById('lyrics-overlay');
-    if (overlay) {
-        overlay.remove();
-        console.log('[Display] Lyrics overlay closed');
+// ============ SHOW LOAD MORE BUTTON ============
+function showLoadMoreButton(source) {
+    var resultsDiv = document.getElementById('results');
+    if (!resultsDiv) return;
+    
+    // Remove existing load more button
+    var existingBtn = document.getElementById('load-more-btn');
+    if (existingBtn) existingBtn.remove();
+    
+    // Check if more results exist
+    var hasMore = false;
+    if (window._searchState.total > 0) {
+        var loadedCount = window._searchLoadedPages.length * window._searchState.limit;
+        hasMore = loadedCount < window._searchState.total;
+    } else {
+        // If total unknown, assume more if we have results
+        var lastData = window.Cache.get(window._searchLoadedPages[window._searchLoadedPages.length - 1]);
+        if (lastData && lastData.results) {
+            hasMore = lastData.results.length >= window._searchState.limit;
+        }
     }
+    
+    if (!hasMore) {
+        var endMsg = document.createElement('div');
+        endMsg.className = 'end-of-results';
+        endMsg.id = 'load-more-btn';
+        endMsg.textContent = '🏁 End of results';
+        resultsDiv.appendChild(endMsg);
+        return;
+    }
+    
+    var btn = document.createElement('button');
+    btn.id = 'load-more-btn';
+    btn.className = 'btn-load-more';
+    btn.textContent = 'Load ' + window._searchState.limit + ' More';
+    btn.dataset.source = source || 'search';
+    btn.addEventListener('click', function() {
+        loadMoreSearch();
+    });
+    resultsDiv.appendChild(btn);
 }
 
-// ============ EXPOSE ============
-window.displaySongs = displaySongs;
-window.displayAlbums = displayAlbums;
-window.viewAlbum = viewAlbum;
-window.showLyrics = showLyrics;
-window.closeLyricsOverlay = closeLyricsOverlay;
-
+window.search = search;
+window.loadMoreSearch = loadMoreSearch;
 
     // ============================================================
     // FILE: /js/ui/player.js
@@ -2501,8 +4606,91 @@ window.currentAudio = null;
 window.currentSearchType = 'songs';
 window.currentQuery = '';
 window.decryptedUrlCache = new Map();
+window.lyricsCache = {};
 // Quality setting (default: 96 kbps)
 window.currentQuality = 96;
+// ============ CACHE ============
+window.Cache = {
+    store: {},
+    
+    set: function(key, data) {
+        this.store[key] = {
+            data: data,
+            timestamp: Date.now()
+        };
+    },
+    
+    get: function(key) {
+        return this.store[key] ? this.store[key].data : null;
+    },
+    
+    has: function(key) {
+        return !!this.store[key];
+    },
+    
+    delete: function(key) {
+        delete this.store[key];
+    },
+    
+    clear: function() {
+        this.store = {};
+    },
+    
+    getSearchKey: function(type, query, page, limit) {
+        return 'search:' + type + ':' + query + ':' + (page || 1) + ':' + (limit || 20);
+    },
+    
+    getDetailKey: function(type, token) {
+        return 'detail:' + type + ':' + token;
+    }
+};
+// ============ PAGINATION STATE ============
+// For search results
+window._searchState = {
+    type: 'songs',
+    query: '',
+    currentPage: 1,
+    limit: 20,
+    total: 0,
+    isLoading: false
+};
+window._searchLoadedPages = [];
+
+// For playlist details
+window._playlistState = {
+    token: '',
+    currentPage: 1,
+    limit: 50,
+    total: 0,
+    isLoading: false
+};
+window._playlistLoadedPages = [];
+
+// ============ NAVIGATION ============
+window._navStack = [];
+window._isRestoring = false;
+
+window.Nav = {
+    push: function(view) {
+        window._navStack.push(view);
+        console.log('[Nav] PUSH:', view.type, 'Stack:', window._navStack.map(v => v.type).join(' → '));
+    },
+    pop: function() {
+        var view = window._navStack.pop();
+        console.log('[Nav] POP:', view ? view.type : 'none', 'Stack:', window._navStack.map(v => v.type).join(' → '));
+        return view;
+    },
+    clear: function() {
+        window._navStack = [];
+        console.log('[Nav] CLEAR');
+    },
+    peek: function() {
+        return window._navStack[window._navStack.length - 1];
+    },
+    getStack: function() {
+        return window._navStack;
+    }
+};
 
 var isOpen = false;
 var isInitialized = false;
@@ -2642,8 +4830,10 @@ window.createUI = function() {
             </div>
 
             <div class="search-tabs">
-                <button class="tab active" id="tab-songs">🎵 Songs</button>
-                <button class="tab" id="tab-albums">💿 Albums</button>
+                <button class="tab active" id="tab-songs">Songs</button>
+                <button class="tab" id="tab-albums">Albums</button>
+                <button class="tab" id="tab-playlists">Playlists</button>
+                <button class="tab" id="tab-artists">Artists</button>
             </div>
 
             <div class="search-box">
@@ -2800,6 +4990,26 @@ function setupEventListeners() {
         });
     }
 
+    // Playlists tab
+    var playlistsTab = document.getElementById('tab-playlists');
+    if (playlistsTab) {
+        playlistsTab.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            switchTab('playlists');
+        });
+    }
+
+    // Artists tab
+    var artistsTab = document.getElementById('tab-artists');
+    if (artistsTab) {
+        artistsTab.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            switchTab('artists');
+        });
+    }
+
     // Quality dropdown
     var qualitySelect = document.getElementById('quality-select');
     if (qualitySelect) {
@@ -2835,24 +5045,33 @@ function switchTab(type) {
     
     var songsTab = document.getElementById('tab-songs');
     var albumsTab = document.getElementById('tab-albums');
+    var playlistsTab = document.getElementById('tab-playlists');
+    var artistsTab = document.getElementById('tab-artists');
     var stats = document.getElementById('stats');
     var results = document.getElementById('results');
     var player = document.getElementById('player');
     
-    if (songsTab && albumsTab) {
-        if (type === 'songs') {
-            songsTab.classList.add('active');
-            albumsTab.classList.remove('active');
-        } else {
-            albumsTab.classList.add('active');
-            songsTab.classList.remove('active');
-        }
+    // Remove active class from all tabs
+    if (songsTab) songsTab.classList.remove('active');
+    if (albumsTab) albumsTab.classList.remove('active');
+    if (playlistsTab) playlistsTab.classList.remove('active');
+    if (artistsTab) artistsTab.classList.remove('active');
+    
+    // Add active class to selected tab
+    if (type === 'songs' && songsTab) {
+        songsTab.classList.add('active');
+    } else if (type === 'albums' && albumsTab) {
+        albumsTab.classList.add('active');
+    } else if (type === 'playlists' && playlistsTab) {
+        playlistsTab.classList.add('active');
+    } else if (type === 'artists' && artistsTab) {
+        artistsTab.classList.add('active');
     }
     
+    // Clear results for other tabs
     if (results) results.innerHTML = '';
     if (stats) stats.innerHTML = '';
     if (player) player.innerHTML = '';
-    
     if (DOM.searchInput) DOM.searchInput.focus();
 }
 
