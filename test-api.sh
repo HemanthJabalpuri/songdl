@@ -4,7 +4,7 @@
 # API CONFIG & CORE CLIENT
 # ============================================================
 
-API_URL="https://www.jiosaavn.com/api.php"
+API_URL="https://www.mymusic.com/api.php"
 DEFAULTS="_format=json&_marker=0&api_version=4&ctx=wap6dot0"
 
 check_dependencies() {
@@ -392,7 +392,7 @@ get_artist() {
 
 
 usage() {
-    printf '📖 Test JioSaavn API\n\n'
+    printf '📖 Test API\n\n'
     printf 'Usage: %s [command] [arguments]\n\n' "$0"
     printf 'Commands:\n'
     printf '  search-songs <query> [limit]\n'

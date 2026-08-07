@@ -1,8 +1,8 @@
-# JioSaavn Song Downloader - Developer Documentation
+# Song Downloader - Developer Documentation
 
 ## Project Summary
 
-**JioSaavn Song Downloader** is a userscript designed for Firefox Android with Violentmonkey. It provides a clean UI for searching, playing, and downloading songs and albums from JioSaavn with full metadata (ID3 tags, album art, lyrics).
+**Song Downloader** is a userscript designed for Firefox Android with Violentmonkey. It provides a clean UI for searching, playing, and downloading songs and albums from supported music platform with full metadata (ID3 tags, album art, lyrics).
 
 ### Key Features
 - Search songs and albums
@@ -44,7 +44,7 @@ Refactored/
         │   └── albums.js    # Album API endpoints
         │
         ├── utils/           # Pure utility functions (no side effects)
-        │   ├── decrypt.js           # JioSaavn URL decryption
+        │   ├── decrypt.js           # supported music platform URL decryption
         │   ├── resource.js          # Fetch audio, album art
         │   ├── formatters.js        # Data formatting
         │   ├── url-helper.js        # URL parsing
@@ -74,7 +74,7 @@ Refactored/
 
 | Folder | Responsibility | Examples |
 |--------|---------------|----------|
-| **api/** | Raw HTTP calls to JioSaavn API | `searchSongs()`, `getAlbum()` |
+| **api/** | Raw HTTP calls to supported music platform API | `searchSongs()`, `getAlbum()` |
 | **utils/** | Pure functions, no side effects | `formatSong()`, `decode()`, `fetchResource()` |
 | **libs/** | Third-party libraries | DES decryption, M4A writer |
 | **services/** | Business logic, orchestrates API + Utils | `downloadSong()`, `getDecryptedSong()` |
@@ -101,7 +101,7 @@ Refactored/
 | Feature | Split Mode | Bundle Mode | Userscript |
 |---------|------------|-------------|------------|
 | **Purpose** | Development | Testing | Production |
-| **URL** | `http://localhost:3000/` | `http://localhost:3000/bundle` | `https://www.jiosaavn.com/*` |
+| **URL** | `http://localhost:3000/` | `http://localhost:3000/bundle` | supported music platform |
 | **Files** | Individual `<script>` tags | Single embedded script | Single userscript file |
 | **CSS** | `<link>` tag | Embedded in JS | Embedded in JS |
 | **isProxy** | `true` (set in index.html) | `true` (set in server response) | `undefined` |
@@ -132,7 +132,7 @@ http://localhost:3000/bundle
 
 ### Userscript Mode (Production)
 ```
-Installed in Violentmonkey on https://www.jiosaavn.com/*
+Installed in Violentmonkey on supported music platform
 ```
 - Single file: `dist/song-downloader.user.js`
 - CSS embedded in the script
@@ -231,8 +231,8 @@ while ((match = regex.exec(html)) !== null) {
 ## CORS Handling
 
 ### The Problem
-- JioSaavn API servers (`api.jiosaavn.com`) don't send CORS headers
-- CDN servers (`aac.saavncdn.com`, `saavncdn.com`) do send CORS headers
+- Supported music platform API servers don't send CORS headers
+- CDN servers do send CORS headers
 
 ### The Solutions
 
@@ -246,20 +246,20 @@ while ((match = regex.exec(html)) !== null) {
 ### How `/proxy` Works
 
 ```
-Browser → fetch('/proxy') → server.js → JioSaavn API
+Browser → fetch('/proxy') → server.js → supported music platform API
         ← JSON response ←           ←
 ```
 
 1. Browser requests `/proxy` on same origin (`localhost:3000`)
 2. No CORS restriction (same-origin)
-3. Server forwards request to JioSaavn API
+3. Server forwards request to supported music platform API
 4. Server adds required headers (User-Agent, Cookie, Referer)
 5. Server returns response with CORS headers
 
 ### Headers Added by Proxy
 - `User-Agent`: Mimics real browser
-- `Cookie`: Required for JioSaavn API
-- `Referer`: Required for JioSaavn API
+- `Cookie`: Required for supported music platform API
+- `Referer`: Required for supported music platform API
 - `Access-Control-Allow-Origin`: `*` - Allows browser to use response
 - `Access-Control-Allow-Headers`: `*`
 - `Access-Control-Allow-Methods`: `*`
@@ -305,7 +305,7 @@ Response → Audio file with metadata → Downloads
 User pastes URL or opens UI on song page
     ↓
 Utils.parseUrl(url) checks:
-    ├── Contains jiosaavn.com?
+    ├── Contains supported music platform link?
     ├── Contains /song/? → type: 'song'
     ├── Contains /album/? → type: 'album'
     ├── Contains /lyrics/? → type: 'lyrics'
@@ -460,7 +460,7 @@ node server.js
 1. `ui/utils.js` - UI utilities
 2. `libs/des.js` - Pure DES implementation
 3. `libs/writem4a.js` - M4A metadata writer
-4. `utils/decrypt.js` - JioSaavn URL decryption
+4. `utils/decrypt.js` - supported music platform URL decryption
 5. `utils/resource.js` - Fetch audio, album art
 6. `utils/formatters.js` - Data formatting
 7. `utils/url-helper.js` - URL parsing
@@ -487,4 +487,4 @@ node server.js
 ### Manual Testing
 1. **Split Mode:** `node server.js` → http://localhost:3000/
 2. **Bundle Mode:** `node build.js` → `node server.js` → http://localhost:3000/bundle
-3. **Userscript:** `node build.js` → Install in Violentmonkey → https://www.jiosaavn.com/
+3. **Userscript:** `node build.js` → Install in Violentmonkey → supported music platform

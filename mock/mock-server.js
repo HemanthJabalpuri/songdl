@@ -1,5 +1,5 @@
 // mock/mock-server.js
-// Mock server for JioSaavn API - Static JSON with Pagination
+// Mock server for supported music platform API - Static JSON with Pagination
 
 const fs = require('fs');
 const path = require('path');

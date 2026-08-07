@@ -1,6 +1,6 @@
-# 🎵 JioSaavn Song Downloader
+# 🎵 Song Downloader
 
-Download songs and albums from JioSaavn with full metadata, right in your browser.
+Download songs from supported music platform with full metadata, right in your browser.
 
 ---
 
@@ -8,11 +8,7 @@ Download songs and albums from JioSaavn with full metadata, right in your browse
 
 I built this project mainly to learn JavaScript and practice pair programming with GenAI (DeepSeek). The entire development was done on Android, proving that you can build serious projects on mobile.
 
-With the sunset of the Blackhole Android app, I needed a way to listen to songs from JioSaavn again. I found projects like **saavn-dl** (website) and **Melotune** (Android app), but they had limitations:
-- Required hosted APIs (ongoing cost)
-- Platform-specific (not cross-platform)
-
-This userscript solves both problems:
+This userscript solves common problems:
 - ✅ **No server needed** - Runs entirely in your browser
 - ✅ **Cross-platform** - Works on any device with Violentmonkey (Android, Desktop, etc.)
 
@@ -25,7 +21,7 @@ This userscript solves both problems:
 - 📜 **Lyrics** - View and embed lyrics (when available)
 - 🎵 **Player** - Listen to songs right in the UI
 - 🎚️ **Quality** - Choose from 12, 48, 96, 160, 320 kbps
-- 🔗 **URL Detection** - Paste any JioSaavn URL or open UI on a song/album page and it's auto-filled
+- 🔗 **URL Detection** - Paste any supported music platform URL or open UI on a song/album page and it's auto-filled
 - 💿 **Album Downloads** - Download entire albums at once
 - 🖼️ **Album Art** - Embedded in downloaded files
 - 🏷️ **Full Metadata** - Title, artist, album, year, genre, lyrics, cover art
@@ -39,11 +35,11 @@ This userscript solves both problems:
 - **Other Browsers:** Visit [violentmonkey.github.io](https://violentmonkey.github.io/)
 
 ### 2. Install the Userscript
-- Open `song-downloader.user.js` from the [userscript branch](https://raw.githubusercontent.com/HemanthJabalpuri/songdl/refs/heads/userscript/song-downloader.user.js) and click "Install" when Violentmonkey page appears
+- Open `song-downloader.user.js` from the userscript branch and click "Install" when Violentmonkey page appears
 - Or install directly from the `userscript` branch in GitHub repo 
 
-### 3. Visit JioSaavn
-- Go to [jiosaavn.com](https://www.jiosaavn.com/)
+### 3. Visit supported music platform
+- Go to supported music platform
 - Click the 🎵 button or press `Alt+J` to open the UI
 
 ---
@@ -81,17 +77,17 @@ This userscript solves both problems:
 - Lyrics are also embedded in downloaded files
 
 ### URL Detection
-- **Paste any JioSaavn URL** in the search box:
-  - Song URL: `https://www.jiosaavn.com/song/...`
-  - Album URL: `https://www.jiosaavn.com/album/...`
-  - Lyrics URL: `https://www.jiosaavn.com/lyrics/...`
+- **Paste any supported music platform URL** in the search box:
+  - Song URL: `https://supported music platform/song/...`
+  - Album URL: `https://supported music platform/album/...`
+  - Lyrics URL: `https://supported music platform/lyrics/...`
 - **Auto-detect:** If you're on a song/album page and open the UI, the URL is auto-filled
 
 ---
 
 ## What Happens on Song/Album Pages
 
-When you're on a JioSaavn song or album page and open the UI:
+When you're on a supported music platform song or album page and open the UI:
 - The URL is automatically prefilled in the search box
 - Click **Search** to load the song/album
 - No need to copy-paste URLs manually
@@ -112,10 +108,10 @@ When you're on a JioSaavn song or album page and open the UI:
 
 | Issue | Solution |
 |-------|----------|
-| Script not showing | Make sure Violentmonkey is enabled on jiosaavn.com |
+| Script not showing | Make sure Violentmonkey is enabled on supported music platform |
 | UI doesn't open | Check the console (F12) for errors |
 | Downloads failing | Try a different quality setting |
-| Player not working | Make sure you're on jiosaavn.com (not a different site) |
+| Player not working | Make sure you're on supported music platform (not a different site) |
 | Lyrics not showing | Not all songs have lyrics available |
 
 ---
@@ -124,7 +120,7 @@ When you're on a JioSaavn song or album page and open the UI:
 
 - ⚠️ **For personal use only** - This tool is for learning and personal enjoyment
 - 📝 **Respect content rights** - Only download content you have rights to
-- 🔗 **Not affiliated** - This project is not affiliated with or endorsed by JioSaavn
+- 🔗 **Not affiliated** - This project is not affiliated with or endorsed by supported music platform
 
 ---
 

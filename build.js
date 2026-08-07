@@ -61,21 +61,21 @@ function build() {
     let combined = '';
 
     combined += `// ==UserScript==
-// @name         JioSaavn Song Downloader
-// @namespace    https://github.com/HemanthJabalpuri/songdl
+// @name         Song Downloader
+// @namespace    Violentmonkey
 // @version      ${VERSION}
 // @description  Download songs and albums with metadata
-// @author       HemanthJabalpuri
-// @match        https://www.jiosaavn.com/*
+// @author       Hemanth
+// @match        https://www.mymusic.com/*
 // @grant        GM_xmlhttpRequest
-// @connect      aac.saavncdn.com
-// @connect      saavncdn.com
+// @connect      aac.musiccdn.com
+// @connect      musiccdn.com
 // ==/UserScript==
 
 (function() {
     'use strict';
     
-    console.log('[Userscript] JioSaavn Downloader loaded');
+    console.log('[Userscript] Song Downloader loaded');
     console.log('[Userscript] Click the 🎵 button or press Alt+J to open');
     
 `;

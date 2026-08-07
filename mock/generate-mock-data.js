@@ -205,7 +205,6 @@ function generateSong(albumId, albumTitle, globalIndex, prefix, artistIds) {
             vcode: '',
             vlink: '',
             triller_available: false,
-            request_jiotune_flag: false,
             webp: 'true',
             lyrics_id: ''
         },

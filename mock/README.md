@@ -1,6 +1,6 @@
-# Mock Server for JioSaavn API
+# Mock Server for API
 
-A fully offline mock server that mimics JioSaavn's API behavior for development and testing.
+A fully offline mock server that mimics supported music platform's API behavior for development and testing.
 
 ## Features
 
@@ -103,7 +103,7 @@ The server matches search queries against filenames:
 
 ### Encrypted Audio URLs
 
-The mock uses real encryption to mimic JioSaavn's behavior:
+The mock uses real encryption to mimic supported music platform's behavior:
 
 1. **JSON contains** encrypted string: `"encrypted_media_url": "JKcIGVL+NOVwdDWakCj6fWGE8WcC+2iTTmjcVY5gjZcb6MwSnJjGC0KIVQL/LeFRb5cctSKeEIo="`
 2. **Browser decrypts** using `decryptMediaUrl()` → `http://127.0.0.1:3000/mock/audio/mock_audio_96.mp4`
@@ -162,4 +162,4 @@ node server.js --mock
 - The mock server is fully offline - no external API calls are made
 - All audio and image files are served from the `mock/assets/` directory
 - CORS headers are set for all mock asset requests
-- The mock uses real encryption/decryption to mimic JioSaavn's behavior
+- The mock uses real encryption/decryption to mimic supported music platform's behavior

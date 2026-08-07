@@ -4,7 +4,7 @@ window.API = window.API || {};
 window.API.constants = window.API.constants || {};
 
 // API endpoints
-const HOST = 'https://www.jiosaavn.com';
+const HOST = 'https://www.mymusic.com';
 Object.assign(window.API.constants, {
   API_HOST: HOST,
   API_BASE: `${HOST}/api.php`,
