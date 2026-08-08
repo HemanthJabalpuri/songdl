@@ -1,165 +1,106 @@
-# Mock Server for API
+# Mock Server & Dataset Generator
 
-A fully offline mock server that mimics supported music platform's API behavior for development and testing.
+A fully offline mock server and automated testing dataset generator that mimics supported music platform's API behavior for local development.
+
+---
 
 ## Features
 
-- 🔍 **Search** - Song and album search with keyword matching
-- 🎵 **Song Details** - Full song metadata with artistMap, lyrics, and more
-- 💿 **Album Details** - Album metadata with song lists
-- 📜 **Lyrics** - Lyrics with `<br>` tags (mimics real API)
-- 🖼️ **Album Art** - 150x150 and 500x500 images
-- 🎧 **Audio** - Mock audio files for playback and download
-- ⚡ **Cached** - File mappings loaded once at startup for performance
+- 🔍 **Search** - Song, album, playlist, and artist search with keyword matching
+- 🎵 **Song Details** - Full song metadata with decryptable audio URLs
+- 💿 **Album Details** - Album metadata with track listings
+- 🎤 **Artist Profiles** - Complete profiles containing Popular and Latest releases, singles, playlists, and bios.
+- 🗂️ **Playlists Curations** - Playlist metadata listings
+- 📜 **Lyrics** - Lyrics with `<br>` formatting tags (mimics real API)
+- 🎧 **Audio CDNs** - Mock audio files served locally for playing and downloading
+- ⚡ **Paging support** - Pre-generated paging sub-files for loading more items dynamically (e.g. `_songs_2.json`, `_albums_3.json`, etc.)
+
+---
 
 ## Directory Structure
 
 ```
 mock/
-├── mock-server.js          # Main mock server
+├── generate-mock-data.js    # Automated mock dataset generator
+├── mock-server.js           # Request handler logic
 ├── assets/
-│   ├── audio/              # Mock audio files (.mp4)
-│   │   ├── mock_audio_12.mp4
-│   │   ├── mock_audio_48.mp4
-│   │   ├── mock_audio_96.mp4
-│   │   ├── mock_audio_160.mp4
-│   │   └── mock_audio_320.mp4
-│   └── images/             # Mock album art
-│       ├── mock_image-150x150.jpg
-│       └── mock_image-500x500.jpg
-└── data/
+│   ├── audio/               # Mock audio files (.mp4) for bitrates
+│   └── images/              # Mock album cover art (.jpg)
+└── data/                    # Generated mock database files
     ├── search/
-    │   ├── songs/          # Search responses for songs
-    │   │   ├── jingle.json
-    │   │   ├── mary.json
-    │   │   ├── home.json
-    │   │   ├── saints.json
-    │   │   ├── amazing.json
-    │   │   └── default.json
-    │   └── albums/         # Search responses for albums
-    │       ├── holiday.json
-    │       ├── nursery.json
-    │       ├── folk.json
-    │       ├── hymn.json
-    │       └── default.json
+    │   ├── songs/           # Search responses for songs
+    │   ├── albums/          # Search responses for albums
+    │   ├── playlists/       # Search responses for playlists
+    │   └── artists/         # Search responses for artists
     └── details/
-        ├── songs/          # Full song details
-        │   ├── mock_song_001.json
-        │   ├── mock_song_002.json
-        │   ├── mock_song_003.json
-        │   ├── mock_song_004.json
-        │   └── mock_song_005.json
-        ├── albums/         # Full album details
-        │   ├── mock_album_001.json
-        │   ├── mock_album_002.json
-        │   ├── mock_album_003.json
-        │   └── mock_album_004.json
-        └── lyrics/         # Lyrics for songs
-            ├── mock_song_001.json
-            ├── mock_song_002.json
-            ├── mock_song_003.json
-            ├── mock_song_004.json
-            └── mock_song_005.json
+        ├── songs/           # Full song details
+        ├── albums/          # Full album details
+        ├── playlists/       # Full playlist details with track segments
+        ├── lyrics/          # Lyrics for tracks
+        └── artists/         # Artist details, profiles, and page sub-lists
 ```
+
+---
 
 ## How It Works
 
-### API Endpoints
+The local web server (`server.js`) intercepts calls to `/proxy` and delegates them to `mock-server.js` when mock mode is active (`server.js --mock`).
 
-The mock server intercepts requests through the `/proxy` endpoint and responds with mock data.
+### Mock API Endpoints
 
-| Request | Response |
-|---------|----------|
-| `search.getResults?q=jingle` | Returns Jingle Bells song |
-| `search.getAlbumResults?q=holiday` | Returns Holiday Classics album |
-| `webapi.get?token=mock_song_001&type=song` | Returns full song details |
-| `webapi.get?token=mock_album_001&type=album` | Returns full album details |
-| `webapi.get?token=mock_song_001&type=lyrics` | Returns lyrics |
+The mock server maps requested URLs to files inside `mock/data/`:
 
-### Search Matching
+| Endpoints Call | Type | Mock Data File resolved |
+|----------------|------|------------------------|
+| `search.getResults?q=xyz` | search | `data/search/songs/xyz.json` |
+| `search.getAlbumResults?q=xyz` | search | `data/search/albums/xyz.json` |
+| `search.getPlaylistResults?q=xyz` | search | `data/search/playlists/xyz.json` |
+| `search.getArtistResults?q=xyz` | search | `data/search/artists/xyz.json` |
+| `webapi.get?token=XYZ&type=song` | details | `data/details/songs/XYZ.json` |
+| `webapi.get?token=XYZ&type=album` | details | `data/details/albums/XYZ.json` |
+| `webapi.get?token=XYZ&type=playlist` | details | `data/details/playlists/XYZ_page_1.json` |
+| `webapi.get?token=XYZ&type=lyrics` | details | `data/details/lyrics/XYZ.json` |
+| `webapi.get?token=XYZ&type=artist&category=popular` | details | `data/details/artists/XYZ_popular.json` |
+| `webapi.get?token=XYZ&type=artist&category=latest` | details | `data/details/artists/XYZ_latest.json` |
 
-The server matches search queries against filenames:
+### Artist/Playlist Pagination Requests
 
-| Search Query | Returns |
-|--------------|---------|
-| `jingle` | Jingle Bells |
-| `mary` | Mary Had A Little Lamb |
-| `home` | Home on the Range |
-| `saints` | When the Saints Go Marching In |
-| `amazing` | Amazing Grace |
-| `holiday` | Holiday Classics album |
-| `nursery` | Nursery Rhymes album |
-| `folk` | American Folk Songs album |
-| `hymn` | Hymns of Faith album |
-| Anything else | Empty results (`default.json`) |
+Paging requests query specific page indexes:
 
-### Asset URLs
+- **Artist Popular Songs**: `artistId=XYZ&page=2&category=popular` -> Maps to:
+  `data/details/artists/XYZ_popular_songs_2.json`
+- **Artist Latest Songs**: `artistId=XYZ&page=2&category=latest` -> Maps to:
+  `data/details/artists/XYZ_latest_songs_2.json`
+- **Artist Albums**: `albumId=XYZ&page=2` (Note: The API queries artist-albums via `albumId` parameter) -> Maps to:
+  `data/details/artists/XYZ_albums_2.json`
+- **Playlists tracks**: `token=XYZ&type=playlist&page=2` -> Maps to:
+  `data/details/playlists/XYZ_page_2.json`
 
-| Asset Type | URL Pattern | File Location |
-|------------|-------------|---------------|
-| Album Art | `http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg` | `assets/images/mock_image-150x150.jpg` |
-| Album Art (500x500) | `http://127.0.0.1:3000/mock/images/mock_image-500x500.jpg` | `assets/images/mock_image-500x500.jpg` |
-| Audio | `http://127.0.0.1:3000/mock/audio/mock_audio_96.mp4` | `assets/audio/mock_audio_96.mp4` |
+---
 
-### Encrypted Audio URLs
+## Mock Dataset Generator
 
-The mock uses real encryption to mimic supported music platform's behavior:
+The mock dataset is generated automatically by **`generate-mock-data.js`**:
+```bash
+# Generate the mock database files (with prefix 'test'):
+node mock/generate-mock-data.js test
 
-1. **JSON contains** encrypted string: `"encrypted_media_url": "JKcIGVL+NOVwdDWakCj6fWGE8WcC+2iTTmjcVY5gjZcb6MwSnJjGC0KIVQL/LeFRb5cctSKeEIo="`
-2. **Browser decrypts** using `decryptMediaUrl()` → `http://127.0.0.1:3000/mock/audio/mock_audio_96.mp4`
-3. **Browser fetches** the audio from local server
+# Purge existing dataset before generating:
+node mock/generate-mock-data.js --delete test
+```
 
-## Mock Songs
+### Generation Logic:
+1. Creates a pool of candidate tracks, artists, and playlists.
+2. Formats all permadomains to standard production paths (`https://www.mymusic.com`).
+3. Correctly binds `albumToken` values in trace listings, avoiding detail lookup errors.
+4. Generates search files matching keywords (`mary`, `jingle`, etc.).
+5. Randomly assigns songs to artists, generating paginated secondary files (`_songs_2.json`, `_albums_2.json`, etc.) dynamically for those that have more than 10 allocations, enabling local layout testing.
 
-| ID | Title | Artist | Album | Has Lyrics |
-|----|-------|--------|-------|------------|
-| `mock_song_001` | Jingle Bells | James Pierpont | Holiday Classics | ✅ |
-| `mock_song_002` | Mary Had A Little Lamb | Traditional | Nursery Rhymes | ✅ |
-| `mock_song_003` | Home on the Range | Daniel E. Kelley | American Folk Songs | ✅ |
-| `mock_song_004` | When the Saints Go Marching In | Traditional | American Folk Songs | ✅ |
-| `mock_song_005` | Amazing Grace | John Newton | Hymns of Faith | ✅ |
-
-## Mock Albums
-
-| ID | Title | Artist | Songs |
-|----|-------|--------|-------|
-| `mock_album_001` | Holiday Classics | James Pierpont | 1 |
-| `mock_album_002` | Nursery Rhymes | Traditional | 1 |
-| `mock_album_003` | American Folk Songs | Various Artists | 2 |
-| `mock_album_004` | Hymns of Faith | John Newton | 1 |
-
-## Adding New Mock Data
-
-### Add a New Song
-
-1. **Create song details**: `data/details/songs/mock_song_XXX.json`
-2. **Create search response**: `data/search/songs/name.json`
-3. **Create lyrics**: `data/details/lyrics/mock_song_XXX.json`
-4. **Add audio file**: `assets/audio/mock_audio_XXX.mp4`
-5. **Add album art**: `assets/images/mock_image-XXX-150x150.jpg` and `500x500.jpg`
-6. **Restart the server**
-
-### Add a New Album
-
-1. **Create album details**: `data/details/albums/mock_album_XXX.json`
-2. **Create search response**: `data/search/albums/name.json`
-3. **Add album art**: `assets/images/mock_image-XXX-150x150.jpg` and `500x500.jpg`
-4. **Restart the server**
+---
 
 ## Running the Mock Server
 
+Start the development server with mock mode enabled:
 ```bash
-# Start with mock mode
 node server.js --mock
 ```
-
-## Dependencies
-
-- Node.js (built-in modules only: `fs`, `path`)
-
-## Notes
-
-- The mock server is fully offline - no external API calls are made
-- All audio and image files are served from the `mock/assets/` directory
-- CORS headers are set for all mock asset requests
-- The mock uses real encryption/decryption to mimic supported music platform's behavior

@@ -1,4 +1,4 @@
-// ui/js/services/album.js
+// src/js/services/album.js
 
 window.Services = window.Services || {};
 
@@ -8,12 +8,10 @@ window.Services.Album = {
         var rawData = await window.API.searchAlbums(query, limit, page);
         return window.Utils.formatters.formatSearchResults(rawData, 'album');
     },
-    
+
     // Get album details with formatted songs
     getDetails: async function(token) {
         var rawData = await window.API.getAlbum(token);
         return window.Utils.formatters.formatAlbumDetail(rawData);
     }
 };
-
-console.log('[Services] Album loaded');

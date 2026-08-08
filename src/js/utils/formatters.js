@@ -1,4 +1,4 @@
-// ui/js/core/formatters.js
+// src/js/utils/formatters.js
 
 window.Utils = window.Utils || {};
 window.Utils.formatters = window.Utils.formatters || {};
@@ -6,10 +6,7 @@ window.Utils.formatters = window.Utils.formatters || {};
 // ============ DECODE ============
 window.Utils.formatters.decode = function(text) {
     if (!text) return '';
-    return text
-        .replace(/&amp;/g, '&')
-        .replace(/&#039;/g, "'")
-        .replace(/&quot;/g, '"');
+    return text.replace(/&amp;/g, '&').replace(/&#039;/g, '\'').replace(/&quot;/g, '"');
 };
 
 // ============ EXTRACT TOKEN ============
@@ -18,11 +15,6 @@ window.Utils.formatters.extractToken = function(url) {
     return url.split('/').pop() || '';
 };
 
-// ============ HIGH RES ALBUM ART ============
-window.Utils.formatters.getHighResAlbumArt = function(url) {
-    if (!url) return null;
-    return url.replace(/\d+x\d+\.jpg$/, '500x500.jpg');
-};
 
 
 // ============ HIGH RES ARTIST IMAGE ============
@@ -35,14 +27,11 @@ window.Utils.formatters.formatLyrics = function(rawLyrics) {
     return rawLyrics.replace(/<br>/g, '\n');
 };
 
-/**
- * Replace bitrate in decrypted URL with selected quality
- * Example: https://.../song_96.mp4 -> https://.../song_320.mp4
- */
+// Replace bitrate in decrypted URL with selected quality Example: https://.../song_96.mp4 -> https://.../song_320.mp4
 window.Utils.formatters.formatUrlWithQuality = function(url, quality) {
     if (!url) return url;
     if (!quality) quality = 96;
-    
+
     // Match pattern like _96.mp4, _160.mp4, _320.mp4
     // Replace with selected quality
     return url.replace(/_(\d+)\.mp4/, '_' + quality + '.mp4');
@@ -51,16 +40,20 @@ window.Utils.formatters.formatUrlWithQuality = function(url, quality) {
 // ============ EXTRACT ARTISTS ============
 window.Utils.formatters.extractArtists = function(songData) {
     var artistMap = songData.more_info ? songData.more_info.artistMap : null;
-    
+
     var primaryArtists = (artistMap && artistMap.primary_artists) ? artistMap.primary_artists : [];
     var featuredArtists = (artistMap && artistMap.featured_artists) ? artistMap.featured_artists : [];
-    
-    var primaryNames = primaryArtists.map(function(a) { return a.name; });
-    var featuredNames = featuredArtists.map(function(a) { return a.name; });
+
+    var primaryNames = primaryArtists.map(function(a) {
+        return a.name;
+    });
+    var featuredNames = featuredArtists.map(function(a) {
+        return a.name;
+    });
     var allNames = primaryNames.concat(featuredNames);
     var primaryArtist = primaryNames[0] || '';
     var allArtists = allNames.join(', ');
-    
+
     return {
         primary: primaryArtists,
         featured: featuredArtists,
@@ -91,9 +84,10 @@ window.Utils.formatters.getCopyright = function(songData) {
 
 // ============ FORMAT SEARCH RESULTS ============
 window.Utils.formatters.formatSearchResults = function(data, type) {
-    var results = (data.results || [])
-        .filter(function(item) { return item.type === type; });
-    
+    var results = (data.results || []).filter(function(item) {
+        return item.type === type;
+    });
+
     if (type === 'song') {
         results = results.map(window.Utils.formatters.formatSong);
     } else if (type === 'album') {
@@ -103,12 +97,8 @@ window.Utils.formatters.formatSearchResults = function(data, type) {
     } else if (type === 'artist') {
         results = results.map(window.Utils.formatters.formatArtistSearch);
     }
-    
-    return {
-        total: Number(data.total || 0),
-        start: Number(data.start || 0),
-        results: results
-    };
+
+    return {total: Number(data.total || 0), start: Number(data.start || 0), results: results};
 };
 
 // ============ SONG FORMATTER ============
@@ -144,9 +134,7 @@ window.Utils.formatters.formatAlbum = function(album) {
         image: album.image || '',
         language: album.language,
         year: album.year,
-        more_info: {
-            song_count: album.more_info ? album.more_info.song_count || '0' : '0'
-        }
+        more_info: {song_count: album.more_info ? album.more_info.song_count || '0' : '0'}
     };
 };
 
@@ -176,9 +164,7 @@ window.Utils.formatters.formatPlaylist = function(playlist) {
         image: playlist.image || '',
         language: playlist.more_info ? playlist.more_info.language || '' : '',
         year: '',
-        more_info: {
-            song_count: playlist.more_info ? playlist.more_info.song_count || '0' : '0'
-        }
+        more_info: {song_count: playlist.more_info ? playlist.more_info.song_count || '0' : '0'}
     };
 };
 
@@ -244,9 +230,6 @@ window.Utils.formatters.formatArtistDetail = function(data) {
         featuredPlaylists: (data.featured_artist_playlist || []).map(window.Utils.formatters.formatPlaylist),
         singles: (data.singles || []).map(window.Utils.formatters.formatAlbum),
         latestReleases: (data.latest_release || []).map(window.Utils.formatters.formatAlbum),
-        // Pagination info
-        totalSongs: data.topSongs ? data.topSongs.length : 0,
-        totalAlbums: data.topAlbums ? data.topAlbums.length : 0,
         // Store artistId for more API calls
         artistId: data.artistId
     };
@@ -255,16 +238,16 @@ window.Utils.formatters.formatArtistDetail = function(data) {
 // ============ DECRYPTED SONG FORMATTER ============
 window.Utils.formatters.formatDecryptedSong = function(songData, decryptedUrl) {
     var rawData = songData;
-    
+
     // Extract artist info from songData
     var artists = window.Utils.formatters.extractArtists(rawData);
-    
+
     // Get album name from songData
     var albumName = window.Utils.formatters.getAlbumName(rawData);
-    
+
     // Get copyright from songData
     var copyright = window.Utils.formatters.getCopyright(rawData);
-    
+
     return {
         title: window.Utils.formatters.decode(rawData.title),
         subtitle: window.Utils.formatters.decode(rawData.subtitle),
@@ -281,5 +264,3 @@ window.Utils.formatters.formatDecryptedSong = function(songData, decryptedUrl) {
         url: decryptedUrl
     };
 };
-
-console.log('[Utils] Formatters loaded');

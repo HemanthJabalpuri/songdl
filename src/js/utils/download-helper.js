@@ -1,12 +1,10 @@
-// ui/js/core/download-helper.js
+// src/js/utils/download-helper.js
 
 window.Utils = window.Utils || {};
 
-/**
- * Trigger a file download in the browser
- */
+// Trigger a file download in the browser
 window.Utils.downloadFile = function(data, filename) {
-    var blob = new Blob([data], { type: 'audio/mp4' });
+    var blob = new Blob([data], {type: 'audio/mp4'});
     var blobUrl = URL.createObjectURL(blob);
     var link = document.createElement('a');
     link.href = blobUrl;
@@ -14,18 +12,16 @@ window.Utils.downloadFile = function(data, filename) {
     link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
-    
+
     setTimeout(function() {
         document.body.removeChild(link);
         URL.revokeObjectURL(blobUrl);
     }, 5000);
-    
+
     return true;
 };
 
-/**
- * Build a filename from song metadata
- */
+// Build a filename from song metadata
 window.Utils.buildFilename = function(song, quality) {
     var artist = song.primary_artist || 'Unknown Artist';
     var safeTitle = (song.title || 'song').replace(/[^a-zA-Z0-9\s-]/g, '').trim();
@@ -38,9 +34,7 @@ window.Utils.buildFilename = function(song, quality) {
 };
 
 
-/**
- * Build metadata object for M4A
- */
+// Build metadata object for M4A
 window.Utils.buildMetadata = function(song, albumArt, lyrics) {
     var allArtists = song.all_artists || song.subtitle || '';
 
@@ -54,7 +48,7 @@ window.Utils.buildMetadata = function(song, albumArt, lyrics) {
         comment: 'Token: ' + (song.token || ''),
         album_artist: allArtists,
     };
-    
+
     if (albumArt && albumArt.data && albumArt.data.length > 0) {
         metadata.picture = albumArt;
     }
@@ -65,5 +59,3 @@ window.Utils.buildMetadata = function(song, albumArt, lyrics) {
 
     return metadata;
 };
-
-console.log('[Utils] Download helper loaded');

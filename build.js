@@ -1,3 +1,5 @@
+// build.js
+
 const fs = require('fs');
 const path = require('path');
 
@@ -21,14 +23,14 @@ function readFile(filePath) {
 function getScriptFilesFromHTML() {
     const html = readFile(path.join(ROOT_DIR, 'index.html'));
     const scripts = [];
-    
+
     // Match src="/js/..." - capture full path with leading slash
     const regex = /src="(\/js\/[^"]+)"/g;
     let match;
     while ((match = regex.exec(html)) !== null) {
         scripts.push(match[1]);
     }
-    
+
     return scripts;
 }
 
@@ -54,7 +56,7 @@ function build() {
     const files = getScriptFilesFromHTML();
     console.log('📋 Found ' + files.length + ' scripts in index.html:');
     files.forEach((f, i) => {
-        console.log('   ' + (i+1) + '. ' + f);
+        console.log('   ' + (i + 1) + '. ' + f);
     });
     console.log('');
 
@@ -101,7 +103,8 @@ function build() {
 
         // Remove userscript headers
         content = content.replace(/\/\/ ==UserScript==[\s\S]*?\/\/ ==\/UserScript==\n/, '');
-        content = content.replace(/\/\/ @(grant|connect|match|require|name|namespace|version|description|author).*\n/g, '');
+        content =
+            content.replace(/\/\/ @(grant|connect|match|require|name|namespace|version|description|author).*\n/g, '');
 
         combined += '\n    // ============================================================\n';
         combined += '    // FILE: ' + file + '\n';

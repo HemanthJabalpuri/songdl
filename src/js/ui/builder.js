@@ -2,12 +2,12 @@
 
 window.createUI = function() {
     console.log('[UI] Creating UI...');
-    
+
     if (isInitialized) {
         console.log('[UI] Already initialized');
         return;
     }
-    
+
     var overlay = document.createElement('div');
     overlay.id = 'ui-overlay';
     overlay.innerHTML = `
@@ -44,34 +44,34 @@ window.createUI = function() {
         </div>
     `;
     document.body.appendChild(overlay);
-    
+
     var toggleBtn = document.createElement('button');
     toggleBtn.id = 'ui-toggle-btn';
     toggleBtn.textContent = '🎵';
     toggleBtn.title = 'Open Song Downloader (Alt+J)';
     document.body.appendChild(toggleBtn);
-    
+
     isInitialized = true;
-    
+
     waitForElements(function() {
         setupEventListeners();
         setupAppEventListeners();
         console.log('[UI] UI ready');
     });
-    
+
     console.log('[UI] UI created');
 };
 
 function toggleUI() {
     if (isToggling) return;
     isToggling = true;
-    
+
     if (isOpen) {
         closeUI();
     } else {
         openUI();
     }
-    
+
     setTimeout(function() {
         isToggling = false;
     }, 300);
@@ -80,7 +80,7 @@ function toggleUI() {
 function openUI() {
     if (!DOM.overlay) return;
     if (isOpen) return;
-    
+
     DOM.overlay.classList.add('active');
 
     // Prefill URL from current page if available
@@ -92,12 +92,10 @@ function openUI() {
             DOM.searchInput.focus();
         }, 100);
     }
-    
+
     isOpen = true;
     console.log('[UI] Opened');
 }
 
 window.toggleUI = toggleUI;
 window.openUI = openUI;
-
-console.log('[UI] Builder module loaded');

@@ -12,9 +12,12 @@ function getHeaders() {
     };
 }
 
-function handleResponse(response, responseType) {
-    if (!response.ok) throw new Error('HTTP ' + response.status);
-    
+function handleResponse(response, responseType, url) {
+    if (!response.ok) {
+        console.error('[Utils Fetch Error] Server returnedStatus:', response.status, 'for:', url);
+        throw new Error('HTTP ' + response.status);
+    }
+
     if (responseType === 'arraybuffer') return response.arrayBuffer();
     if (responseType === 'blob') return response.blob();
     return response;
@@ -31,16 +34,15 @@ function handleGMResponse(response, resolve, reject) {
 // ============ FETCH METHODS ============
 
 function fetchViaDirect(url, responseType) {
-    return fetch(url, { headers: getHeaders() })
-        .then(function(response) {
-            return handleResponse(response, responseType);
-        });
+    return fetch(url, {headers: getHeaders()}).then(function(response) {
+        return handleResponse(response, responseType, url);
+    });
 }
 
 function fetchViaGM(url, responseType) {
     return new Promise(function(resolve, reject) {
         GM_xmlhttpRequest({
-            method: "GET",
+            method: 'GET',
             url: url,
             responseType: responseType === 'arraybuffer' ? 'arraybuffer' : 'blob',
             headers: getHeaders(),
@@ -62,18 +64,18 @@ function fetchViaGM(url, responseType) {
 window.Utils.fetchResource = function(url, responseType) {
     responseType = responseType || 'arraybuffer';
     console.log('[Utils] Fetching:', url.substring(0, 60) + '...');
-    
+
     // Proxy mode: direct fetch (CDN allows CORS)
     if (window.isProxy) {
         return fetchViaDirect(url, responseType);
     }
-    
+
     // Userscript mode: use GM_xmlhttpRequest
     if (typeof GM_xmlhttpRequest !== 'undefined') {
         console.log('[Utils] Using GM_xmlhttpRequest');
         return fetchViaGM(url, responseType);
     }
-    
+
     // Fallback: standard fetch
     console.log('[Utils] Using standard fetch');
     return fetchViaDirect(url, responseType);
@@ -88,29 +90,23 @@ function getHighResUrl(url) {
 function processAlbumArt(buffer) {
     var artBytes = new Uint8Array(buffer);
     console.log('[Utils] Album art loaded:', (artBytes.length / 1024).toFixed(1) + ' KB');
-    return { data: artBytes, format: 'jpeg' };
+    return {data: artBytes, format: 'jpeg'};
 }
 
 function fetchAlbumArtWithFallback(url) {
     var highResUrl = getHighResUrl(url);
     console.log('[Utils] Album art:', highResUrl);
-    
-    return window.Utils.fetchResource(highResUrl, 'arraybuffer')
-        .then(processAlbumArt)
-        .catch(function() {
-            console.log('[Utils] High-res failed, trying original...');
-            return window.Utils.fetchResource(url, 'arraybuffer')
-                .then(processAlbumArt)
-                .catch(function() {
-                    console.warn('[Utils] Album art fetch failed');
-                    return null;
-                });
+
+    return window.Utils.fetchResource(highResUrl, 'arraybuffer').then(processAlbumArt).catch(function() {
+        console.log('[Utils] High-res failed, trying original...');
+        return window.Utils.fetchResource(url, 'arraybuffer').then(processAlbumArt).catch(function() {
+            console.warn('[Utils] Album art fetch failed');
+            return null;
         });
+    });
 }
 
 window.Utils.fetchAlbumArt = function(url) {
     if (!url) return Promise.resolve(null);
     return fetchAlbumArtWithFallback(url);
 };
-
-console.log('[Utils] Resource module loaded');

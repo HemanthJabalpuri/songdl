@@ -3,22 +3,12 @@
 
 window.API = window.API || {};
 
-/**
- * Search for artists - returns raw API response
- */
+// Search for artists - returns raw API response
 window.API.searchArtists = async function(query, limit, page) {
-    return await window.API.callAPI('search.getArtistResults', {
-        q: query,
-        p: page || 1,
-        n: limit || 20
-    });
+    return await window.API.callAPI('search.getArtistResults', {q: query, p: page || 1, n: limit || 20});
 };
 
-/**
- * Get artist details by token - returns raw API response
- * @param {string} token - Artist token from perma_url
- * @param {string} category - 'popular' or 'latest'
- */
+// Get artist details by token - returns raw API response
 window.API.getArtist = async function(token, category) {
     return await window.API.callAPI('webapi.get', {
         token: token,
@@ -32,12 +22,7 @@ window.API.getArtist = async function(token, category) {
     });
 };
 
-/**
- * Get more songs by artist - returns raw API response
- * @param {string} artistId - Artist ID (not token)
- * @param {number} page - Page number
- * @param {string} category - 'popular' or 'latest'
- */
+// Get more songs by artist - returns raw API response
 window.API.getArtistMoreSongs = async function(artistId, page, category) {
     return await window.API.callAPI('artist.getArtistMoreSong', {
         artistId: artistId,
@@ -47,12 +32,7 @@ window.API.getArtistMoreSongs = async function(artistId, page, category) {
     });
 };
 
-/**
- * Get more albums by artist - returns raw API response
- * @param {string} artistId - Artist ID (not token)
- * @param {number} page - Page number
- * @param {string} category - 'popular' or 'latest'
- */
+// Get more albums by artist - returns raw API response
 window.API.getArtistMoreAlbums = async function(artistId, page, category) {
     return await window.API.callAPI('artist.getArtistMoreAlbum', {
         artistId: artistId,
@@ -61,5 +41,3 @@ window.API.getArtistMoreAlbums = async function(artistId, page, category) {
         sort_order: category === 'latest' ? 'desc' : 'asc'
     });
 };
-
-console.log('[API] Artists loaded');

@@ -4,30 +4,19 @@
 window.Services = window.Services || {};
 
 window.Services.Artist = {
-    /**
-     * Search for artists and format results
-     */
+    // Search for artists and format results
     search: async function(query, limit, page) {
         var rawData = await window.API.searchArtists(query, limit, page);
         return window.Utils.formatters.formatSearchResults(rawData, 'artist');
     },
-    
-    /**
-     * Get artist details with formatted songs and albums
-     * @param {string} token - Artist token from perma_url
-     * @param {string} category - 'popular' or 'latest'
-     */
+
+    // Get artist details with formatted songs and albums
     getDetails: async function(token, category) {
         var rawData = await window.API.getArtist(token, category);
         return window.Utils.formatters.formatArtistDetail(rawData);
     },
-    
-    /**
-     * Get more songs by artist
-     * @param {string} artistId - Artist ID (not token)
-     * @param {number} page - Page number
-     * @param {string} category - 'popular' or 'latest'
-     */
+
+    // Get more songs by artist
     getMoreSongs: async function(artistId, page, category) {
         var rawData = await window.API.getArtistMoreSongs(artistId, page, category);
         // rawData.topSongs.songs contains the songs array
@@ -38,13 +27,8 @@ window.Services.Artist = {
             last_page: rawData.topSongs ? rawData.topSongs.last_page !== false : true
         };
     },
-    
-    /**
-     * Get more albums by artist
-     * @param {string} artistId - Artist ID (not token)
-     * @param {number} page - Page number
-     * @param {string} category - 'popular' or 'latest'
-     */
+
+    // Get more albums by artist
     getMoreAlbums: async function(artistId, page, category) {
         var rawData = await window.API.getArtistMoreAlbums(artistId, page, category);
         // rawData.topAlbums.albums contains the albums array
@@ -56,5 +40,3 @@ window.Services.Artist = {
         };
     }
 };
-
-console.log('[Services] Artist loaded');
