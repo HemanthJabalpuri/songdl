@@ -1,25 +1,26 @@
 // ==UserScript==
-// @name         JioSaavn Song Downloader
-// @namespace    https://github.com/HemanthJabalpuri/songdl
-// @version      1.2.0
+// @name         Song Downloader
+// @namespace    Violentmonkey
+// @version      1.3.0
 // @description  Download songs and albums with metadata
-// @author       HemanthJabalpuri
-// @match        https://www.jiosaavn.com/*
+// @author       Hemanth
+// @match        https://www.mymusic.com/*
 // @grant        GM_xmlhttpRequest
-// @connect      aac.saavncdn.com
-// @connect      saavncdn.com
+// @connect      aac.musiccdn.com
+// @connect      musiccdn.com
 // ==/UserScript==
 
 (function() {
     'use strict';
     
-    console.log('[Userscript] JioSaavn Downloader loaded');
+
+    console.log('[Userscript] Song Downloader loaded');
     console.log('[Userscript] Click the 🎵 button or press Alt+J to open');
     
     // ============================================================
     // EMBEDDED CSS
     // ============================================================
-    var UI_CSS = "/* ===== Floating Toggle Button ===== */\n#ui-toggle-btn {\n    position: fixed;\n    bottom: 20px;\n    right: 20px;\n    z-index: 2147483647;\n    background: #1db954;\n    color: white;\n    border: none;\n    border-radius: 50%;\n    width: 56px;\n    height: 56px;\n    font-size: 24px;\n    cursor: pointer;\n    box-shadow: 0 4px 12px rgba(0,0,0,0.3);\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: transform 0.2s;\n    touch-action: manipulation;\n}\n#ui-toggle-btn:hover {\n    transform: scale(1.1);\n}\n#ui-toggle-btn:active {\n    transform: scale(0.95);\n}\n\n/* ===== Fullscreen Overlay ===== */\n#ui-overlay {\n    position: fixed;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n    z-index: 2147483646;\n    background: #111;\n    color: #fff;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;\n    display: none;\n    flex-direction: column;\n    overflow-y: auto;\n    padding: 20px;\n}\n#ui-overlay.active {\n    display: flex;\n}\n\n/* ===== Overlay Content ===== */\n#ui-overlay .container {\n    max-width: 900px;\n    margin: 0 auto;\n    width: 100%;\n}\n#ui-overlay h1 {\n    color: #1db954;\n    font-size: 24px;\n    margin-bottom: 20px;\n    display: flex;\n    align-items: center;\n    gap: 12px;\n}\n\n/* Search Tabs */\n#ui-overlay .search-tabs {\n    display: flex;\n    gap: 10px;\n    margin-bottom: 20px;\n}\n#ui-overlay .tab {\n    padding: 10px 24px;\n    background: #282828;\n    color: #888;\n    border: none;\n    border-radius: 8px;\n    font-size: 15px;\n    cursor: pointer;\n    transition: all 0.2s;\n}\n#ui-overlay .tab:hover {\n    background: #333;\n}\n#ui-overlay .tab.active {\n    background: #1db954;\n    color: #111;\n    font-weight: bold;\n}\n\n/* Disabled tab */\n#ui-overlay .tab.disabled {\n    opacity: 0.4;\n    cursor: not-allowed;\n    pointer-events: none;\n}\n\n/* Search Box */\n#ui-overlay .search-box {\n    display: flex;\n    gap: 10px;\n    margin-bottom: 20px;\n}\n#ui-overlay .search-box input {\n    flex: 1;\n    padding: 12px;\n    border: 2px solid #333;\n    border-radius: 8px;\n    background: #222;\n    color: #fff;\n    font-size: 16px;\n    outline: none;\n}\n#ui-overlay .search-box input:focus {\n    border-color: #1db954;\n}\n#ui-overlay .search-box input::placeholder {\n    color: #666;\n}\n#ui-overlay .btn-search {\n    padding: 12px 24px;\n    background: #1db954;\n    color: #111;\n    border: none;\n    border-radius: 8px;\n    font-size: 16px;\n    font-weight: bold;\n    cursor: pointer;\n}\n#ui-overlay .btn-search:hover {\n    background: #1ed760;\n}\n\n/* Stats */\n#ui-overlay .stats {\n    margin: 10px 0 20px 0;\n    color: #888;\n    font-size: 14px;\n}\n\n/* Results */\n#ui-overlay .results {\n    display: grid;\n    gap: 15px;\n}\n\n/* Song Cards */\n#ui-overlay .song-card {\n    background: #1a1a1a;\n    padding: 15px;\n    border-radius: 8px;\n    display: flex;\n    gap: 15px;\n    align-items: center;\n    border: 1px solid #222;\n}\n#ui-overlay .song-card img {\n    width: 80px;\n    height: 80px;\n    border-radius: 4px;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .song-info {\n    flex: 1;\n}\n#ui-overlay .song-title {\n    font-size: 18px;\n    font-weight: bold;\n    color: #fff;\n}\n#ui-overlay .song-artist {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .song-details {\n    color: #666;\n    font-size: 14px;\n}\n#ui-overlay .song-actions {\n    display: flex;\n    gap: 8px;\n    margin-top: 8px;\n    flex-wrap: wrap;\n}\n#ui-overlay .btn-download {\n    padding: 6px 16px;\n    background: #1db954;\n    color: #111;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    font-weight: bold;\n    cursor: pointer;\n}\n#ui-overlay .btn-download:hover {\n    background: #1ed760;\n}\n#ui-overlay .btn-download:disabled {\n    background: #555;\n    cursor: not-allowed;\n}\n#ui-overlay .btn-play {\n    padding: 6px 16px;\n    background: #007bff;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    cursor: pointer;\n}\n#ui-overlay .btn-play:hover {\n    background: #0056b3;\n}\n#ui-overlay .btn-play:disabled {\n    background: #555;\n    cursor: not-allowed;\n}\n\n/* Album Cards */\n#ui-overlay .album-card {\n    background: #1a1a1a;\n    padding: 15px;\n    border-radius: 8px;\n    display: flex;\n    gap: 15px;\n    align-items: center;\n    cursor: pointer;\n    border: 1px solid #222;\n}\n#ui-overlay .album-card:hover {\n    background: #222;\n}\n#ui-overlay .album-card img {\n    width: 100px;\n    height: 100px;\n    border-radius: 4px;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .album-info {\n    flex: 1;\n}\n#ui-overlay .album-title {\n    font-size: 18px;\n    font-weight: bold;\n    color: #fff;\n}\n#ui-overlay .album-artist {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .album-details {\n    color: #666;\n    font-size: 14px;\n}\n#ui-overlay .btn-view-album {\n    margin-top: 8px;\n    padding: 6px 16px;\n    background: #6c757d;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    cursor: pointer;\n}\n#ui-overlay .btn-view-album:hover {\n    background: #5a6268;\n}\n\n/* Album Detail View */\n#ui-overlay .album-header {\n    background: #1a1a1a;\n    padding: 20px;\n    border-radius: 8px;\n    display: flex;\n    gap: 20px;\n    margin-bottom: 20px;\n    border: 1px solid #222;\n}\n#ui-overlay .album-header img {\n    width: 200px;\n    height: 200px;\n    border-radius: 4px;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .album-header-info {\n    flex: 1;\n}\n#ui-overlay .album-header-info h2 {\n    margin-bottom: 5px;\n    color: #fff;\n}\n#ui-overlay .album-header-info p {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .album-actions {\n    margin-top: 15px;\n    display: flex;\n    gap: 10px;\n    flex-wrap: wrap;\n}\n#ui-overlay .btn-back {\n    padding: 8px 20px;\n    background: #6c757d;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    cursor: pointer;\n}\n#ui-overlay .btn-back:hover {\n    background: #5a6268;\n}\n\n/* Song List in Album */\n#ui-overlay .song-list {\n    display: grid;\n    gap: 8px;\n}\n#ui-overlay .song-item {\n    background: #1a1a1a;\n    padding: 12px 15px;\n    border-radius: 4px;\n    display: flex;\n    align-items: center;\n    gap: 15px;\n    border: 1px solid #222;\n}\n#ui-overlay .song-item .song-title {\n    flex: 2;\n    font-weight: 500;\n    font-size: 15px;\n    color: #fff;\n}\n#ui-overlay .song-item .song-artist {\n    flex: 2;\n    color: #aaa;\n    font-size: 14px;\n}\n#ui-overlay .song-item .song-duration {\n    color: #666;\n    font-size: 13px;\n    min-width: 50px;\n}\n\n/* Playlist Cards */\n#ui-overlay .playlist-card {\n    background: #1a1a1a;\n    padding: 15px;\n    border-radius: 8px;\n    display: flex;\n    gap: 15px;\n    align-items: center;\n    cursor: pointer;\n    border: 1px solid #222;\n}\n#ui-overlay .playlist-card:hover {\n    background: #222;\n}\n#ui-overlay .playlist-card img {\n    width: 100px;\n    height: 100px;\n    border-radius: 4px;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .playlist-info {\n    flex: 1;\n}\n#ui-overlay .playlist-title {\n    font-size: 18px;\n    font-weight: bold;\n    color: #fff;\n}\n#ui-overlay .playlist-artist {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .playlist-details {\n    color: #666;\n    font-size: 14px;\n}\n#ui-overlay .btn-view-playlist {\n    margin-top: 8px;\n    padding: 6px 16px;\n    background: #6c757d;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    cursor: pointer;\n}\n#ui-overlay .btn-view-playlist:hover {\n    background: #5a6268;\n}\n\n/* Playlist Header */\n#ui-overlay .playlist-header {\n    background: #1a1a1a;\n    padding: 20px;\n    border-radius: 8px;\n    display: flex;\n    gap: 20px;\n    margin-bottom: 20px;\n    border: 1px solid #222;\n}\n#ui-overlay .playlist-header img {\n    width: 200px;\n    height: 200px;\n    border-radius: 4px;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .playlist-header-info {\n    flex: 1;\n}\n#ui-overlay .playlist-header-info h2 {\n    margin-bottom: 5px;\n    color: #fff;\n}\n#ui-overlay .playlist-header-info p {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .playlist-description {\n    color: #888 !important;\n    font-style: italic;\n    margin-top: 10px !important;\n}\n#ui-overlay .playlist-actions {\n    margin-top: 15px;\n    display: flex;\n    gap: 10px;\n    flex-wrap: wrap;\n}\n\n/* Loading & Error */\n#ui-overlay .loading {\n    text-align: center;\n    padding: 40px;\n    color: #888;\n}\n#ui-overlay .error {\n    color: #ff4444;\n    padding: 20px;\n    background: #2a1a1a;\n    border-radius: 8px;\n    border: 1px solid #661111;\n}\n#ui-overlay .no-results {\n    text-align: center;\n    padding: 40px;\n    color: #666;\n}\n\n/* Progress */\n#ui-overlay .download-progress,\n#ui-overlay .play-progress {\n    display: none;\n    margin-top: 5px;\n    font-size: 12px;\n    color: #1db954;\n}\n#ui-overlay .download-progress.active,\n#ui-overlay .play-progress.active {\n    display: block;\n}\n\n/* Player */\n#ui-overlay audio {\n    width: 100%;\n    margin-top: 20px;\n    border-radius: 8px;\n}\n\n/* Lyrics Button */\n#ui-overlay .btn-lyrics {\n    padding: 6px 16px;\n    background: #6c757d;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    cursor: pointer;\n}\n#ui-overlay .btn-lyrics:hover {\n    background: #5a6268;\n}\n\n/* ===== More Button ===== */\n#ui-overlay .btn-more {\n    padding: 6px 12px;\n    background: transparent;\n    color: #aaa;\n    border: none;\n    border-radius: 4px;\n    font-size: 18px;\n    cursor: pointer;\n    line-height: 1;\n}\n#ui-overlay .btn-more:hover {\n    color: #fff;\n    background: #282828;\n}\n\n/* ===== More Menu ===== */\n#ui-overlay .more-menu {\n    position: absolute;\n    right: 0;\n    top: 100%;\n    min-width: 160px;\n    max-width: 250px;\n    background: #1a1a1a;\n    border: 1px solid #333;\n    border-radius: 8px;\n    padding: 4px 0;\n    z-index: 100;\n    box-shadow: 0 4px 12px rgba(0,0,0,0.5);\n    margin-top: 4px;\n}\n\n#ui-overlay .more-item {\n    display: block;\n    width: 100%;\n    padding: 8px 16px;\n    background: transparent;\n    color: #ddd;\n    border: none;\n    text-align: left;\n    font-size: 14px;\n    cursor: pointer;\n    white-space: nowrap;\n    overflow: hidden;\n    text-overflow: ellipsis;\n}\n#ui-overlay .more-item:hover {\n    background: #282828;\n    color: #fff;\n}\n\n/* Song card needs position relative for menu positioning */\n#ui-overlay .song-card {\n    position: relative;\n}\n\n/* ===== Load More Button ===== */\n#ui-overlay .btn-load-more {\n    display: block;\n    width: 100%;\n    padding: 12px 20px;\n    margin-top: 15px;\n    background: #282828;\n    color: #fff;\n    border: 1px solid #444;\n    border-radius: 8px;\n    font-size: 14px;\n    font-weight: 500;\n    cursor: pointer;\n    transition: all 0.2s;\n    text-align: center;\n}\n\n#ui-overlay .btn-load-more:hover {\n    background: #333;\n    border-color: #1db954;\n}\n\n#ui-overlay .btn-load-more:disabled {\n    opacity: 0.5;\n    cursor: not-allowed;\n}\n\n#ui-overlay .btn-load-more:disabled:hover {\n    background: #282828;\n    border-color: #444;\n}\n\n/* ===== End of Results ===== */\n#ui-overlay .end-of-results {\n    display: block;\n    width: 100%;\n    padding: 12px 20px;\n    margin-top: 15px;\n    color: #666;\n    font-size: 14px;\n    text-align: center;\n    border-top: 1px solid #333;\n}\n\n/* ===== Artist Header ===== */\n#ui-overlay .artist-header {\n    background: #1a1a1a;\n    padding: 20px;\n    border-radius: 8px;\n    display: flex;\n    gap: 20px;\n    margin-bottom: 20px;\n    border: 1px solid #222;\n}\n#ui-overlay .artist-header img {\n    width: 150px;\n    height: 150px;\n    border-radius: 50%;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .artist-header-info {\n    flex: 1;\n}\n#ui-overlay .artist-header-info h2 {\n    margin-bottom: 5px;\n    color: #fff;\n    font-size: 24px;\n}\n#ui-overlay .artist-header-info p {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .artist-bio {\n    color: #888 !important;\n    font-size: 14px;\n    margin-top: 10px !important;\n    line-height: 1.6;\n}\n#ui-overlay .artist-actions {\n    margin-top: 15px;\n    display: flex;\n    gap: 10px;\n    flex-wrap: wrap;\n}\n\n/* ===== Artist Tabs ===== */\n#ui-overlay .artist-tabs {\n    display: flex;\n    gap: 10px;\n    margin-bottom: 20px;\n    border-bottom: 1px solid #333;\n    padding-bottom: 10px;\n}\n#ui-overlay .artist-tab {\n    padding: 8px 16px;\n    background: transparent;\n    color: #888;\n    border: none;\n    border-radius: 4px;\n    font-size: 14px;\n    cursor: pointer;\n    transition: all 0.2s;\n}\n#ui-overlay .artist-tab:hover {\n    color: #fff;\n    background: #282828;\n}\n#ui-overlay .artist-tab.active {\n    color: #1db954;\n    background: rgba(29, 185, 84, 0.1);\n    font-weight: bold;\n}\n\n/* ===== Artist Sections ===== */\n#ui-overlay .artist-songs-section,\n#ui-overlay .artist-albums-section,\n#ui-overlay .artist-playlists-section {\n    margin-top: 20px;\n}\n#ui-overlay .artist-songs-section h3,\n#ui-overlay .artist-albums-section h3,\n#ui-overlay .artist-playlists-section h3 {\n    color: #fff;\n    font-size: 18px;\n    margin-bottom: 12px;\n    padding-bottom: 8px;\n    border-bottom: 1px solid #333;\n}\n\n/* ===== Artist Cards (Search Results) ===== */\n#ui-overlay .artist-card {\n    background: #1a1a1a;\n    padding: 15px;\n    border-radius: 8px;\n    display: flex;\n    gap: 15px;\n    align-items: center;\n    cursor: pointer;\n    border: 1px solid #222;\n}\n#ui-overlay .artist-card:hover {\n    background: #222;\n}\n#ui-overlay .artist-card img {\n    width: 80px;\n    height: 80px;\n    border-radius: 50%;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .artist-info {\n    flex: 1;\n}\n#ui-overlay .artist-name {\n    font-size: 18px;\n    font-weight: bold;\n    color: #fff;\n}\n#ui-overlay .artist-role {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .btn-view-artist {\n    margin-top: 8px;\n    padding: 6px 16px;\n    background: #6c757d;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    cursor: pointer;\n}\n#ui-overlay .btn-view-artist:hover {\n    background: #5a6268;\n}\n\n/* ===== Responsive ===== */\n@media (max-width: 600px) {\n    #ui-overlay .artist-header {\n        flex-direction: column;\n        align-items: center;\n        text-align: center;\n    }\n    #ui-overlay .artist-header img {\n        width: 120px;\n        height: 120px;\n    }\n    #ui-overlay .artist-tabs {\n        flex-wrap: wrap;\n        justify-content: center;\n    }\n    #ui-overlay .artist-tab {\n        flex: 1;\n        text-align: center;\n        padding: 8px 12px;\n        font-size: 13px;\n    }\n}\n\n/* Responsive */\n@media (max-width: 600px) {\n    #ui-overlay .album-header {\n        flex-direction: column;\n        align-items: center;\n        text-align: center;\n    }\n    #ui-overlay .album-header img {\n        width: 150px;\n        height: 150px;\n    }\n    #ui-overlay .song-item {\n        flex-wrap: wrap;\n    }\n    #ui-overlay .song-item .song-title {\n        flex: 1 1 100%;\n    }\n    #ui-overlay .song-item .song-artist {\n        flex: 1 1 100%;\n    }\n    #ui-overlay .search-tabs {\n        flex-wrap: wrap;\n    }\n    #ui-overlay .tab {\n        flex: 1;\n        text-align: center;\n        padding: 8px 12px;\n        font-size: 13px;\n    }\n}";
+    var UI_CSS = "/* ===== Floating Toggle Button ===== */\n#ui-toggle-btn {\n    position: fixed;\n    bottom: 20px;\n    right: 20px;\n    z-index: 2147483647;\n    background: #1db954;\n    color: white;\n    border: none;\n    border-radius: 50%;\n    width: 56px;\n    height: 56px;\n    font-size: 24px;\n    cursor: pointer;\n    box-shadow: 0 4px 12px rgba(0,0,0,0.3);\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: transform 0.2s;\n    touch-action: manipulation;\n}\n#ui-toggle-btn:hover {\n    transform: scale(1.1);\n}\n#ui-toggle-btn:active {\n    transform: scale(0.95);\n}\n\n/* ===== Fullscreen Overlay ===== */\n#ui-overlay {\n    position: fixed;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n    z-index: 2147483646;\n    background: #111;\n    color: #fff;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;\n    display: none;\n    flex-direction: column;\n    overflow-y: auto;\n    padding: 20px;\n}\n#ui-overlay.active {\n    display: flex;\n}\n\n/* ===== Overlay Content ===== */\n#ui-overlay .container {\n    max-width: 900px;\n    margin: 0 auto;\n    width: 100%;\n}\n#ui-overlay h1 {\n    color: #1db954;\n    font-size: 24px;\n    margin-bottom: 20px;\n    display: flex;\n    align-items: center;\n    gap: 12px;\n}\n\n/* Search Tabs */\n#ui-overlay .search-tabs {\n    display: flex;\n    gap: 10px;\n    margin-bottom: 20px;\n}\n#ui-overlay .tab {\n    padding: 10px 24px;\n    background: #282828;\n    color: #888;\n    border: none;\n    border-radius: 8px;\n    font-size: 15px;\n    cursor: pointer;\n    transition: all 0.2s;\n}\n#ui-overlay .tab:hover {\n    background: #333;\n}\n#ui-overlay .tab.active {\n    background: #1db954;\n    color: #111;\n    font-weight: bold;\n}\n\n/* Disabled tab */\n#ui-overlay .tab.disabled {\n    opacity: 0.4;\n    cursor: not-allowed;\n    pointer-events: none;\n}\n\n/* Search Box */\n#ui-overlay .search-box {\n    display: flex;\n    gap: 10px;\n    margin-bottom: 20px;\n}\n#ui-overlay .search-box input {\n    flex: 1;\n    padding: 12px;\n    border: 2px solid #333;\n    border-radius: 8px;\n    background: #222;\n    color: #fff;\n    font-size: 16px;\n    outline: none;\n}\n#ui-overlay .search-box input:focus {\n    border-color: #1db954;\n}\n#ui-overlay .search-box input::placeholder {\n    color: #666;\n}\n#ui-overlay .btn-search {\n    padding: 12px 24px;\n    background: #1db954;\n    color: #111;\n    border: none;\n    border-radius: 8px;\n    font-size: 16px;\n    font-weight: bold;\n    cursor: pointer;\n}\n#ui-overlay .btn-search:hover {\n    background: #1ed760;\n}\n\n/* Stats */\n#ui-overlay .stats {\n    margin: 10px 0 20px 0;\n    color: #888;\n    font-size: 14px;\n}\n\n/* Results */\n#ui-overlay .results {\n    display: grid;\n    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));\n    gap: 15px;\n}\n\n/* Song Cards */\n#ui-overlay .song-card {\n    background: #1a1a1a;\n    padding: 15px;\n    border-radius: 8px;\n    display: flex;\n    gap: 15px;\n    align-items: center;\n    border: 1px solid #222;\n}\n#ui-overlay .song-card img {\n    width: 80px;\n    height: 80px;\n    border-radius: 4px;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .song-info {\n    flex: 1;\n}\n#ui-overlay .song-title {\n    font-size: 18px;\n    font-weight: bold;\n    color: #fff;\n}\n#ui-overlay .song-artist {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .song-details {\n    color: #666;\n    font-size: 14px;\n}\n#ui-overlay .song-actions {\n    display: flex;\n    gap: 8px;\n    margin-top: 8px;\n    flex-wrap: wrap;\n}\n#ui-overlay .btn-download {\n    padding: 6px 16px;\n    background: #1db954;\n    color: #111;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    font-weight: bold;\n    cursor: pointer;\n}\n#ui-overlay .btn-download:hover {\n    background: #1ed760;\n}\n#ui-overlay .btn-download:disabled {\n    background: #555;\n    cursor: not-allowed;\n}\n#ui-overlay .btn-play {\n    padding: 6px 16px;\n    background: #007bff;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    cursor: pointer;\n}\n#ui-overlay .btn-play:hover {\n    background: #0056b3;\n}\n#ui-overlay .btn-play:disabled {\n    background: #555;\n    cursor: not-allowed;\n}\n\n/* Album Cards */\n#ui-overlay .album-card {\n    background: #1a1a1a;\n    padding: 15px;\n    border-radius: 8px;\n    display: flex;\n    gap: 15px;\n    align-items: center;\n    cursor: pointer;\n    border: 1px solid #222;\n}\n#ui-overlay .album-card:hover {\n    background: #222;\n}\n#ui-overlay .album-card img {\n    width: 100px;\n    height: 100px;\n    border-radius: 4px;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .album-info {\n    flex: 1;\n}\n#ui-overlay .album-title {\n    font-size: 18px;\n    font-weight: bold;\n    color: #fff;\n}\n#ui-overlay .album-artist {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .album-details {\n    color: #666;\n    font-size: 14px;\n}\n#ui-overlay .btn-view-album {\n    margin-top: 8px;\n    padding: 6px 16px;\n    background: #6c757d;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    cursor: pointer;\n}\n#ui-overlay .btn-view-album:hover {\n    background: #5a6268;\n}\n\n/* Album Detail View */\n#ui-overlay .album-header {\n    background: #1a1a1a;\n    padding: 20px;\n    border-radius: 8px;\n    display: flex;\n    gap: 20px;\n    margin-bottom: 20px;\n    border: 1px solid #222;\n}\n#ui-overlay .album-header img {\n    width: 200px;\n    height: 200px;\n    border-radius: 4px;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .album-header-info {\n    flex: 1;\n}\n#ui-overlay .album-header-info h2 {\n    margin-bottom: 5px;\n    color: #fff;\n}\n#ui-overlay .album-header-info p {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .album-actions {\n    margin-top: 15px;\n    display: flex;\n    gap: 10px;\n    flex-wrap: wrap;\n}\n#ui-overlay .btn-back {\n    padding: 8px 20px;\n    background: #6c757d;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    cursor: pointer;\n}\n#ui-overlay .btn-back:hover {\n    background: #5a6268;\n}\n\n/* Song List in Album */\n#ui-overlay .song-list {\n    display: grid;\n    gap: 8px;\n}\n\n/* Unified grid layout for card elements in detail views */\n#ui-overlay .album-list,\n#ui-overlay .playlist-list,\n#ui-overlay .album-songs-list,\n#ui-overlay .playlist-songs-list,\n#ui-overlay .artist-songs-section .song-list {\n    display: grid;\n    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));\n    gap: 15px;\n}\n#ui-overlay .song-item {\n    background: #1a1a1a;\n    padding: 12px 15px;\n    border-radius: 4px;\n    display: flex;\n    align-items: center;\n    gap: 15px;\n    border: 1px solid #222;\n}\n#ui-overlay .song-item .song-title {\n    flex: 2;\n    font-weight: 500;\n    font-size: 15px;\n    color: #fff;\n}\n#ui-overlay .song-item .song-artist {\n    flex: 2;\n    color: #aaa;\n    font-size: 14px;\n}\n#ui-overlay .song-item .song-duration {\n    color: #666;\n    font-size: 13px;\n    min-width: 50px;\n}\n\n/* Playlist Cards */\n#ui-overlay .playlist-card {\n    background: #1a1a1a;\n    padding: 15px;\n    border-radius: 8px;\n    display: flex;\n    gap: 15px;\n    align-items: center;\n    cursor: pointer;\n    border: 1px solid #222;\n}\n#ui-overlay .playlist-card:hover {\n    background: #222;\n}\n#ui-overlay .playlist-card img {\n    width: 100px;\n    height: 100px;\n    border-radius: 4px;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .playlist-info {\n    flex: 1;\n}\n#ui-overlay .playlist-title {\n    font-size: 18px;\n    font-weight: bold;\n    color: #fff;\n}\n#ui-overlay .playlist-artist {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .playlist-details {\n    color: #666;\n    font-size: 14px;\n}\n#ui-overlay .btn-view-playlist {\n    margin-top: 8px;\n    padding: 6px 16px;\n    background: #6c757d;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    cursor: pointer;\n}\n#ui-overlay .btn-view-playlist:hover {\n    background: #5a6268;\n}\n\n/* Playlist Header */\n#ui-overlay .playlist-header {\n    background: #1a1a1a;\n    padding: 20px;\n    border-radius: 8px;\n    display: flex;\n    gap: 20px;\n    margin-bottom: 20px;\n    border: 1px solid #222;\n}\n#ui-overlay .playlist-header img {\n    width: 200px;\n    height: 200px;\n    border-radius: 4px;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .playlist-header-info {\n    flex: 1;\n}\n#ui-overlay .playlist-header-info h2 {\n    margin-bottom: 5px;\n    color: #fff;\n}\n#ui-overlay .playlist-header-info p {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .playlist-description {\n    color: #888 !important;\n    font-style: italic;\n    margin-top: 10px !important;\n}\n#ui-overlay .playlist-actions {\n    margin-top: 15px;\n    display: flex;\n    gap: 10px;\n    flex-wrap: wrap;\n}\n\n/* Loading & Error */\n#ui-overlay .loading {\n    text-align: center;\n    padding: 40px;\n    color: #888;\n}\n#ui-overlay .error {\n    color: #ff4444;\n    padding: 20px;\n    background: #2a1a1a;\n    border-radius: 8px;\n    border: 1px solid #661111;\n}\n#ui-overlay .no-results {\n    text-align: center;\n    padding: 40px;\n    color: #666;\n}\n\n/* Progress */\n#ui-overlay .download-progress,\n#ui-overlay .play-progress {\n    display: none;\n    margin-top: 5px;\n    font-size: 12px;\n    color: #1db954;\n}\n#ui-overlay .download-progress.active,\n#ui-overlay .play-progress.active {\n    display: block;\n}\n\n/* Player */\n#ui-overlay audio {\n    width: 100%;\n    margin-top: 20px;\n    border-radius: 8px;\n}\n\n/* Lyrics Button */\n#ui-overlay .btn-lyrics {\n    padding: 6px 16px;\n    background: #6c757d;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    cursor: pointer;\n}\n#ui-overlay .btn-lyrics:hover {\n    background: #5a6268;\n}\n\n/* ===== More Button ===== */\n#ui-overlay .btn-more {\n    padding: 6px 12px;\n    background: transparent;\n    color: #aaa;\n    border: none;\n    border-radius: 4px;\n    font-size: 18px;\n    cursor: pointer;\n    line-height: 1;\n}\n#ui-overlay .btn-more:hover {\n    color: #fff;\n    background: #282828;\n}\n\n/* ===== More Menu ===== */\n#ui-overlay .more-menu {\n    position: absolute;\n    right: 0;\n    top: 100%;\n    min-width: 160px;\n    max-width: 250px;\n    background: #1a1a1a;\n    border: 1px solid #333;\n    border-radius: 8px;\n    padding: 4px 0;\n    z-index: 100;\n    box-shadow: 0 4px 12px rgba(0,0,0,0.5);\n    margin-top: 4px;\n}\n\n#ui-overlay .more-item {\n    display: block;\n    width: 100%;\n    padding: 8px 16px;\n    background: transparent;\n    color: #ddd;\n    border: none;\n    text-align: left;\n    font-size: 14px;\n    cursor: pointer;\n    white-space: nowrap;\n    overflow: hidden;\n    text-overflow: ellipsis;\n}\n#ui-overlay .more-item:hover {\n    background: #282828;\n    color: #fff;\n}\n\n/* Song card needs position relative for menu positioning */\n#ui-overlay .song-card {\n    position: relative;\n}\n\n/* ===== Load More Button ===== */\n#ui-overlay .btn-load-more {\n    display: block;\n    width: 100%;\n    padding: 12px 20px;\n    margin-top: 15px;\n    background: #282828;\n    color: #fff;\n    border: 1px solid #444;\n    border-radius: 8px;\n    font-size: 14px;\n    font-weight: 500;\n    cursor: pointer;\n    transition: all 0.2s;\n    text-align: center;\n}\n\n#ui-overlay .btn-load-more:hover {\n    background: #333;\n    border-color: #1db954;\n}\n\n#ui-overlay .btn-load-more:disabled {\n    opacity: 0.5;\n    cursor: not-allowed;\n}\n\n#ui-overlay .btn-load-more:disabled:hover {\n    background: #282828;\n    border-color: #444;\n}\n\n/* ===== End of Results ===== */\n#ui-overlay .end-of-results {\n    display: block;\n    width: 100%;\n    padding: 12px 20px;\n    margin-top: 15px;\n    color: #666;\n    font-size: 14px;\n    text-align: center;\n    border-top: 1px solid #333;\n}\n\n/* ===== Artist Header ===== */\n#ui-overlay .artist-header {\n    background: #1a1a1a;\n    padding: 20px;\n    border-radius: 8px;\n    display: flex;\n    gap: 20px;\n    margin-bottom: 20px;\n    border: 1px solid #222;\n}\n#ui-overlay .artist-header img {\n    width: 150px;\n    height: 150px;\n    border-radius: 50%;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .artist-header-info {\n    flex: 1;\n}\n#ui-overlay .artist-header-info h2 {\n    margin-bottom: 5px;\n    color: #fff;\n    font-size: 24px;\n}\n#ui-overlay .artist-header-info p {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .artist-bio {\n    color: #888 !important;\n    font-size: 14px;\n    margin-top: 10px !important;\n    line-height: 1.6;\n}\n#ui-overlay .artist-actions {\n    margin-top: 15px;\n    display: flex;\n    gap: 10px;\n    flex-wrap: wrap;\n}\n\n/* ===== Artist Tabs ===== */\n#ui-overlay .artist-tabs {\n    display: flex;\n    gap: 10px;\n    margin-bottom: 20px;\n    border-bottom: 1px solid #333;\n    padding-bottom: 10px;\n}\n#ui-overlay .artist-tab {\n    padding: 8px 16px;\n    background: transparent;\n    color: #888;\n    border: none;\n    border-radius: 4px;\n    font-size: 14px;\n    cursor: pointer;\n    transition: all 0.2s;\n}\n#ui-overlay .artist-tab:hover {\n    color: #fff;\n    background: #282828;\n}\n#ui-overlay .artist-tab.active {\n    color: #1db954;\n    background: rgba(29, 185, 84, 0.1);\n    font-weight: bold;\n}\n\n/* ===== Artist Sections ===== */\n#ui-overlay .artist-songs-section,\n#ui-overlay .artist-albums-section,\n#ui-overlay .artist-playlists-section {\n    margin-top: 20px;\n}\n#ui-overlay .artist-songs-section h3,\n#ui-overlay .artist-albums-section h3,\n#ui-overlay .artist-playlists-section h3 {\n    color: #fff;\n    font-size: 18px;\n    margin-bottom: 12px;\n    padding-bottom: 8px;\n    border-bottom: 1px solid #333;\n}\n\n/* ===== Artist Cards (Search Results) ===== */\n#ui-overlay .artist-card {\n    background: #1a1a1a;\n    padding: 15px;\n    border-radius: 8px;\n    display: flex;\n    gap: 15px;\n    align-items: center;\n    cursor: pointer;\n    border: 1px solid #222;\n}\n#ui-overlay .artist-card:hover {\n    background: #222;\n}\n#ui-overlay .artist-card img {\n    width: 80px;\n    height: 80px;\n    border-radius: 50%;\n    object-fit: cover;\n    background: #222;\n}\n#ui-overlay .artist-info {\n    flex: 1;\n}\n#ui-overlay .artist-name {\n    font-size: 18px;\n    font-weight: bold;\n    color: #fff;\n}\n#ui-overlay .artist-role {\n    color: #aaa;\n    margin: 5px 0;\n}\n#ui-overlay .btn-view-artist {\n    margin-top: 8px;\n    padding: 6px 16px;\n    background: #6c757d;\n    color: white;\n    border: none;\n    border-radius: 4px;\n    font-size: 13px;\n    cursor: pointer;\n}\n#ui-overlay .btn-view-artist:hover {\n    background: #5a6268;\n}\n\n/* ===== Responsive ===== */\n@media (max-width: 600px) {\n    #ui-overlay .artist-header {\n        flex-direction: column;\n        align-items: center;\n        text-align: center;\n    }\n    #ui-overlay .artist-header img {\n        width: 120px;\n        height: 120px;\n    }\n    #ui-overlay .artist-tabs {\n        flex-wrap: wrap;\n        justify-content: center;\n    }\n    #ui-overlay .artist-tab {\n        flex: 1;\n        text-align: center;\n        padding: 8px 12px;\n        font-size: 13px;\n    }\n}\n\n/* Responsive */\n@media (max-width: 600px) {\n    #ui-overlay .album-header {\n        flex-direction: column;\n        align-items: center;\n        text-align: center;\n    }\n    #ui-overlay .album-header img {\n        width: 150px;\n        height: 150px;\n    }\n    #ui-overlay .song-item {\n        flex-wrap: wrap;\n    }\n    #ui-overlay .song-item .song-title {\n        flex: 1 1 100%;\n    }\n    #ui-overlay .song-item .song-artist {\n        flex: 1 1 100%;\n    }\n    #ui-overlay .search-tabs {\n        flex-wrap: wrap;\n    }\n    #ui-overlay .tab {\n        flex: 1;\n        text-align: center;\n        padding: 8px 12px;\n        font-size: 13px;\n    }\n    #ui-overlay .playlist-header {\n        flex-direction: column;\n        align-items: center;\n        text-align: center;\n    }\n    #ui-overlay .playlist-header img {\n        width: 150px;\n        height: 150px;\n    }\n}";
     
     // Add CSS to page
     var styleEl = document.createElement('style');
@@ -29,10 +30,73 @@
     
 
     // ============================================================
+    // FILE: /js/api/constants.js
+    // ============================================================
+
+// src/js/api/constants.js
+
+window.API = window.API || {};
+window.API.constants = window.API.constants || {};
+
+// API endpoints
+const HOST = 'https://www.mymusic.com';
+Object.assign(window.API.constants, {
+    API_HOST: HOST,
+    API_BASE: `${HOST}/api.php`,
+    REFERER: `${HOST}/`,
+});
+
+// Default headers for all requests
+window.API.constants.DEFAULT_HEADERS = {
+    'Accept': 'application/json, text/plain, */*',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+};
+
+// Default parameters for all API calls
+window.API.constants.API_DEFAULTS = {
+    _format: 'json',
+    _marker: 0,
+    api_version: 4,
+    ctx: 'web6dot0'
+};
+
+
+    // ============================================================
+    // FILE: /js/utils/logger.js
+    // ============================================================
+
+// src/js/utils/logger.js
+// Centralized Logging Control Interceptor
+
+// Global toggle: Set to true to show all logs, false to silence them.
+window.LOGGING_ENABLED = true;
+
+var originalLog = console.log;
+var originalWarn = console.warn;
+var originalError = console.error;
+
+console.log = function() {
+    if (window.LOGGING_ENABLED === false) return;
+    originalLog.apply(console, arguments);
+};
+
+console.warn = function() {
+    if (window.LOGGING_ENABLED === false) return;
+    originalWarn.apply(console, arguments);
+};
+
+console.error = function() {
+    // Errors always render by default, but respect the toggle if wanted
+    if (window.LOGGING_ENABLED === false) return;
+    originalError.apply(console, arguments);
+};
+
+
+    // ============================================================
     // FILE: /js/ui/utils.js
     // ============================================================
 
-// ui/js/utils.js
+// src/js/ui/utils.js
 
 function escapeHtml(text) {
     if (!text) return '';
@@ -50,873 +114,810 @@ function formatDuration(seconds) {
     return `${mins}:${remainingSecs.toString().padStart(2, '0')}`;
 }
 
-function getSongId(song) {
-    return song.id || song.token || Math.random().toString(36);
+// Get a standard SVG vector placeholder matching the component type
+function getDefaultImage(type) {
+    var emoji = '🎵';
+    if (type === 'artist') {
+        emoji = '🎤';
+    } else if (type === 'album') {
+        emoji = '💿';
+    } else if (type === 'playlist') {
+        emoji = '🎶';
+    }
+
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">' +
+        '<rect width="200" height="200" fill="#282828"/>' +
+        '<text x="50%" y="60%" font-size="80" text-anchor="middle" dominant-baseline="middle">' + emoji +
+        '</text></svg>';
+
+    return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
 }
 
-function hasStream(song) {
-    return !!(song.more_info?.encrypted_media_url || song.encrypted_media_url);
+// Expose getDefaultImage to utility scope
+window.Utils = window.Utils || {};
+window.Utils.getDefaultImage = getDefaultImage;
+
+function buildCard(options) {
+    var type = options.type;
+    var token = options.token;
+    var image = options.image;
+    if (!image || image.includes('placeholder.com')) {
+        image = getDefaultImage(type);
+    }
+    var title = options.title || '';
+    var subtitle = options.subtitle || '';
+    var details = options.details || '';
+    var buttonText = options.buttonText || '';
+
+    // Map class names to fit existing CSS selectors in ui.css
+    var titleClass = type === 'artist' ? 'artist-name' : type + '-title';
+    var subtitleClass = type === 'artist' ? 'artist-role' : type + '-subtitle';
+    if (type !== 'artist') {
+        subtitleClass = type === 'album' ? 'album-artist' : 'playlist-artist';
+    }
+
+    return `
+        <div class="${type}-card" data-token="${token}">
+            <img src="${image}" alt="${escapeHtml(title)}" />
+            <div class="${type}-info">
+                <div class="${titleClass}">${escapeHtml(title)}</div>
+                <div class="${subtitleClass}">${escapeHtml(subtitle)}</div>
+                ${details ? `<div class="${type}-details">${details}</div>` : ''}
+                <button class="btn-view-${type}" data-token="${token}">
+                    ${buttonText}
+                </button>
+            </div>
+        </div>
+    `;
 }
+
+// Create HTML representations for album cards
+function createAlbumCard(album) {
+    var songCount = album.more_info?.song_count || 0;
+    return buildCard({
+        type: 'album',
+        token: album.token,
+        image: album.image,
+        title: album.title,
+        subtitle: album.subtitle,
+        details: `${songCount} songs • ${escapeHtml(album.language || 'Unknown')} • ${album.year || 'N/A'}`,
+        buttonText: '📂 View Album'
+    });
+}
+
+// Create HTML representations for playlist cards
+function createPlaylistCard(playlist) {
+    var songCount = playlist.more_info?.song_count || playlist.song_count || '0';
+    return buildCard({
+        type: 'playlist',
+        token: playlist.token,
+        image: playlist.image,
+        title: playlist.title,
+        subtitle: playlist.subtitle || '',
+        details: `${songCount} songs • ${escapeHtml(playlist.language || 'Unknown')}`,
+        buttonText: '📂 View Playlist'
+    });
+}
+
+// Create HTML representations for artist cards
+function createArtistCard(artist) {
+    return buildCard({
+        type: 'artist',
+        token: artist.token,
+        image: artist.image,
+        title: artist.name,
+        subtitle: artist.role || 'Artist',
+        buttonText: '🎤 View Artist'
+    });
+}
+
+// Expose card creators to global window scope
+window.Utils = window.Utils || {};
+window.Utils.formatDuration = formatDuration;
+window.createArtistCard = createArtistCard;
 
     // ============================================================
     // FILE: /js/libs/des.js
     // ============================================================
 
-// ui/js/libs/des.js
+// src/js/libs/des.js
 // Stripped DES library - ECB mode only, decryption only
 // Based on Paul Tero's DES implementation
 
-(function() {
-    'use strict';
+// S-boxes (standard DES)
+const S1 = new Int32Array([
+    0x1010400, 0,         0x10000,   0x1010404, 0x1010004, 0x10404,   0x4,       0x10000,   0x400,     0x1010400,
+    0x1010404, 0x400,     0x1000404, 0x1010004, 0x1000000, 0x4,       0x404,     0x1000400, 0x1000400, 0x10400,
+    0x10400,   0x1010000, 0x1010000, 0x1000404, 0x10004,   0x1000004, 0x1000004, 0x10004,   0,         0x404,
+    0x10404,   0x1000000, 0x10000,   0x1010404, 0x4,       0x1010000, 0x1010400, 0x1000000, 0x1000000, 0x400,
+    0x1010004, 0x10000,   0x10400,   0x1000004, 0x400,     0x4,       0x1000404, 0x10404,   0x1010404, 0x10004,
+    0x1010000, 0x1000404, 0x1000004, 0x404,     0x10404,   0x1010400, 0x404,     0x1000400, 0x1000400, 0,
+    0x10004,   0x10400,   0,         0x1010004
+]);
 
-    // S-boxes (standard DES)
-    const S1 = new Int32Array([
-        0x1010400, 0, 0x10000, 0x1010404, 0x1010004, 0x10404, 0x4, 0x10000,
-        0x400, 0x1010400, 0x1010404, 0x400, 0x1000404, 0x1010004, 0x1000000, 0x4,
-        0x404, 0x1000400, 0x1000400, 0x10400, 0x10400, 0x1010000, 0x1010000, 0x1000404,
-        0x10004, 0x1000004, 0x1000004, 0x10004, 0, 0x404, 0x10404, 0x1000000,
-        0x10000, 0x1010404, 0x4, 0x1010000, 0x1010400, 0x1000000, 0x1000000, 0x400,
-        0x1010004, 0x10000, 0x10400, 0x1000004, 0x400, 0x4, 0x1000404, 0x10404,
-        0x1010404, 0x10004, 0x1010000, 0x1000404, 0x1000004, 0x404, 0x10404, 0x1010400,
-        0x404, 0x1000400, 0x1000400, 0, 0x10004, 0x10400, 0, 0x1010004
-    ]);
+const S2 = new Int32Array([
+    -0x7FEF7FE0, -0x7FFF8000, 0x8000,      0x108020,    0x100000,    0x20,        -0x7FEFFFE0, -0x7FFF7FE0,
+    -0x7FFFFFE0, -0x7FEF7FE0, -0x7FEF8000, -0x80000000, -0x7FFF8000, 0x100000,    0x20,        -0x7FEFFFE0,
+    0x108000,    0x100020,    -0x7FFF7FE0, 0,           -0x80000000, 0x8000,      0x108020,    -0x7FF00000,
+    0x100020,    -0x7FFFFFE0, 0,           0x108000,    0x8020,      -0x7FEF8000, -0x7FF00000, 0x8020,
+    0,           0x108020,    -0x7FEFFFE0, 0x100000,    -0x7FFF7FE0, -0x7FF00000, -0x7FEF8000, 0x8000,
+    -0x7FF00000, -0x7FFF8000, 0x20,        -0x7FEF7FE0, 0x108020,    0x20,        0x8000,      -0x80000000,
+    0x8020,      -0x7FEF8000, 0x100000,    -0x7FFFFFE0, 0x100020,    -0x7FFF7FE0, -0x7FFFFFE0, 0x100020,
+    0x108000,    0,           -0x7FFF8000, 0x8020,      -0x80000000, -0x7FEFFFE0, -0x7FEF7FE0, 0x108000
+]);
 
-    const S2 = new Int32Array([
-        -0x7FEF7FE0, -0x7FFF8000, 0x8000, 0x108020, 0x100000, 0x20, -0x7FEFFFE0, -0x7FFF7FE0,
-        -0x7FFFFFE0, -0x7FEF7FE0, -0x7FEF8000, -0x80000000, -0x7FFF8000, 0x100000, 0x20, -0x7FEFFFE0,
-        0x108000, 0x100020, -0x7FFF7FE0, 0, -0x80000000, 0x8000, 0x108020, -0x7FF00000,
-        0x100020, -0x7FFFFFE0, 0, 0x108000, 0x8020, -0x7FEF8000, -0x7FF00000, 0x8020,
-        0, 0x108020, -0x7FEFFFE0, 0x100000, -0x7FFF7FE0, -0x7FF00000, -0x7FEF8000, 0x8000,
-        -0x7FF00000, -0x7FFF8000, 0x20, -0x7FEF7FE0, 0x108020, 0x20, 0x8000, -0x80000000,
-        0x8020, -0x7FEF8000, 0x100000, -0x7FFFFFE0, 0x100020, -0x7FFF7FE0, -0x7FFFFFE0, 0x100020,
-        0x108000, 0, -0x7FFF8000, 0x8020, -0x80000000, -0x7FEFFFE0, -0x7FEF7FE0, 0x108000
-    ]);
+const S3 = new Int32Array([
+    0x208,     0x8020200, 0,         0x8020008, 0x8000200, 0,         0x20208,   0x8000200, 0x20008,   0x8000008,
+    0x8000008, 0x20000,   0x8020208, 0x20008,   0x8020000, 0x208,     0x8000000, 0x8,       0x8020200, 0x200,
+    0x20200,   0x8020000, 0x8020008, 0x20208,   0x8000208, 0x20200,   0x20000,   0x8000208, 0x8,       0x8020208,
+    0x200,     0x8000000, 0x8020200, 0x8000000, 0x20008,   0x208,     0x20000,   0x8020200, 0x8000200, 0,
+    0x200,     0x20008,   0x8020208, 0x8000200, 0x8000008, 0x200,     0,         0x8020008, 0x8000208, 0x20000,
+    0x8000000, 0x8020208, 0x8,       0x20208,   0x20200,   0x8000008, 0x8020000, 0x8000208, 0x208,     0x8020000,
+    0x20208,   0x8,       0x8020008, 0x20200
+]);
 
-    const S3 = new Int32Array([
-        0x208, 0x8020200, 0, 0x8020008, 0x8000200, 0, 0x20208, 0x8000200,
-        0x20008, 0x8000008, 0x8000008, 0x20000, 0x8020208, 0x20008, 0x8020000, 0x208,
-        0x8000000, 0x8, 0x8020200, 0x200, 0x20200, 0x8020000, 0x8020008, 0x20208,
-        0x8000208, 0x20200, 0x20000, 0x8000208, 0x8, 0x8020208, 0x200, 0x8000000,
-        0x8020200, 0x8000000, 0x20008, 0x208, 0x20000, 0x8020200, 0x8000200, 0,
-        0x200, 0x20008, 0x8020208, 0x8000200, 0x8000008, 0x200, 0, 0x8020008,
-        0x8000208, 0x20000, 0x8000000, 0x8020208, 0x8, 0x20208, 0x20200, 0x8000008,
-        0x8020000, 0x8000208, 0x208, 0x8020000, 0x20208, 0x8, 0x8020008, 0x20200
-    ]);
+const S4 = new Int32Array([
+    0x802001, 0x2081,   0x2081,   0x80,     0x802080, 0x800081, 0x800001, 0x2001,   0,        0x802000, 0x802000,
+    0x802081, 0x81,     0,        0x800080, 0x800001, 0x1,      0x2000,   0x800000, 0x802001, 0x80,     0x800000,
+    0x2001,   0x2080,   0x800081, 0x1,      0x2080,   0x800080, 0x2000,   0x802080, 0x802081, 0x81,     0x800080,
+    0x800001, 0x802000, 0x802081, 0x81,     0,        0,        0x802000, 0x2080,   0x800080, 0x800081, 0x1,
+    0x802001, 0x2081,   0x2081,   0x80,     0x802081, 0x81,     0x1,      0x2000,   0x800001, 0x2001,   0x802080,
+    0x800081, 0x2001,   0x2080,   0x800000, 0x802001, 0x80,     0x800000, 0x2000,   0x802080
+]);
 
-    const S4 = new Int32Array([
-        0x802001, 0x2081, 0x2081, 0x80, 0x802080, 0x800081, 0x800001, 0x2001,
-        0, 0x802000, 0x802000, 0x802081, 0x81, 0, 0x800080, 0x800001,
-        0x1, 0x2000, 0x800000, 0x802001, 0x80, 0x800000, 0x2001, 0x2080,
-        0x800081, 0x1, 0x2080, 0x800080, 0x2000, 0x802080, 0x802081, 0x81,
-        0x800080, 0x800001, 0x802000, 0x802081, 0x81, 0, 0, 0x802000,
-        0x2080, 0x800080, 0x800081, 0x1, 0x802001, 0x2081, 0x2081, 0x80,
-        0x802081, 0x81, 0x1, 0x2000, 0x800001, 0x2001, 0x802080, 0x800081,
-        0x2001, 0x2080, 0x800000, 0x802001, 0x80, 0x800000, 0x2000, 0x802080
-    ]);
+const S5 = new Int32Array([
+    0x100,      0x2080100,  0x2080000,  0x42000100, 0x80000,    0x100,      0x40000000, 0x2080000,
+    0x40080100, 0x80000,    0x2000100,  0x40080100, 0x42000100, 0x42080000, 0x80100,    0x40000000,
+    0x2000000,  0x40080000, 0x40080000, 0,          0x40000100, 0x42080100, 0x42080100, 0x2000100,
+    0x42080000, 0x40000100, 0,          0x42000000, 0x2080100,  0x2000000,  0x42000000, 0x80100,
+    0x80000,    0x42000100, 0x100,      0x2000000,  0x40000000, 0x2080000,  0x42000100, 0x40080100,
+    0x2000100,  0x40000000, 0x42080000, 0x2080100,  0x40080100, 0x100,      0x2000000,  0x42080000,
+    0x42080100, 0x80100,    0x42000000, 0x42080100, 0x2080000,  0,          0x40080000, 0x42000000,
+    0x80100,    0x2000100,  0x40000100, 0x80000,    0,          0x40080000, 0x2080100,  0x40000100
+]);
 
-    const S5 = new Int32Array([
-        0x100, 0x2080100, 0x2080000, 0x42000100, 0x80000, 0x100, 0x40000000, 0x2080000,
-        0x40080100, 0x80000, 0x2000100, 0x40080100, 0x42000100, 0x42080000, 0x80100, 0x40000000,
-        0x2000000, 0x40080000, 0x40080000, 0, 0x40000100, 0x42080100, 0x42080100, 0x2000100,
-        0x42080000, 0x40000100, 0, 0x42000000, 0x2080100, 0x2000000, 0x42000000, 0x80100,
-        0x80000, 0x42000100, 0x100, 0x2000000, 0x40000000, 0x2080000, 0x42000100, 0x40080100,
-        0x2000100, 0x40000000, 0x42080000, 0x2080100, 0x40080100, 0x100, 0x2000000, 0x42080000,
-        0x42080100, 0x80100, 0x42000000, 0x42080100, 0x2080000, 0, 0x40080000, 0x42000000,
-        0x80100, 0x2000100, 0x40000100, 0x80000, 0, 0x40080000, 0x2080100, 0x40000100
-    ]);
+const S6 = new Int32Array([
+    0x20000010, 0x20400000, 0x4000,     0x20404010, 0x20400000, 0x10,       0x20404010, 0x400000,
+    0x20004000, 0x404010,   0x400000,   0x20000010, 0x400010,   0x20004000, 0x20000000, 0x4010,
+    0,          0x400010,   0x20004010, 0x4000,     0x404000,   0x20004010, 0x10,       0x20400010,
+    0x20400010, 0,          0x404010,   0x20404000, 0x4010,     0x404000,   0x20404000, 0x20000000,
+    0x20004000, 0x10,       0x20400010, 0x404000,   0x20404010, 0x400000,   0x4010,     0x20000010,
+    0x400000,   0x20004000, 0x20000000, 0x4010,     0x20000010, 0x20404010, 0x404000,   0x20400000,
+    0x404010,   0x20404000, 0,          0x20400010, 0x10,       0x4000,     0x20400000, 0x404010,
+    0x4000,     0x400010,   0x20004010, 0,          0x20404000, 0x20000000, 0x400010,   0x20004010
+]);
 
-    const S6 = new Int32Array([
-        0x20000010, 0x20400000, 0x4000, 0x20404010, 0x20400000, 0x10, 0x20404010, 0x400000,
-        0x20004000, 0x404010, 0x400000, 0x20000010, 0x400010, 0x20004000, 0x20000000, 0x4010,
-        0, 0x400010, 0x20004010, 0x4000, 0x404000, 0x20004010, 0x10, 0x20400010,
-        0x20400010, 0, 0x404010, 0x20404000, 0x4010, 0x404000, 0x20404000, 0x20000000,
-        0x20004000, 0x10, 0x20400010, 0x404000, 0x20404010, 0x400000, 0x4010, 0x20000010,
-        0x400000, 0x20004000, 0x20000000, 0x4010, 0x20000010, 0x20404010, 0x404000, 0x20400000,
-        0x404010, 0x20404000, 0, 0x20400010, 0x10, 0x4000, 0x20400000, 0x404010,
-        0x4000, 0x400010, 0x20004010, 0, 0x20404000, 0x20000000, 0x400010, 0x20004010
-    ]);
+const S7 = new Int32Array([
+    0x200000,  0x4200002, 0x4000802, 0,         0x800,     0x4000802, 0x200802,  0x4200800, 0x4200802, 0x200000,
+    0,         0x4000002, 0x2,       0x4000000, 0x4200002, 0x802,     0x4000800, 0x200802,  0x200002,  0x4000800,
+    0x4000002, 0x4200000, 0x4200800, 0x200002,  0x4200000, 0x800,     0x802,     0x4200802, 0x200800,  0x2,
+    0x4000000, 0x200800,  0x4000000, 0x200800,  0x200000,  0x4000802, 0x4000802, 0x4200002, 0x4200002, 0x2,
+    0x200002,  0x4000000, 0x4000800, 0x200000,  0x4200800, 0x802,     0x200802,  0x4200800, 0x802,     0x4000002,
+    0x4200802, 0x4200000, 0x200800,  0,         0x2,       0x4200802, 0,         0x200802,  0x4200000, 0x800,
+    0x4000002, 0x4000800, 0x800,     0x200002
+]);
 
-    const S7 = new Int32Array([
-        0x200000, 0x4200002, 0x4000802, 0, 0x800, 0x4000802, 0x200802, 0x4200800,
-        0x4200802, 0x200000, 0, 0x4000002, 0x2, 0x4000000, 0x4200002, 0x802,
-        0x4000800, 0x200802, 0x200002, 0x4000800, 0x4000002, 0x4200000, 0x4200800, 0x200002,
-        0x4200000, 0x800, 0x802, 0x4200802, 0x200800, 0x2, 0x4000000, 0x200800,
-        0x4000000, 0x200800, 0x200000, 0x4000802, 0x4000802, 0x4200002, 0x4200002, 0x2,
-        0x200002, 0x4000000, 0x4000800, 0x200000, 0x4200800, 0x802, 0x200802, 0x4200800,
-        0x802, 0x4000002, 0x4200802, 0x4200000, 0x200800, 0, 0x2, 0x4200802,
-        0, 0x200802, 0x4200000, 0x800, 0x4000002, 0x4000800, 0x800, 0x200002
-    ]);
+const S8 = new Int32Array([
+    0x10001040, 0x1000,     0x40000,    0x10041040, 0x10000000, 0x10001040, 0x40,       0x10000000,
+    0x40040,    0x10040000, 0x10041040, 0x41000,    0x10041000, 0x41040,    0x1000,     0x40,
+    0x10040000, 0x10000040, 0x10001000, 0x1040,     0x41000,    0x40040,    0x10040040, 0x10041000,
+    0x1040,     0,          0,          0x10040040, 0x10000040, 0x10001000, 0x41040,    0x40000,
+    0x41040,    0x40000,    0x10041000, 0x1000,     0x40,       0x10040040, 0x1000,     0x41040,
+    0x10001000, 0x40,       0x10000040, 0x10040000, 0x10040040, 0x10000000, 0x40000,    0x10001040,
+    0,          0x10041040, 0x40040,    0x10000040, 0x10040000, 0x10001000, 0x10001040, 0,
+    0x10041040, 0x41000,    0x41000,    0x1040,     0x1040,     0x40040,    0x10000000, 0x10041000
+]);
 
-    const S8 = new Int32Array([
-        0x10001040, 0x1000, 0x40000, 0x10041040, 0x10000000, 0x10001040, 0x40, 0x10000000,
-        0x40040, 0x10040000, 0x10041040, 0x41000, 0x10041000, 0x41040, 0x1000, 0x40,
-        0x10040000, 0x10000040, 0x10001000, 0x1040, 0x41000, 0x40040, 0x10040040, 0x10041000,
-        0x1040, 0, 0, 0x10040040, 0x10000040, 0x10001000, 0x41040, 0x40000,
-        0x41040, 0x40000, 0x10041000, 0x1000, 0x40, 0x10040040, 0x1000, 0x41040,
-        0x10001000, 0x40, 0x10000040, 0x10040000, 0x10040040, 0x10000000, 0x40000, 0x10001040,
-        0, 0x10041040, 0x40040, 0x10000040, 0x10040000, 0x10001000, 0x10001040, 0,
-        0x10041040, 0x41000, 0x41000, 0x1040, 0x1040, 0x40040, 0x10000000, 0x10041000
-    ]);
+// DES decryption - ECB mode only
+function desDecrypt(message, keys) {
+    const s1 = S1, s2 = S2, s3 = S3, s4 = S4;
+    const s5 = S5, s6 = S6, s7 = S7, s8 = S8;
 
-    /**
-     * DES decryption - ECB mode only
-     * @param {string} message - Encrypted message (binary string)
-     * @param {Uint32Array} keys - 32 round keys
-     * @returns {string} Decrypted message (binary string)
-     */
-    function desDecrypt(message, keys) {
-        const s1 = S1, s2 = S2, s3 = S3, s4 = S4;
-        const s5 = S5, s6 = S6, s7 = S7, s8 = S8;
+    const len = message.length;
+    let result = '';
+    let left, right, temp;
 
-        const len = message.length;
-        let result = '';
-        let left, right, temp;
+    for (let m = 0; m < len; m += 8) {
+        left = (message.charCodeAt(m) << 24) | (message.charCodeAt(m + 1) << 16) | (message.charCodeAt(m + 2) << 8) |
+            message.charCodeAt(m + 3);
+        right = (message.charCodeAt(m + 4) << 24) | (message.charCodeAt(m + 5) << 16) |
+            (message.charCodeAt(m + 6) << 8) | message.charCodeAt(m + 7);
 
-        for (let m = 0; m < len; m += 8) {
-            left = (message.charCodeAt(m) << 24) |
-                   (message.charCodeAt(m + 1) << 16) |
-                   (message.charCodeAt(m + 2) << 8) |
-                   message.charCodeAt(m + 3);
-            right = (message.charCodeAt(m + 4) << 24) |
-                    (message.charCodeAt(m + 5) << 16) |
-                    (message.charCodeAt(m + 6) << 8) |
-                    message.charCodeAt(m + 7);
+        // Initial Permutation
+        temp = ((left >>> 4) ^ right) & 0x0F0F0F0F;
+        right ^= temp;
+        left ^= (temp << 4);
 
-            // Initial Permutation
-            temp = ((left >>> 4) ^ right) & 0x0F0F0F0F;
-            right ^= temp;
-            left ^= (temp << 4);
+        temp = ((left >>> 16) ^ right) & 0x0000FFFF;
+        right ^= temp;
+        left ^= (temp << 16);
 
-            temp = ((left >>> 16) ^ right) & 0x0000FFFF;
-            right ^= temp;
-            left ^= (temp << 16);
+        temp = ((right >>> 2) ^ left) & 0x33333333;
+        left ^= temp;
+        right ^= (temp << 2);
 
-            temp = ((right >>> 2) ^ left) & 0x33333333;
-            left ^= temp;
-            right ^= (temp << 2);
+        temp = ((right >>> 8) ^ left) & 0x00FF00FF;
+        left ^= temp;
+        right ^= (temp << 8);
 
-            temp = ((right >>> 8) ^ left) & 0x00FF00FF;
-            left ^= temp;
-            right ^= (temp << 8);
+        temp = ((left >>> 1) ^ right) & 0x55555555;
+        right ^= temp;
+        left ^= (temp << 1);
 
-            temp = ((left >>> 1) ^ right) & 0x55555555;
-            right ^= temp;
-            left ^= (temp << 1);
+        left = ((left << 1) | (left >>> 31));
+        right = ((right << 1) | (right >>> 31));
 
-            left = ((left << 1) | (left >>> 31));
-            right = ((right << 1) | (right >>> 31));
+        // 16 rounds (decryption - keys in reverse)
+        for (let i = 30; i >= 0; i -= 2) {
+            const right1 = right ^ keys[i];
+            const rrot = (right >>> 4) | (right << 28);
+            const right2 = rrot ^ keys[i + 1];
 
-            // 16 rounds (decryption - keys in reverse)
-            for (let i = 30; i >= 0; i -= 2) {
-                const right1 = right ^ keys[i];
-                const rrot = (right >>> 4) | (right << 28);
-                const right2 = rrot ^ keys[i + 1];
-
-                temp = left;
-                left = right;
-                right = temp ^ (
-                    s2[(right1 >>> 24) & 63] |
-                    s4[(right1 >>> 16) & 63] |
-                    s6[(right1 >>> 8) & 63] |
-                    s8[right1 & 63] |
-                    s1[(right2 >>> 24) & 63] |
-                    s3[(right2 >>> 16) & 63] |
-                    s5[(right2 >>> 8) & 63] |
-                    s7[right2 & 63]
-                );
-            }
-
-            // Swap left and right
             temp = left;
             left = right;
-            right = temp;
-
-            // Final Permutation (IP-1)
-            left = ((left >>> 1) | (left << 31));
-            right = ((right >>> 1) | (right << 31));
-
-            temp = ((left >>> 1) ^ right) & 0x55555555;
-            right ^= temp;
-            left ^= (temp << 1);
-
-            temp = ((right >>> 8) ^ left) & 0x00FF00FF;
-            left ^= temp;
-            right ^= (temp << 8);
-
-            temp = ((right >>> 2) ^ left) & 0x33333333;
-            left ^= temp;
-            right ^= (temp << 2);
-
-            temp = ((left >>> 16) ^ right) & 0x0000FFFF;
-            right ^= temp;
-            left ^= (temp << 16);
-
-            temp = ((left >>> 4) ^ right) & 0x0F0F0F0F;
-            right ^= temp;
-            left ^= (temp << 4);
-
-            result += String.fromCharCode(
-                (left >>> 24),
-                ((left >>> 16) & 0xFF),
-                ((left >>> 8) & 0xFF),
-                (left & 0xFF),
-                (right >>> 24),
-                ((right >>> 16) & 0xFF),
-                ((right >>> 8) & 0xFF),
-                (right & 0xFF)
-            );
+            right = temp ^
+                (s2[(right1 >>> 24) & 63] | s4[(right1 >>> 16) & 63] | s6[(right1 >>> 8) & 63] | s8[right1 & 63] |
+                 s1[(right2 >>> 24) & 63] | s3[(right2 >>> 16) & 63] | s5[(right2 >>> 8) & 63] | s7[right2 & 63]);
         }
-        return result;
-    }
 
-    // Expose to browser
-    if (typeof window !== 'undefined') {
-        window.desDecrypt = desDecrypt;
-    }
+        // Swap left and right
+        temp = left;
+        left = right;
+        right = temp;
 
-})();
+        // Final Permutation (IP-1)
+        left = ((left >>> 1) | (left << 31));
+        right = ((right >>> 1) | (right << 31));
+
+        temp = ((left >>> 1) ^ right) & 0x55555555;
+        right ^= temp;
+        left ^= (temp << 1);
+
+        temp = ((right >>> 8) ^ left) & 0x00FF00FF;
+        left ^= temp;
+        right ^= (temp << 8);
+
+        temp = ((right >>> 2) ^ left) & 0x33333333;
+        left ^= temp;
+        right ^= (temp << 2);
+
+        temp = ((left >>> 16) ^ right) & 0x0000FFFF;
+        right ^= temp;
+        left ^= (temp << 16);
+
+        temp = ((left >>> 4) ^ right) & 0x0F0F0F0F;
+        right ^= temp;
+        left ^= (temp << 4);
+
+        result += String.fromCharCode(
+            (left >>> 24), ((left >>> 16) & 0xFF), ((left >>> 8) & 0xFF), (left & 0xFF), (right >>> 24),
+            ((right >>> 16) & 0xFF), ((right >>> 8) & 0xFF), (right & 0xFF));
+    }
+    return result;
+}
+
+// Expose to browser
+if (typeof window !== 'undefined') {
+    window.desDecrypt = desDecrypt;
+}
 
     // ============================================================
     // FILE: /js/libs/writem4a.js
     // ============================================================
 
-/**
- * @fileoverview Optimized platform-agnostic M4A metadata reader and writer core.
- * Restricts recursive parsing to metadata-only atoms to avoid GC allocating and
- * shifts index tables in-place using direct byte signatures.
- */
+// src/js/libs/writem4a.js
+
+// Restricts recursive parsing to metadata-only atoms to avoid GC allocating and shifts index tables in-place using
+// direct byte signatures.
 
 const latin1Decoder = new TextDecoder('latin1');
 const utf8Decoder = new TextDecoder('utf-8');
 const utf8Encoder = new TextEncoder();
 
-/**
- * Converts a segment of Uint8Array to string.
- *
- * @param {!Uint8Array} bytes
- * @param {number} offset
- * @param {number} endOffset
- * @param {string=} encoding 'latin1' or 'utf8'
- * @return {string}
- */
+// Converts a segment of Uint8Array to string.
 function bytesToString(bytes, offset, endOffset, encoding = 'latin1') {
-  const slice = bytes.subarray(offset, endOffset);
-  return encoding === 'utf8' ? utf8Decoder.decode(slice) : latin1Decoder.decode(slice);
+    const slice = bytes.subarray(offset, endOffset);
+    return encoding === 'utf8' ? utf8Decoder.decode(slice) : latin1Decoder.decode(slice);
 }
 
-/**
- * Converts a string to Uint8Array.
- *
- * @param {string} str
- * @param {string=} encoding 'utf8' or 'latin1'
- * @return {!Uint8Array}
- */
+// Converts a string to Uint8Array.
 function stringToBytes(str, encoding = 'utf8') {
-  if (encoding === 'latin1') {
-    const bytes = new Uint8Array(str.length);
-    for (let i = 0; i < str.length; i++) {
-      bytes[i] = str.charCodeAt(i) & 0xff;
+    if (encoding === 'latin1') {
+        const bytes = new Uint8Array(str.length);
+        for (let i = 0; i < str.length; i++) {
+            bytes[i] = str.charCodeAt(i) & 0xff;
+        }
+        return bytes;
     }
-    return bytes;
-  }
-  return utf8Encoder.encode(str);
+    return utf8Encoder.encode(str);
 }
 
-/**
- * Concatenates multiple Uint8Array arrays into one.
- *
- * @param {!Array<!Uint8Array>} arrays
- * @return {!Uint8Array}
- */
+// Concatenates multiple Uint8Array arrays into one.
 function concatUint8Arrays(arrays) {
-  const totalLength = arrays.reduce((sum, arr) => sum + arr.length, 0);
-  const result = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const arr of arrays) {
-    result.set(arr, offset);
-    offset += arr.length;
-  }
-  return result;
+    const totalLength = arrays.reduce((sum, arr) => sum + arr.length, 0);
+    const result = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const arr of arrays) {
+        result.set(arr, offset);
+        offset += arr.length;
+    }
+    return result;
 }
 
-/**
- * Reads variable-length Big-Endian integer from DataView.
- *
- * @param {!DataView} view
- * @param {number} offset
- * @param {number} byteLength
- * @return {number}
- */
+// Reads variable-length Big-Endian integer from DataView.
 function readUIntBE(view, offset, byteLength) {
-  let value = 0;
-  for (let i = 0; i < byteLength; i++) {
-    value = (value << 8) | view.getUint8(offset + i);
-  }
-  return value;
+    let value = 0;
+    for (let i = 0; i < byteLength; i++) {
+        value = (value << 8) | view.getUint8(offset + i);
+    }
+    return value;
 }
 
-/**
- * Writes variable-length Big-Endian integer into DataView.
- *
- * @param {!DataView} view
- * @param {number} value
- * @param {number} offset
- * @param {number} byteLength
- */
+// Writes variable-length Big-Endian integer into DataView.
 function writeUIntBE(view, value, offset, byteLength) {
-  let temp = value;
-  for (let i = byteLength - 1; i >= 0; i--) {
-    view.setUint8(offset + i, temp & 0xff);
-    temp = temp >> 8;
-  }
+    let temp = value;
+    for (let i = byteLength - 1; i >= 0; i--) {
+        view.setUint8(offset + i, temp & 0xff);
+        temp = temp >> 8;
+    }
 }
 
-/**
- * Maps M4A 4-byte atom types to human-readable tag keys.
- * @const {!Object<string, string>}
- */
+// Maps M4A 4-byte atom types to human-readable tag keys.
 const TAG_MAPPING = {
-  '\xa9alb': 'album',
-  '\xa9art': 'artist',
-  '\xa9ART': 'artist',
-  'aART': 'album_artist',
-  '\xa9day': 'year',
-  '\xa9nam': 'title',
-  '\xa9gen': 'genre',
-  'trkn': 'track',
-  '\xa9wrt': 'composer',
-  '\xa9too': 'encoder',
-  'cprt': 'copyright',
-  'covr': 'picture',
-  '\xa9grp': 'grouping',
-  'keyw': 'keyword',
-  '\xa9lyr': 'lyrics',
-  '\xa9cmt': 'comment',
-  'tmpo': 'tempo',
-  'cpil': 'compilation',
-  'disk': 'disc'
+    '\xa9alb': 'album',
+    '\xa9art': 'artist',
+    '\xa9ART': 'artist',
+    'aART': 'album_artist',
+    '\xa9day': 'year',
+    '\xa9nam': 'title',
+    '\xa9gen': 'genre',
+    'trkn': 'track',
+    '\xa9wrt': 'composer',
+    '\xa9too': 'encoder',
+    'cprt': 'copyright',
+    'covr': 'picture',
+    '\xa9grp': 'grouping',
+    'keyw': 'keyword',
+    '\xa9lyr': 'lyrics',
+    '\xa9cmt': 'comment',
+    'tmpo': 'tempo',
+    'cpil': 'compilation',
+    'disk': 'disc'
 };
 
-/**
- * Derived inverse mapping to resolve tag keys to M4A atom types.
- * @const {!Object<string, string>}
- */
+// Derived inverse mapping to resolve tag keys to M4A atom types.
 const TAG_TO_ATOM = {};
 for (const [atom, key] of Object.entries(TAG_MAPPING)) {
-  if (!TAG_TO_ATOM[key] || (atom === '\xa9ART' && TAG_TO_ATOM[key] === '\xa9art')) {
-    TAG_TO_ATOM[key] = atom;
-  }
+    if (!TAG_TO_ATOM[key] || (atom === '\xa9ART' && TAG_TO_ATOM[key] === '\xa9art')) {
+        TAG_TO_ATOM[key] = atom;
+    }
 }
 
-/**
- * Reads size and type boundaries of an atom header.
- *
- * @param {!Uint8Array} bytes File bytes buffer.
- * @param {number} offset Start index.
- * @return {?{type: string, size: number, headerSize: number}} Header meta, or null if out of bounds.
- */
+// Reads size and type boundaries of an atom header.
 function readAtomHeader(bytes, offset) {
-  if (offset + 8 > bytes.length) return null;
-  const view = new DataView(bytes.buffer, bytes.byteOffset + offset, 8);
-  const size = view.getUint32(0, false);
-  const type = bytesToString(bytes, offset + 4, offset + 8, 'latin1');
-  let headerSize = 8;
-  let actualSize = size;
+    if (offset + 8 > bytes.length) return null;
+    const view = new DataView(bytes.buffer, bytes.byteOffset + offset, 8);
+    const size = view.getUint32(0, false);
+    const type = bytesToString(bytes, offset + 4, offset + 8, 'latin1');
+    let headerSize = 8;
+    let actualSize = size;
 
-  if (size === 1) {
-    if (offset + 16 > bytes.length) return null;
-    const viewLong = new DataView(bytes.buffer, bytes.byteOffset + offset + 8, 8);
-    actualSize = Number(viewLong.getBigUint64(0, false));
-    headerSize = 16;
-  }
-  return { type, size: actualSize, headerSize };
+    if (size === 1) {
+        if (offset + 16 > bytes.length) return null;
+        const viewLong = new DataView(bytes.buffer, bytes.byteOffset + offset + 8, 8);
+        actualSize = Number(viewLong.getBigUint64(0, false));
+        headerSize = 16;
+    }
+    return {type, size: actualSize, headerSize};
 }
 
-/**
- * Scans top-level atoms in the buffer sequentially.
- *
- * @param {!Uint8Array} bytes File bytes buffer.
- * @return {!Array<!Object>} List of top-level atom descriptors.
- */
+// Scans top-level atoms in the buffer sequentially.
 function scanTopLevelAtoms(bytes) {
-  const atoms = [];
-  let pos = 0;
-  while (pos < bytes.length) {
-    const header = readAtomHeader(bytes, pos);
-    if (!header || header.size <= 0 || pos + header.size > bytes.length) break;
-    atoms.push({
-      type: header.type,
-      size: header.size,
-      headerSize: header.headerSize,
-      offset: pos,
-      bytes: bytes.subarray(pos, pos + header.size)
-    });
-    pos += header.size;
-  }
-  return atoms;
+    const atoms = [];
+    let pos = 0;
+    while (pos < bytes.length) {
+        const header = readAtomHeader(bytes, pos);
+        if (!header || header.size <= 0 || pos + header.size > bytes.length) break;
+        atoms.push({
+            type: header.type,
+            size: header.size,
+            headerSize: header.headerSize,
+            offset: pos,
+            bytes: bytes.subarray(pos, pos + header.size)
+        });
+        pos += header.size;
+    }
+    return atoms;
 }
 
-/**
- * Finds or creates a child atom in a parent container tree.
- *
- * @param {!Object} parent The parent containing atom block.
- * @param {string} type 4-byte atom type.
- * @param {!Uint8Array} headerBytes Default fallback header.
- * @param {!Uint8Array=} metaPrefix Optional meta prefix bytes.
- * @return {!Object} The existing/new child atom.
- */
+// Finds or creates a child atom in a parent container tree.
 function getOrCreateChild(parent, type, headerBytes, metaPrefix = null) {
-  let child = parent.children.find(c => c.type === type);
-  if (!child) {
-    child = {
-      type,
-      headerSize: headerBytes.length,
-      headerBytes,
-      children: []
-    };
-    if (metaPrefix) child.metaPrefix = metaPrefix;
-    parent.children.push(child);
-  }
-  return child;
+    let child = parent.children.find(c => c.type === type);
+    if (!child) {
+        child = {type, headerSize: headerBytes.length, headerBytes, children: []};
+        if (metaPrefix) child.metaPrefix = metaPrefix;
+        parent.children.push(child);
+    }
+    return child;
 }
 
-/**
- * Recursively parses the binary buffer into a structured atom tree.
- * Optimized: Only iterates within metadata containers (moov, udta, meta, ilst)
- * to bypass allocating track timelines on javascript heap.
- *
- * @param {!Uint8Array} bytes The full file buffer as Uint8Array.
- * @param {number} offset The current reading byte offset.
- * @param {number} endOffset The boundary end index of the container.
- * @return {!Object} The parsed atom object with its children tree layout.
- */
+// Recursively parses the binary buffer into a structured atom tree. Optimized: Only iterates within metadata containers
+// (moov, udta, meta, ilst) to bypass allocating track timelines on javascript heap.
 function parseAtomTree(bytes, offset, endOffset) {
-  const header = readAtomHeader(bytes, offset);
-  if (!header) {
-    throw new Error('Out of bounds reading atom header.');
-  }
-  const payloadOffset = offset + header.headerSize;
-  const payloadSize = header.size - header.headerSize;
-
-  // Optimized containerTypes list: skips tracking nested trak, mdia, etc., but parses metadata fields
-  const containerTypes = [
-    'moov', 'udta', 'meta', 'ilst',
-    '\xa9nam', '\xa9art', '\xa9ART', 'aART', '\xa9alb', '\xa9day',
-    '\xa9gen', 'trkn', '\xa9wrt', '\xa9too', 'cprt', 'covr',
-    '\xa9grp', 'keyw', '\xa9lyr', '\xa9cmt', 'tmpo', 'cpil', 'disk'
-  ];
-
-  const atom = {
-    type: header.type,
-    headerSize: header.headerSize,
-    headerBytes: bytes.subarray(offset, payloadOffset),
-    children: []
-  };
-
-  const isContainer = containerTypes.includes(header.type);
-  if (isContainer && payloadSize > 0) {
-    let childOffset = payloadOffset;
-    if (header.type === 'meta') {
-      atom.metaPrefix = bytes.subarray(payloadOffset, payloadOffset + 4);
-      childOffset += 4;
+    const header = readAtomHeader(bytes, offset);
+    if (!header) {
+        throw new Error('Out of bounds reading atom header.');
     }
-    const childrenEnd = offset + header.size;
-    while (childOffset < childrenEnd) {
-      if (childOffset + 8 > childrenEnd) break;
-      const childHeader = readAtomHeader(bytes, childOffset);
-      if (!childHeader || childHeader.size === 0) break;
-      const child = parseAtomTree(bytes, childOffset, childrenEnd);
-      atom.children.push(child);
-      childOffset += childHeader.size;
+    const payloadOffset = offset + header.headerSize;
+    const payloadSize = header.size - header.headerSize;
+
+    // Optimized containerTypes list: skips tracking nested trak, mdia, etc., but parses metadata fields
+    const containerTypes = [
+        'moov',    'udta',    'meta',    'ilst',    '\xa9nam', '\xa9art', '\xa9ART', 'aART',
+        '\xa9alb', '\xa9day', '\xa9gen', 'trkn',    '\xa9wrt', '\xa9too', 'cprt',    'covr',
+        '\xa9grp', 'keyw',    '\xa9lyr', '\xa9cmt', 'tmpo',    'cpil',    'disk'
+    ];
+
+    const atom = {
+        type: header.type,
+        headerSize: header.headerSize,
+        headerBytes: bytes.subarray(offset, payloadOffset),
+        children: []
+    };
+
+    const isContainer = containerTypes.includes(header.type);
+    if (isContainer && payloadSize > 0) {
+        let childOffset = payloadOffset;
+        if (header.type === 'meta') {
+            atom.metaPrefix = bytes.subarray(payloadOffset, payloadOffset + 4);
+            childOffset += 4;
+        }
+        const childrenEnd = offset + header.size;
+        while (childOffset < childrenEnd) {
+            if (childOffset + 8 > childrenEnd) break;
+            const childHeader = readAtomHeader(bytes, childOffset);
+            if (!childHeader || childHeader.size === 0) break;
+            const child = parseAtomTree(bytes, childOffset, childrenEnd);
+            atom.children.push(child);
+            childOffset += childHeader.size;
+        }
+    } else {
+        atom.payload = bytes.subarray(payloadOffset, payloadOffset + payloadSize);
     }
-  } else {
-    atom.payload = bytes.subarray(payloadOffset, payloadOffset + payloadSize);
-  }
-  return atom;
+    return atom;
 }
 
-/**
- * Scans a trak byte buffer in-place to find and shift offsets in stco or co64 index tables.
- *
- * @param {!Uint8Array} bytes The raw trak atom payload.
- * @param {number} delta Shift amount to apply.
- */
+// Scans a trak byte buffer in-place to find and shift offsets in stco or co64 index tables.
 function shiftStcoInBytes(bytes, delta) {
-  if (delta === 0) return;
-  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  
-  // Find 'stco' in bytes (4-byte signature: [115, 116, 99, 111])
-  let pos = 0;
-  while (pos + 8 <= bytes.length) {
-    // checking [s, t, c, o]
-    if (bytes[pos] === 115 && bytes[pos+1] === 116 && bytes[pos+2] === 99 && bytes[pos+3] === 111) {
-      const size = view.getUint32(pos - 4, false);
-      if (pos - 4 + size <= bytes.length) {
-        const count = view.getUint32(pos + 8, false);
-        for (let i = 0; i < count; i++) {
-          const idx = pos + 12 + i * 4;
-          if (idx + 4 <= bytes.length) {
-            const val = view.getUint32(idx, false);
-            view.setUint32(idx, val + delta, false);
-          }
+    if (delta === 0) return;
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+
+    // Find 'stco' in bytes (4-byte signature: [115, 116, 99, 111])
+    let pos = 0;
+    while (pos + 8 <= bytes.length) {
+        // checking [s, t, c, o]
+        if (bytes[pos] === 115 && bytes[pos + 1] === 116 && bytes[pos + 2] === 99 && bytes[pos + 3] === 111) {
+            const size = view.getUint32(pos - 4, false);
+            if (pos - 4 + size <= bytes.length) {
+                const count = view.getUint32(pos + 8, false);
+                for (let i = 0; i < count; i++) {
+                    const idx = pos + 12 + i * 4;
+                    if (idx + 4 <= bytes.length) {
+                        const val = view.getUint32(idx, false);
+                        view.setUint32(idx, val + delta, false);
+                    }
+                }
+            }
+            break;
         }
-      }
-      break;
-    }
-    // Find 'co64' in bytes (4-byte signature: [99, 111, 54, 52])
-    if (bytes[pos] === 99 && bytes[pos+1] === 111 && bytes[pos+2] === 54 && bytes[pos+3] === 52) {
-      const size = view.getUint32(pos - 4, false);
-      if (pos - 4 + size <= bytes.length) {
-        const count = view.getUint32(pos + 8, false);
-        for (let i = 0; i < count; i++) {
-          const idx = pos + 12 + i * 8;
-          if (idx + 8 <= bytes.length) {
-            const val = view.getBigUint64(idx, false);
-            view.setBigUint64(idx, val + BigInt(delta), false);
-          }
+        // Find 'co64' in bytes (4-byte signature: [99, 111, 54, 52])
+        if (bytes[pos] === 99 && bytes[pos + 1] === 111 && bytes[pos + 2] === 54 && bytes[pos + 3] === 52) {
+            const size = view.getUint32(pos - 4, false);
+            if (pos - 4 + size <= bytes.length) {
+                const count = view.getUint32(pos + 8, false);
+                for (let i = 0; i < count; i++) {
+                    const idx = pos + 12 + i * 8;
+                    if (idx + 8 <= bytes.length) {
+                        const val = view.getBigUint64(idx, false);
+                        view.setBigUint64(idx, val + BigInt(delta), false);
+                    }
+                }
+            }
+            break;
         }
-      }
-      break;
+        pos++;
     }
-    pos++;
-  }
 }
 
-/**
- * Recursively serializes the atom tree back into a binary buffer,
- * adjusting chunk offset indexing tables (`stco` / `co64`) by the shift delta.
- * Optimized: Runs in-place offset adjustments directly on the trak byte arrays
- * and avoids string encoding allocations.
- *
- * @param {!Object} atom The root atom of the tree to serialize.
- * @param {number=} delta Chunk offset shift value (non-zero if moov size changed).
- * @return {!Uint8Array} Serialized binary buffer.
- */
+// Recursively serializes the atom tree back into a binary buffer, adjusting chunk offset indexing tables (`stco` /
+// `co64`) by the shift delta. Optimized: Runs in-place offset adjustments directly on the trak byte arrays and avoids
+// string encoding allocations.
 function serializeAtomTree(atom, delta = 0) {
-  // If track atom payload is encountered, apply offset shifts to stco/co64 directly
-  if (delta !== 0 && atom.type === 'trak') {
-    shiftStcoInBytes(atom.payload, delta);
-  }
-
-  if (atom.children && atom.children.length > 0) {
-    const serializedChildren = atom.children.map(child => serializeAtomTree(child, delta));
-    let payloadLength = serializedChildren.reduce((sum, b) => sum + b.length, 0);
-    if (atom.type === 'meta') {
-      payloadLength += 4;
+    // If track atom payload is encountered, apply offset shifts to stco/co64 directly
+    if (delta !== 0 && atom.type === 'trak') {
+        shiftStcoInBytes(atom.payload, delta);
     }
 
-    const header = new Uint8Array(atom.headerSize);
-    const view = new DataView(header.buffer, header.byteOffset, header.byteLength);
-    view.setUint32(0, payloadLength + atom.headerSize, false);
-    
-    // Optimized: Set type string characters directly (allocation-free)
-    header[4] = atom.type.charCodeAt(0);
-    header[5] = atom.type.charCodeAt(1);
-    header[6] = atom.type.charCodeAt(2);
-    header[7] = atom.type.charCodeAt(3);
+    if (atom.children && atom.children.length > 0) {
+        const serializedChildren = atom.children.map(child => serializeAtomTree(child, delta));
+        let payloadLength = serializedChildren.reduce((sum, b) => sum + b.length, 0);
+        if (atom.type === 'meta') {
+            payloadLength += 4;
+        }
 
-    const parts = [header];
-    if (atom.type === 'meta') {
-      parts.push(atom.metaPrefix);
+        const header = new Uint8Array(atom.headerSize);
+        const view = new DataView(header.buffer, header.byteOffset, header.byteLength);
+        view.setUint32(0, payloadLength + atom.headerSize, false);
+
+        // Optimized: Set type string characters directly (allocation-free)
+        header[4] = atom.type.charCodeAt(0);
+        header[5] = atom.type.charCodeAt(1);
+        header[6] = atom.type.charCodeAt(2);
+        header[7] = atom.type.charCodeAt(3);
+
+        const parts = [header];
+        if (atom.type === 'meta') {
+            parts.push(atom.metaPrefix);
+        }
+        parts.push(...serializedChildren);
+        return concatUint8Arrays(parts);
+    } else {
+        const header = new Uint8Array(atom.headerSize);
+        const view = new DataView(header.buffer, header.byteOffset, header.byteLength);
+        view.setUint32(0, atom.payload.length + atom.headerSize, false);
+
+        // Set type characters directly
+        header[4] = atom.type.charCodeAt(0);
+        header[5] = atom.type.charCodeAt(1);
+        header[6] = atom.type.charCodeAt(2);
+        header[7] = atom.type.charCodeAt(3);
+
+        return concatUint8Arrays([header, atom.payload]);
     }
-    parts.push(...serializedChildren);
-    return concatUint8Arrays(parts);
-  } else {
-    const header = new Uint8Array(atom.headerSize);
-    const view = new DataView(header.buffer, header.byteOffset, header.byteLength);
-    view.setUint32(0, atom.payload.length + atom.headerSize, false);
-    
-    // Set type characters directly
-    header[4] = atom.type.charCodeAt(0);
-    header[5] = atom.type.charCodeAt(1);
-    header[6] = atom.type.charCodeAt(2);
-    header[7] = atom.type.charCodeAt(3);
-
-    return concatUint8Arrays([header, atom.payload]);
-  }
 }
 
-/**
- * Decodes metadata fields from parsed tags located inside the `ilst` atom parent.
- *
- * @param {!Object} ilstAtom The item list parsed atom.
- * @return {!Object<string, *>} Extracted metadata tags mapping.
- */
+// Decodes metadata fields from parsed tags located inside the `ilst` atom parent.
 function extractTags(ilstAtom) {
-  const tags = {};
-  if (!ilstAtom || !ilstAtom.children) return tags;
+    const tags = {};
+    if (!ilstAtom || !ilstAtom.children) return tags;
 
-  for (const tagAtom of ilstAtom.children) {
-    const key = TAG_MAPPING[tagAtom.type];
-    if (!key) continue;
+    for (const tagAtom of ilstAtom.children) {
+        const key = TAG_MAPPING[tagAtom.type];
+        if (!key) continue;
 
-    const dataAtom = tagAtom.children.find(c => c.type === 'data');
-    if (!dataAtom || !dataAtom.payload) continue;
+        const dataAtom = tagAtom.children.find(c => c.type === 'data');
+        if (!dataAtom || !dataAtom.payload) continue;
 
-    const payload = dataAtom.payload;
-    if (payload.length < 8) continue;
-    
-    const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
-    const typeClass = readUIntBE(view, 1, 3);
-    const valueBuf = payload.subarray(8);
+        const payload = dataAtom.payload;
+        if (payload.length < 8) continue;
 
-    if (key === 'track' || key === 'disc') {
-      if (valueBuf.length >= 6) {
-        const valView = new DataView(valueBuf.buffer, valueBuf.byteOffset, valueBuf.byteLength);
-        tags[key] = valView.getUint16(2, false);
-        tags[key + '_count'] = valView.getUint16(4, false);
-      }
-    } else if (typeClass === 1) {
-      tags[key] = bytesToString(valueBuf, 0, valueBuf.length, 'utf8');
-    } else if (typeClass === 13 || typeClass === 14) {
-      tags[key] = {
-        format: typeClass === 13 ? 'jpeg' : 'png',
-        mimeType: typeClass === 13 ? 'image/jpeg' : 'image/png',
-        data: valueBuf
-      };
-    } else if (typeClass === 21) {
-      const valView = new DataView(valueBuf.buffer, valueBuf.byteOffset, valueBuf.byteLength);
-      tags[key] = readUIntBE(valView, 0, valueBuf.length);
-    } else {
-      tags[key] = bytesToString(valueBuf, 0, valueBuf.length, 'utf8');
+        const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+        const typeClass = readUIntBE(view, 1, 3);
+        const valueBuf = payload.subarray(8);
+
+        if (key === 'track' || key === 'disc') {
+            if (valueBuf.length >= 6) {
+                const valView = new DataView(valueBuf.buffer, valueBuf.byteOffset, valueBuf.byteLength);
+                tags[key] = valView.getUint16(2, false);
+                tags[key + '_count'] = valView.getUint16(4, false);
+            }
+        } else if (typeClass === 1) {
+            tags[key] = bytesToString(valueBuf, 0, valueBuf.length, 'utf8');
+        } else if (typeClass === 13 || typeClass === 14) {
+            tags[key] = {
+                format: typeClass === 13 ? 'jpeg' : 'png',
+                mimeType: typeClass === 13 ? 'image/jpeg' : 'image/png',
+                data: valueBuf
+            };
+        } else if (typeClass === 21) {
+            const valView = new DataView(valueBuf.buffer, valueBuf.byteOffset, valueBuf.byteLength);
+            tags[key] = readUIntBE(valView, 0, valueBuf.length);
+        } else {
+            tags[key] = bytesToString(valueBuf, 0, valueBuf.length, 'utf8');
+        }
     }
-  }
-  return tags;
+    return tags;
 }
 
-/**
- * Creates a valid M4A metadata tag atom containing a sub-atom 'data'.
- *
- * @param {string} type M4A 4-byte atom type (e.g. '\xa9nam').
- * @param {*} value The value to write.
- * @param {boolean=} isPicture True if writing picture image bytes.
- * @return {!Object} Constructed tag atom tree.
- */
+// Creates a valid M4A metadata tag atom containing a sub-atom 'data'.
 function createTagAtom(type, value, isPicture = false) {
-  let valueBuf;
-  let typeClass; // 1 = text, 13 = JPEG cover, 14 = PNG cover, 21 = uint
-  
-  if (isPicture) {
-    valueBuf = value.data;
-    typeClass = value.format === 'png' ? 14 : 13;
-  } else if (typeof value === 'number') {
-    valueBuf = new Uint8Array(4);
-    const valView = new DataView(valueBuf.buffer, valueBuf.byteOffset, valueBuf.byteLength);
-    valView.setUint32(0, value, false);
-    typeClass = 21;
-  } else {
-    valueBuf = stringToBytes(String(value), 'utf8');
-    typeClass = 1;
-  }
+    let valueBuf;
+    let typeClass;  // 1 = text, 13 = JPEG cover, 14 = PNG cover, 21 = uint
 
-  const dataAtomHeader = new Uint8Array(16);
-  const headerView = new DataView(dataAtomHeader.buffer, dataAtomHeader.byteOffset, dataAtomHeader.byteLength);
-  headerView.setUint32(0, 16 + valueBuf.length, false);
-  
-  // Set 'data' characters directly (allocation-free)
-  dataAtomHeader[4] = 100; // 'd'
-  dataAtomHeader[5] = 97;  // 'a'
-  dataAtomHeader[6] = 116; // 't'
-  dataAtomHeader[7] = 97;  // 'a'
-  writeUIntBE(headerView, typeClass, 9, 3); // 3-byte class flags
+    if (isPicture) {
+        valueBuf = value.data;
+        typeClass = value.format === 'png' ? 14 : 13;
+    } else if (typeof value === 'number') {
+        valueBuf = new Uint8Array(4);
+        const valView = new DataView(valueBuf.buffer, valueBuf.byteOffset, valueBuf.byteLength);
+        valView.setUint32(0, value, false);
+        typeClass = 21;
+    } else {
+        valueBuf = stringToBytes(String(value), 'utf8');
+        typeClass = 1;
+    }
 
-  const dataAtom = {
-    type: 'data',
-    headerSize: 8,
-    headerBytes: dataAtomHeader.subarray(0, 8),
-    payload: concatUint8Arrays([dataAtomHeader.subarray(8, 16), valueBuf])
-  };
+    const dataAtomHeader = new Uint8Array(16);
+    const headerView = new DataView(dataAtomHeader.buffer, dataAtomHeader.byteOffset, dataAtomHeader.byteLength);
+    headerView.setUint32(0, 16 + valueBuf.length, false);
 
-  const tagAtomHeader = new Uint8Array(8);
-  tagAtomHeader[4] = type.charCodeAt(0);
-  tagAtomHeader[5] = type.charCodeAt(1);
-  tagAtomHeader[6] = type.charCodeAt(2);
-  tagAtomHeader[7] = type.charCodeAt(3);
+    // Set 'data' characters directly (allocation-free)
+    dataAtomHeader[4] = 100;                   // 'd'
+    dataAtomHeader[5] = 97;                    // 'a'
+    dataAtomHeader[6] = 116;                   // 't'
+    dataAtomHeader[7] = 97;                    // 'a'
+    writeUIntBE(headerView, typeClass, 9, 3);  // 3-byte class flags
 
-  return {
-    type,
-    headerSize: 8,
-    headerBytes: tagAtomHeader,
-    children: [dataAtom]
-  };
+    const dataAtom = {
+        type: 'data',
+        headerSize: 8,
+        headerBytes: dataAtomHeader.subarray(0, 8),
+        payload: concatUint8Arrays([dataAtomHeader.subarray(8, 16), valueBuf])
+    };
+
+    const tagAtomHeader = new Uint8Array(8);
+    tagAtomHeader[4] = type.charCodeAt(0);
+    tagAtomHeader[5] = type.charCodeAt(1);
+    tagAtomHeader[6] = type.charCodeAt(2);
+    tagAtomHeader[7] = type.charCodeAt(3);
+
+    return {type, headerSize: 8, headerBytes: tagAtomHeader, children: [dataAtom]};
 }
 
-/**
- * Scans the binary buffer in-place to verify that the file meets essential M4A structure expectations
- * (ftyp signature, plus mdat and moov containers).
- * Performs zero allocations and runs in under 10 microseconds.
- *
- * @param {!Uint8Array} bytes The Uint8Array file buffer.
- * @return {boolean} True if the essential M4A structure exists.
- */
+// Scans the binary buffer in-place to verify that the file meets essential M4A structure expectations (ftyp signature,
+// plus mdat and moov containers). Performs zero allocations and runs in under 10 microseconds.
 function verifyM4AStructure(bytes) {
-  if (bytes.length < 8) return false;
+    if (bytes.length < 8) return false;
 
-  // 1. Verify ftyp signature
-  if (bytesToString(bytes, 4, 8, 'latin1') !== 'ftyp') return false;
+    // 1. Verify ftyp signature
+    if (bytesToString(bytes, 4, 8, 'latin1') !== 'ftyp') return false;
 
-  // 2. Scan top-level atoms for mdat and moov
-  const atoms = scanTopLevelAtoms(bytes);
-  const hasMdat = atoms.some(a => a.type === 'mdat');
-  const hasMoov = atoms.some(a => a.type === 'moov');
+    // 2. Scan top-level atoms for mdat and moov
+    const atoms = scanTopLevelAtoms(bytes);
+    const hasMdat = atoms.some(a => a.type === 'mdat');
+    const hasMoov = atoms.some(a => a.type === 'moov');
 
-  return hasMdat && hasMoov;
+    return hasMdat && hasMoov;
 }
 
-/**
- * Helper to recursively find an atom of a specific type in the tree structure.
- *
- * @param {!Object} atom The root atom of the tree search start.
- * @param {string} type The 4-byte atom type identifier to look for.
- * @return {?Object} The found atom child, or null if not found.
- */
+// Helper to recursively find an atom of a specific type in the tree structure.
 function findAtom(atom, type) {
-  if (atom.type === type) return atom;
-  for (const child of atom.children || []) {
-    const found = findAtom(child, type);
-    if (found) return found;
-  }
-  return null;
+    if (atom.type === type) return atom;
+    for (const child of atom.children || []) {
+        const found = findAtom(child, type);
+        if (found) return found;
+    }
+    return null;
 }
 
-/**
- * Core parsing algorithm operating on a Uint8Array.
- *
- * @param {!Uint8Array} bytes The binary file content as Uint8Array.
- * @return {!Object<string, *>} Parsed metadata tag mapping.
- */
+// Core parsing algorithm operating on a Uint8Array.
 function parseM4ABytes(bytes) {
-  if (!verifyM4AStructure(bytes)) {
-    throw new Error('Unsupported or invalid file structure. Only M4A (.m4a) files with valid audio and metadata containers are supported.');
-  }
-
-  const atoms = scanTopLevelAtoms(bytes);
-  const moovDescriptor = atoms.find(a => a.type === 'moov');
-  if (!moovDescriptor) return {};
-
-  const moovAtom = parseAtomTree(bytes, moovDescriptor.offset, moovDescriptor.offset + moovDescriptor.size);
-
-  let tagsResult = {};
-  const udta = moovAtom.children.find(c => c.type === 'udta');
-  if (udta) {
-    const meta = udta.children.find(c => c.type === 'meta');
-    if (meta) {
-      const ilst = meta.children.find(c => c.type === 'ilst');
-      if (ilst) {
-        tagsResult = extractTags(ilst);
-      }
+    if (!verifyM4AStructure(bytes)) {
+        throw new Error(
+            'Unsupported or invalid file structure. Only M4A (.m4a) files with valid audio and metadata containers are supported.');
     }
-  }
 
-  // Extract play duration from mvhd if it exists
-  const mvhd = findAtom(moovAtom, 'mvhd');
-  if (mvhd && mvhd.payload) {
-    const payload = mvhd.payload;
-    const version = payload[0];
-    let timescale = 0;
-    let duration = 0;
-    if (version === 0 && payload.length >= 20) {
-      const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
-      timescale = view.getUint32(12, false);
-      duration = view.getUint32(16, false);
-    } else if (version === 1 && payload.length >= 32) {
-      const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
-      timescale = view.getUint32(20, false);
-      duration = Number(view.getBigUint64(24, false));
-    }
-    if (timescale > 0) {
-      tagsResult.duration = duration / timescale;
-    }
-  }
+    const atoms = scanTopLevelAtoms(bytes);
+    const moovDescriptor = atoms.find(a => a.type === 'moov');
+    if (!moovDescriptor) return {};
 
-  return tagsResult;
+    const moovAtom = parseAtomTree(bytes, moovDescriptor.offset, moovDescriptor.offset + moovDescriptor.size);
+
+    let tagsResult = {};
+    const udta = moovAtom.children.find(c => c.type === 'udta');
+    if (udta) {
+        const meta = udta.children.find(c => c.type === 'meta');
+        if (meta) {
+            const ilst = meta.children.find(c => c.type === 'ilst');
+            if (ilst) {
+                tagsResult = extractTags(ilst);
+            }
+        }
+    }
+
+    // Extract play duration from mvhd if it exists
+    const mvhd = findAtom(moovAtom, 'mvhd');
+    if (mvhd && mvhd.payload) {
+        const payload = mvhd.payload;
+        const version = payload[0];
+        let timescale = 0;
+        let duration = 0;
+        if (version === 0 && payload.length >= 20) {
+            const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+            timescale = view.getUint32(12, false);
+            duration = view.getUint32(16, false);
+        } else if (version === 1 && payload.length >= 32) {
+            const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+            timescale = view.getUint32(20, false);
+            duration = Number(view.getBigUint64(24, false));
+        }
+        if (timescale > 0) {
+            tagsResult.duration = duration / timescale;
+        }
+    }
+
+    return tagsResult;
 }
 
-/**
- * Core modifying algorithm operating on a Uint8Array and outputting a new Uint8Array.
- * Supporting zero-copy returns via options.returnParts.
- *
- * @param {!Uint8Array} bytes The source M4A file buffer.
- * @param {!Object<string, *>} newTags Tag value key/value pairs to write/overwrite.
- * @param {!Object<string, *>=} options Config options.
- * @return {!Uint8Array|!Array<!Uint8Array>} Serialized modified M4A buffer or parts array.
- */
+// Core modifying algorithm operating on a Uint8Array and outputting a new Uint8Array. Supporting zero-copy returns via
+// options.returnParts.
 function writeM4ABytes(bytes, newTags, options = {}) {
-  if (!verifyM4AStructure(bytes)) {
-    throw new Error('Unsupported or invalid file structure. Only M4A (.m4a) files with valid audio and metadata containers are supported.');
-  }
-
-  const atomsList = scanTopLevelAtoms(bytes);
-  const moovIndex = atomsList.findIndex(a => a.type === 'moov');
-  if (moovIndex === -1) {
-    throw new Error('Invalid or corrupted M4A file structure.');
-  }
-
-  // Parse moov
-  const moovDescriptor = atomsList[moovIndex];
-  const moovAtom = parseAtomTree(bytes, moovDescriptor.offset, moovDescriptor.offset + moovDescriptor.size);
-
-  // 2. Traverses/constructs the udta -> meta -> ilst path recursively
-  const udta = getOrCreateChild(moovAtom, 'udta', stringToBytes('\x00\x00\x00\x08udta', 'latin1'));
-  const meta = getOrCreateChild(udta, 'meta', stringToBytes('\x00\x00\x00\x0cmeta', 'latin1'), new Uint8Array(4));
-  const ilst = getOrCreateChild(meta, 'ilst', stringToBytes('\x00\x00\x00\x08ilst', 'latin1'));
-
-  // 3. Rebuilds/appends the metadata tag atoms list
-  for (const [key, val] of Object.entries(newTags)) {
-    const atomType = TAG_TO_ATOM[key];
-    if (!atomType) continue;
-
-    const isPicture = key === 'picture';
-    const newTagAtom = createTagAtom(atomType, val, isPicture);
-
-    const oldIndex = ilst.children.findIndex(c => c.type === atomType);
-    if (oldIndex !== -1) {
-      ilst.children[oldIndex] = newTagAtom;
-    } else {
-      ilst.children.push(newTagAtom);
+    if (!verifyM4AStructure(bytes)) {
+        throw new Error(
+            'Unsupported or invalid file structure. Only M4A (.m4a) files with valid audio and metadata containers are supported.');
     }
-  }
 
-  // 4. Calculate change in moov size
-  const tempMoovBytes = serializeAtomTree(moovAtom, 0);
-  const newMoovSize = tempMoovBytes.length;
-
-  // 5. Calculate precise new mdat offset to retrieve correct shift amount
-  let currentNewOffset = 0;
-  let oldMdatOffset = 0;
-  let newMdatOffset = 0;
-  let hasMdat = false;
-
-  for (const atom of atomsList) {
-    if (atom.type === 'mdat') {
-      oldMdatOffset = atom.offset;
-      newMdatOffset = currentNewOffset;
-      hasMdat = true;
+    const atomsList = scanTopLevelAtoms(bytes);
+    const moovIndex = atomsList.findIndex(a => a.type === 'moov');
+    if (moovIndex === -1) {
+        throw new Error('Invalid or corrupted M4A file structure.');
     }
-    const atomSize = (atom.type === 'moov') ? newMoovSize : atom.size;
-    currentNewOffset += atomSize;
-  }
 
-  // 6. Shift chunk offsets by the exact delta offset
-  const shiftAmount = hasMdat ? (newMdatOffset - oldMdatOffset) : 0;
-  const finalMoovBytes = serializeAtomTree(moovAtom, shiftAmount);
+    // Parse moov
+    const moovDescriptor = atomsList[moovIndex];
+    const moovAtom = parseAtomTree(bytes, moovDescriptor.offset, moovDescriptor.offset + moovDescriptor.size);
 
-  // 7. Concatenate all atoms back preserving original order
-  const outputParts = [];
-  for (const atom of atomsList) {
-    if (atom.type === 'moov') {
-      outputParts.push(finalMoovBytes);
-    } else {
-      outputParts.push(atom.bytes);
+    // 2. Traverses/constructs the udta -> meta -> ilst path recursively
+    const udta = getOrCreateChild(moovAtom, 'udta', stringToBytes('\x00\x00\x00\x08udta', 'latin1'));
+    const meta = getOrCreateChild(udta, 'meta', stringToBytes('\x00\x00\x00\x0cmeta', 'latin1'), new Uint8Array(4));
+    const ilst = getOrCreateChild(meta, 'ilst', stringToBytes('\x00\x00\x00\x08ilst', 'latin1'));
+
+    // 3. Rebuilds/appends the metadata tag atoms list
+    for (const [key, val] of Object.entries(newTags)) {
+        const atomType = TAG_TO_ATOM[key];
+        if (!atomType) continue;
+
+        const isPicture = key === 'picture';
+        const newTagAtom = createTagAtom(atomType, val, isPicture);
+
+        const oldIndex = ilst.children.findIndex(c => c.type === atomType);
+        if (oldIndex !== -1) {
+            ilst.children[oldIndex] = newTagAtom;
+        } else {
+            ilst.children.push(newTagAtom);
+        }
     }
-  }
 
-  // Return segments array directly if requested
-  if (options.returnParts) {
-    return outputParts;
-  }
+    // 4. Calculate change in moov size
+    const tempMoovBytes = serializeAtomTree(moovAtom, 0);
+    const newMoovSize = tempMoovBytes.length;
 
-  return concatUint8Arrays(outputParts);
+    // 5. Calculate precise new mdat offset to retrieve correct shift amount
+    let currentNewOffset = 0;
+    let oldMdatOffset = 0;
+    let newMdatOffset = 0;
+    let hasMdat = false;
+
+    for (const atom of atomsList) {
+        if (atom.type === 'mdat') {
+            oldMdatOffset = atom.offset;
+            newMdatOffset = currentNewOffset;
+            hasMdat = true;
+        }
+        const atomSize = (atom.type === 'moov') ? newMoovSize : atom.size;
+        currentNewOffset += atomSize;
+    }
+
+    // 6. Shift chunk offsets by the exact delta offset
+    const shiftAmount = hasMdat ? (newMdatOffset - oldMdatOffset) : 0;
+    const finalMoovBytes = serializeAtomTree(moovAtom, shiftAmount);
+
+    // 7. Concatenate all atoms back preserving original order
+    const outputParts = [];
+    for (const atom of atomsList) {
+        if (atom.type === 'moov') {
+            outputParts.push(finalMoovBytes);
+        } else {
+            outputParts.push(atom.bytes);
+        }
+    }
+
+    // Return segments array directly if requested
+    if (options.returnParts) {
+        return outputParts;
+    }
+
+    return concatUint8Arrays(outputParts);
 }
 
 // Always expose to window in browser
@@ -929,44 +930,49 @@ if (typeof window !== 'undefined') {
     // FILE: /js/utils/decrypt.js
     // ============================================================
 
-// ui/js/core/decrypt.js
+// src/js/utils/decrypt.js
 
-(function() {
-    'use strict';
+const KEY = new Uint32Array([
+    36443656,  338827529, 170141697, 338826299, 170272797, 875566612, 170276616, 941097494,
+    153487137, 941103620, 154281006, 940128288, 221380890, 688468270, 621941049, 688727305,
+    622007300, 151861785, 890309646, 184882698, 874054925, 50799890,  874062625, 117842443,
+    805908001, 119942188, 839720978, 102894652, 302780946, 103954180, 302782501, 338829583
+]);
 
-    const KEY = new Uint32Array([
-        36443656, 338827529, 170141697, 338826299,
-        170272797, 875566612, 170276616, 941097494,
-        153487137, 941103620, 154281006, 940128288,
-        221380890, 688468270, 621941049, 688727305,
-        622007300, 151861785, 890309646, 184882698,
-        874054925, 50799890, 874062625, 117842443,
-        805908001, 119942188, 839720978, 102894652,
-        302780946, 103954180, 302782501, 338829583
-    ]);
+// Decrypt media URL
+function decryptMediaUrl(encrypted) {
+    // Get the DES implementation
+    const desDecrypt = window.desDecrypt;
 
-    /**
-     * Decrypt media URL
-     * @param {string} encrypted - Base64 encrypted URL
-     * @returns {string} Decrypted URL
-     */
-    function decryptMediaUrl(encrypted) {
-        // Get the DES implementation
-        const desDecrypt = window.desDecrypt;
-        
-        if (!desDecrypt) {
-            throw new Error('DES decryption library not available');
-        }
-
-        const plain = desDecrypt(atob(encrypted), KEY);
-        return plain.slice(0, -plain.charCodeAt(plain.length - 1));
+    if (!desDecrypt) {
+        throw new Error('DES decryption library not available');
     }
 
-    // Expose to browser
-    if (typeof window !== 'undefined') {
-        window.decryptMediaUrl = decryptMediaUrl;
+    const plain = desDecrypt(atob(encrypted), KEY);
+    return plain.slice(0, -plain.charCodeAt(plain.length - 1));
+}
+
+// Get decrypted URL from song object and format it with quality
+function getDecryptedUrl(songData, quality) {
+    var encrypted = songData.more_info ? songData.more_info.encrypted_media_url : null;
+    if (!encrypted) throw new Error('No encrypted URL found');
+
+    var decryptedUrl = decryptMediaUrl(encrypted);
+    if (!decryptedUrl) throw new Error('Decryption failed');
+
+    if (typeof window.Utils !== 'undefined' && window.Utils.formatters &&
+        typeof window.Utils.formatters.formatUrlWithQuality === 'function') {
+        return window.Utils.formatters.formatUrlWithQuality(decryptedUrl, quality || window.currentQuality || 96);
     }
-})();
+    return decryptedUrl;
+}
+
+// Expose to browser
+if (typeof window !== 'undefined') {
+    window.decryptMediaUrl = decryptMediaUrl;
+    window.Utils = window.Utils || {};
+    window.Utils.getDecryptedUrl = getDecryptedUrl;
+}
 
 
     // ============================================================
@@ -987,9 +993,12 @@ function getHeaders() {
     };
 }
 
-function handleResponse(response, responseType) {
-    if (!response.ok) throw new Error('HTTP ' + response.status);
-    
+function handleResponse(response, responseType, url) {
+    if (!response.ok) {
+        console.error('[Utils Fetch Error] Server returnedStatus:', response.status, 'for:', url);
+        throw new Error('HTTP ' + response.status);
+    }
+
     if (responseType === 'arraybuffer') return response.arrayBuffer();
     if (responseType === 'blob') return response.blob();
     return response;
@@ -1006,16 +1015,15 @@ function handleGMResponse(response, resolve, reject) {
 // ============ FETCH METHODS ============
 
 function fetchViaDirect(url, responseType) {
-    return fetch(url, { headers: getHeaders() })
-        .then(function(response) {
-            return handleResponse(response, responseType);
-        });
+    return fetch(url, {headers: getHeaders()}).then(function(response) {
+        return handleResponse(response, responseType, url);
+    });
 }
 
 function fetchViaGM(url, responseType) {
     return new Promise(function(resolve, reject) {
         GM_xmlhttpRequest({
-            method: "GET",
+            method: 'GET',
             url: url,
             responseType: responseType === 'arraybuffer' ? 'arraybuffer' : 'blob',
             headers: getHeaders(),
@@ -1037,18 +1045,18 @@ function fetchViaGM(url, responseType) {
 window.Utils.fetchResource = function(url, responseType) {
     responseType = responseType || 'arraybuffer';
     console.log('[Utils] Fetching:', url.substring(0, 60) + '...');
-    
+
     // Proxy mode: direct fetch (CDN allows CORS)
     if (window.isProxy) {
         return fetchViaDirect(url, responseType);
     }
-    
+
     // Userscript mode: use GM_xmlhttpRequest
     if (typeof GM_xmlhttpRequest !== 'undefined') {
         console.log('[Utils] Using GM_xmlhttpRequest');
         return fetchViaGM(url, responseType);
     }
-    
+
     // Fallback: standard fetch
     console.log('[Utils] Using standard fetch');
     return fetchViaDirect(url, responseType);
@@ -1063,24 +1071,20 @@ function getHighResUrl(url) {
 function processAlbumArt(buffer) {
     var artBytes = new Uint8Array(buffer);
     console.log('[Utils] Album art loaded:', (artBytes.length / 1024).toFixed(1) + ' KB');
-    return { data: artBytes, format: 'jpeg' };
+    return {data: artBytes, format: 'jpeg'};
 }
 
 function fetchAlbumArtWithFallback(url) {
     var highResUrl = getHighResUrl(url);
     console.log('[Utils] Album art:', highResUrl);
-    
-    return window.Utils.fetchResource(highResUrl, 'arraybuffer')
-        .then(processAlbumArt)
-        .catch(function() {
-            console.log('[Utils] High-res failed, trying original...');
-            return window.Utils.fetchResource(url, 'arraybuffer')
-                .then(processAlbumArt)
-                .catch(function() {
-                    console.warn('[Utils] Album art fetch failed');
-                    return null;
-                });
+
+    return window.Utils.fetchResource(highResUrl, 'arraybuffer').then(processAlbumArt).catch(function() {
+        console.log('[Utils] High-res failed, trying original...');
+        return window.Utils.fetchResource(url, 'arraybuffer').then(processAlbumArt).catch(function() {
+            console.warn('[Utils] Album art fetch failed');
+            return null;
         });
+    });
 }
 
 window.Utils.fetchAlbumArt = function(url) {
@@ -1088,13 +1092,12 @@ window.Utils.fetchAlbumArt = function(url) {
     return fetchAlbumArtWithFallback(url);
 };
 
-console.log('[Utils] Resource module loaded');
 
     // ============================================================
     // FILE: /js/utils/formatters.js
     // ============================================================
 
-// ui/js/core/formatters.js
+// src/js/utils/formatters.js
 
 window.Utils = window.Utils || {};
 window.Utils.formatters = window.Utils.formatters || {};
@@ -1102,10 +1105,7 @@ window.Utils.formatters = window.Utils.formatters || {};
 // ============ DECODE ============
 window.Utils.formatters.decode = function(text) {
     if (!text) return '';
-    return text
-        .replace(/&amp;/g, '&')
-        .replace(/&#039;/g, "'")
-        .replace(/&quot;/g, '"');
+    return text.replace(/&amp;/g, '&').replace(/&#039;/g, '\'').replace(/&quot;/g, '"');
 };
 
 // ============ EXTRACT TOKEN ============
@@ -1114,11 +1114,6 @@ window.Utils.formatters.extractToken = function(url) {
     return url.split('/').pop() || '';
 };
 
-// ============ HIGH RES ALBUM ART ============
-window.Utils.formatters.getHighResAlbumArt = function(url) {
-    if (!url) return null;
-    return url.replace(/\d+x\d+\.jpg$/, '500x500.jpg');
-};
 
 
 // ============ HIGH RES ARTIST IMAGE ============
@@ -1131,14 +1126,11 @@ window.Utils.formatters.formatLyrics = function(rawLyrics) {
     return rawLyrics.replace(/<br>/g, '\n');
 };
 
-/**
- * Replace bitrate in decrypted URL with selected quality
- * Example: https://.../song_96.mp4 -> https://.../song_320.mp4
- */
+// Replace bitrate in decrypted URL with selected quality Example: https://.../song_96.mp4 -> https://.../song_320.mp4
 window.Utils.formatters.formatUrlWithQuality = function(url, quality) {
     if (!url) return url;
     if (!quality) quality = 96;
-    
+
     // Match pattern like _96.mp4, _160.mp4, _320.mp4
     // Replace with selected quality
     return url.replace(/_(\d+)\.mp4/, '_' + quality + '.mp4');
@@ -1147,16 +1139,20 @@ window.Utils.formatters.formatUrlWithQuality = function(url, quality) {
 // ============ EXTRACT ARTISTS ============
 window.Utils.formatters.extractArtists = function(songData) {
     var artistMap = songData.more_info ? songData.more_info.artistMap : null;
-    
+
     var primaryArtists = (artistMap && artistMap.primary_artists) ? artistMap.primary_artists : [];
     var featuredArtists = (artistMap && artistMap.featured_artists) ? artistMap.featured_artists : [];
-    
-    var primaryNames = primaryArtists.map(function(a) { return a.name; });
-    var featuredNames = featuredArtists.map(function(a) { return a.name; });
+
+    var primaryNames = primaryArtists.map(function(a) {
+        return a.name;
+    });
+    var featuredNames = featuredArtists.map(function(a) {
+        return a.name;
+    });
     var allNames = primaryNames.concat(featuredNames);
     var primaryArtist = primaryNames[0] || '';
     var allArtists = allNames.join(', ');
-    
+
     return {
         primary: primaryArtists,
         featured: featuredArtists,
@@ -1187,9 +1183,10 @@ window.Utils.formatters.getCopyright = function(songData) {
 
 // ============ FORMAT SEARCH RESULTS ============
 window.Utils.formatters.formatSearchResults = function(data, type) {
-    var results = (data.results || [])
-        .filter(function(item) { return item.type === type; });
-    
+    var results = (data.results || []).filter(function(item) {
+        return item.type === type;
+    });
+
     if (type === 'song') {
         results = results.map(window.Utils.formatters.formatSong);
     } else if (type === 'album') {
@@ -1199,12 +1196,8 @@ window.Utils.formatters.formatSearchResults = function(data, type) {
     } else if (type === 'artist') {
         results = results.map(window.Utils.formatters.formatArtistSearch);
     }
-    
-    return {
-        total: Number(data.total || 0),
-        start: Number(data.start || 0),
-        results: results
-    };
+
+    return {total: Number(data.total || 0), start: Number(data.start || 0), results: results};
 };
 
 // ============ SONG FORMATTER ============
@@ -1240,9 +1233,7 @@ window.Utils.formatters.formatAlbum = function(album) {
         image: album.image || '',
         language: album.language,
         year: album.year,
-        more_info: {
-            song_count: album.more_info ? album.more_info.song_count || '0' : '0'
-        }
+        more_info: {song_count: album.more_info ? album.more_info.song_count || '0' : '0'}
     };
 };
 
@@ -1272,9 +1263,7 @@ window.Utils.formatters.formatPlaylist = function(playlist) {
         image: playlist.image || '',
         language: playlist.more_info ? playlist.more_info.language || '' : '',
         year: '',
-        more_info: {
-            song_count: playlist.more_info ? playlist.more_info.song_count || '0' : '0'
-        }
+        more_info: {song_count: playlist.more_info ? playlist.more_info.song_count || '0' : '0'}
     };
 };
 
@@ -1340,9 +1329,6 @@ window.Utils.formatters.formatArtistDetail = function(data) {
         featuredPlaylists: (data.featured_artist_playlist || []).map(window.Utils.formatters.formatPlaylist),
         singles: (data.singles || []).map(window.Utils.formatters.formatAlbum),
         latestReleases: (data.latest_release || []).map(window.Utils.formatters.formatAlbum),
-        // Pagination info
-        totalSongs: data.topSongs ? data.topSongs.length : 0,
-        totalAlbums: data.topAlbums ? data.topAlbums.length : 0,
         // Store artistId for more API calls
         artistId: data.artistId
     };
@@ -1351,16 +1337,16 @@ window.Utils.formatters.formatArtistDetail = function(data) {
 // ============ DECRYPTED SONG FORMATTER ============
 window.Utils.formatters.formatDecryptedSong = function(songData, decryptedUrl) {
     var rawData = songData;
-    
+
     // Extract artist info from songData
     var artists = window.Utils.formatters.extractArtists(rawData);
-    
+
     // Get album name from songData
     var albumName = window.Utils.formatters.getAlbumName(rawData);
-    
+
     // Get copyright from songData
     var copyright = window.Utils.formatters.getCopyright(rawData);
-    
+
     return {
         title: window.Utils.formatters.decode(rawData.title),
         subtitle: window.Utils.formatters.decode(rawData.subtitle),
@@ -1378,29 +1364,24 @@ window.Utils.formatters.formatDecryptedSong = function(songData, decryptedUrl) {
     };
 };
 
-console.log('[Utils] Formatters loaded');
 
     // ============================================================
     // FILE: /js/utils/url-helper.js
     // ============================================================
 
-// utils/url-helper.js
+// src/js/utils/url-helper.js
 
 window.Utils = window.Utils || {};
 
-/**
- * Parse URL to extract type and token
- * @param {string} url - Full URL or path
- * @returns {{ type: 'song'|'album'|'lyrics'|null, token: string|null }}
- */
+// Parse URL to extract type and token
 window.Utils.parseUrl = function(url) {
-    if (!url) return { type: null, token: null };
-    
+    if (!url) return {type: null, token: null};
+
     // Check if it's a valid URL
     if (!url.includes(window.API.constants.API_HOST)) {
-        return { type: null, token: null };
+        return {type: null, token: null};
     }
-    
+
     // Determine type from URL
     var type = null;
     if (url.includes('/song/')) {
@@ -1414,34 +1395,30 @@ window.Utils.parseUrl = function(url) {
     } else if (url.includes('/artist/')) {
         type = 'artist';
     } else {
-        return { type: null, token: null };
+        return {type: null, token: null};
     }
-    
+
     // Extract token (last part after /)
     var token = window.Utils.formatters.extractToken(url);
     if (!token) {
-        return { type: null, token: null };
+        return {type: null, token: null};
     }
-    
-    return { type: type, token: token };
-};
 
-console.log('[Utils] URL helper loaded');
+    return {type: type, token: token};
+};
 
 
     // ============================================================
     // FILE: /js/utils/download-helper.js
     // ============================================================
 
-// ui/js/core/download-helper.js
+// src/js/utils/download-helper.js
 
 window.Utils = window.Utils || {};
 
-/**
- * Trigger a file download in the browser
- */
+// Trigger a file download in the browser
 window.Utils.downloadFile = function(data, filename) {
-    var blob = new Blob([data], { type: 'audio/mp4' });
+    var blob = new Blob([data], {type: 'audio/mp4'});
     var blobUrl = URL.createObjectURL(blob);
     var link = document.createElement('a');
     link.href = blobUrl;
@@ -1449,18 +1426,16 @@ window.Utils.downloadFile = function(data, filename) {
     link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
-    
+
     setTimeout(function() {
         document.body.removeChild(link);
         URL.revokeObjectURL(blobUrl);
     }, 5000);
-    
+
     return true;
 };
 
-/**
- * Build a filename from song metadata
- */
+// Build a filename from song metadata
 window.Utils.buildFilename = function(song, quality) {
     var artist = song.primary_artist || 'Unknown Artist';
     var safeTitle = (song.title || 'song').replace(/[^a-zA-Z0-9\s-]/g, '').trim();
@@ -1473,9 +1448,7 @@ window.Utils.buildFilename = function(song, quality) {
 };
 
 
-/**
- * Build metadata object for M4A
- */
+// Build metadata object for M4A
 window.Utils.buildMetadata = function(song, albumArt, lyrics) {
     var allArtists = song.all_artists || song.subtitle || '';
 
@@ -1489,7 +1462,7 @@ window.Utils.buildMetadata = function(song, albumArt, lyrics) {
         comment: 'Token: ' + (song.token || ''),
         album_artist: allArtists,
     };
-    
+
     if (albumArt && albumArt.data && albumArt.data.length > 0) {
         metadata.picture = albumArt;
     }
@@ -1501,41 +1474,6 @@ window.Utils.buildMetadata = function(song, albumArt, lyrics) {
     return metadata;
 };
 
-console.log('[Utils] Download helper loaded');
-
-
-    // ============================================================
-    // FILE: /js/api/constants.js
-    // ============================================================
-
-// src/js/api/constants.js
-
-window.API = window.API || {};
-window.API.constants = window.API.constants || {};
-
-// API endpoints
-const HOST = 'https://www.jiosaavn.com';
-Object.assign(window.API.constants, {
-  API_HOST: HOST,
-  API_BASE: `${HOST}/api.php`,
-  REFERER: `${HOST}/`,
-});
-
-// Default headers for all requests
-window.API.constants.DEFAULT_HEADERS = {
-    'Accept': 'application/json, text/plain, */*',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-};
-
-// Default parameters for all API calls
-window.API.constants.API_DEFAULTS = {
-    _format: 'json',
-    _marker: 0,
-    api_version: 4,
-    ctx: 'web6dot0'
-};
-
-console.log('[API] Constants loaded');
 
     // ============================================================
     // FILE: /js/api/fetch.js
@@ -1548,53 +1486,53 @@ window.API = window.API || {};
 // ============ LOW-LEVEL FETCH ============
 window.API._fetchAPI = function(url, options) {
     options = options || {};
-    
+
     // Proxy mode (local development)
     if (window.isProxy) {
         console.log('[API] Using proxy for:', url.substring(0, 60) + '...');
-        return fetch('/proxy', {
-            method: 'POST',
-            headers: {
-                'X-Proxy-URL': url,
-                'X-Proxy-User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'X-Proxy-Cookie': 'DL=english; L=english; mm_latlong=19.0760%2C72.8777; geo=19.0760%2C72.8777%2CIN%2CMaharashtra%2CMumbai%2C400001'
-            }
-        })
-        .then(function(res) {
-            if (!res.ok) throw new Error('Proxy returned ' + res.status);
-            return res.json();
-        });
+        var proxyEndpoint =
+            (typeof window !== 'undefined' && window.location) ? '/proxy' : 'http://localhost:3000/proxy';
+        return fetch(proxyEndpoint, {
+                   method: 'POST',
+                   headers: {
+                       'X-Proxy-URL': url,
+                       'X-Proxy-User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                       'X-Proxy-Cookie':
+                           'DL=english; L=english; mm_latlong=19.0760%2C72.8777; geo=19.0760%2C72.8777%2CIN%2CMaharashtra%2CMumbai%2C400001'
+                   }
+               })
+            .then(function(res) {
+                if (!res.ok) {
+                    console.error('[API Fetch Error] Server returnedStatus:', res.status, 'for:', url);
+                    throw new Error('Proxy returned ' + res.status);
+                }
+                return res.json();
+            });
     }
-    
+
     // Direct fetch (userscript or browser)
     console.log('[API] Direct fetch for:', url.substring(0, 60) + '...');
-    return fetch(url, options)
-        .then(function(res) {
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            return res.json();
-        });
+    return fetch(url, options).then(function(res) {
+        if (!res.ok) {
+            console.error('[API Fetch Error] Direct HTTP failed with status:', res.status, 'for:', url);
+            throw new Error('HTTP ' + res.status);
+        }
+        return res.json();
+    });
 };
 
 // ============ API CALL WRAPPER ============
 window.API.callAPI = function(call, extraParams) {
-    var params = Object.assign(
-        {},
-        window.API.constants.API_DEFAULTS,
-        { __call: call },
-        extraParams || {}
-    );
-    
+    var params = Object.assign({}, window.API.constants.API_DEFAULTS, {__call: call}, extraParams || {});
+
     var url = new URL(window.API.constants.API_BASE);
     Object.keys(params).forEach(function(key) {
         url.searchParams.append(key, params[key]);
     });
-    
-    return window.API._fetchAPI(url.toString(), {
-        headers: window.API.constants.DEFAULT_HEADERS
-    });
+
+    return window.API._fetchAPI(url.toString(), {headers: window.API.constants.DEFAULT_HEADERS});
 };
 
-console.log('[API] Fetch loaded');
 
     // ============================================================
     // FILE: /js/api/songs.js
@@ -1605,39 +1543,21 @@ console.log('[API] Fetch loaded');
 
 window.API = window.API || {};
 
-/**
- * Search for songs - returns raw API response
- */
+// Search for songs - returns raw API response
 window.API.searchSongs = async function(query, limit, page) {
-    return await window.API.callAPI('search.getResults', {
-        q: query,
-        p: page || 1,
-        n: limit || 20
-    });
+    return await window.API.callAPI('search.getResults', {q: query, p: page || 1, n: limit || 20});
 };
 
-/**
- * Get song details by token - returns raw API response
- */
+// Get song details by token - returns raw API response
 window.API.getSong = async function(token) {
-    return await window.API.callAPI('webapi.get', {
-        token: token,
-        type: 'song',
-        includeMetaTags: 0
-    });
+    return await window.API.callAPI('webapi.get', {token: token, type: 'song', includeMetaTags: 0});
 };
 
-/**
- * Get lyrics for a song by token
- */
+// Get lyrics for a song by token
 window.API.getLyrics = async function(token) {
-    return await window.API.callAPI('webapi.get', {
-        token: token,
-        type: 'lyrics'
-    });
+    return await window.API.callAPI('webapi.get', {token: token, type: 'lyrics'});
 };
 
-console.log('[API] Songs loaded');
 
     // ============================================================
     // FILE: /js/api/albums.js
@@ -1648,29 +1568,16 @@ console.log('[API] Songs loaded');
 
 window.API = window.API || {};
 
-/**
- * Search for albums - returns raw API response
- */
+// Search for albums - returns raw API response
 window.API.searchAlbums = async function(query, limit, page) {
-    return await window.API.callAPI('search.getAlbumResults', {
-        q: query,
-        p: page || 1,
-        n: limit || 20
-    });
+    return await window.API.callAPI('search.getAlbumResults', {q: query, p: page || 1, n: limit || 20});
 };
 
-/**
- * Get album details by token - returns raw API response
- */
+// Get album details by token - returns raw API response
 window.API.getAlbum = async function(token) {
-    return await window.API.callAPI('webapi.get', {
-        token: token,
-        type: 'album',
-        includeMetaTags: 0
-    });
+    return await window.API.callAPI('webapi.get', {token: token, type: 'album', includeMetaTags: 0});
 };
 
-console.log('[API] Albums loaded');
 
     // ============================================================
     // FILE: /js/api/playlists.js
@@ -1681,32 +1588,16 @@ console.log('[API] Albums loaded');
 
 window.API = window.API || {};
 
-/**
- * Search for playlists - returns raw API response
- */
+// Search for playlists - returns raw API response
 window.API.searchPlaylists = async function(query, limit, page) {
-    return await window.API.callAPI('search.getPlaylistResults', {
-        q: query,
-        p: page || 1,
-        n: limit || 20
-    });
+    return await window.API.callAPI('search.getPlaylistResults', {q: query, p: page || 1, n: limit || 20});
 };
 
-/**
- * Get playlist details by token - returns raw API response
- * Supports pagination for large playlists
- */
+// Get playlist details by token - returns raw API response Supports pagination for large playlists
 window.API.getPlaylist = async function(token, page, limit) {
-    return await window.API.callAPI('webapi.get', {
-        token: token,
-        type: 'playlist',
-        includeMetaTags: 0,
-        p: page || 1,
-        n: limit || 50
-    });
+    return await window.API.callAPI(
+        'webapi.get', {token: token, type: 'playlist', includeMetaTags: 0, p: page || 1, n: limit || 50});
 };
-
-console.log('[API] Playlists loaded');
 
 
     // ============================================================
@@ -1718,22 +1609,12 @@ console.log('[API] Playlists loaded');
 
 window.API = window.API || {};
 
-/**
- * Search for artists - returns raw API response
- */
+// Search for artists - returns raw API response
 window.API.searchArtists = async function(query, limit, page) {
-    return await window.API.callAPI('search.getArtistResults', {
-        q: query,
-        p: page || 1,
-        n: limit || 20
-    });
+    return await window.API.callAPI('search.getArtistResults', {q: query, p: page || 1, n: limit || 20});
 };
 
-/**
- * Get artist details by token - returns raw API response
- * @param {string} token - Artist token from perma_url
- * @param {string} category - 'popular' or 'latest'
- */
+// Get artist details by token - returns raw API response
 window.API.getArtist = async function(token, category) {
     return await window.API.callAPI('webapi.get', {
         token: token,
@@ -1747,12 +1628,7 @@ window.API.getArtist = async function(token, category) {
     });
 };
 
-/**
- * Get more songs by artist - returns raw API response
- * @param {string} artistId - Artist ID (not token)
- * @param {number} page - Page number
- * @param {string} category - 'popular' or 'latest'
- */
+// Get more songs by artist - returns raw API response
 window.API.getArtistMoreSongs = async function(artistId, page, category) {
     return await window.API.callAPI('artist.getArtistMoreSong', {
         artistId: artistId,
@@ -1762,12 +1638,7 @@ window.API.getArtistMoreSongs = async function(artistId, page, category) {
     });
 };
 
-/**
- * Get more albums by artist - returns raw API response
- * @param {string} artistId - Artist ID (not token)
- * @param {number} page - Page number
- * @param {string} category - 'popular' or 'latest'
- */
+// Get more albums by artist - returns raw API response
 window.API.getArtistMoreAlbums = async function(artistId, page, category) {
     return await window.API.callAPI('artist.getArtistMoreAlbum', {
         artistId: artistId,
@@ -1777,14 +1648,12 @@ window.API.getArtistMoreAlbums = async function(artistId, page, category) {
     });
 };
 
-console.log('[API] Artists loaded');
-
 
     // ============================================================
     // FILE: /js/services/song.js
     // ============================================================
 
-// ui/js/services/song.js
+// src/js/services/song.js
 // Song business logic - orchestrates API calls and formatting
 
 window.Services = window.Services || {};
@@ -1795,37 +1664,39 @@ window.Services.Song = {
         var rawData = await window.API.searchSongs(query, limit, page);
         return window.Utils.formatters.formatSearchResults(rawData, 'song');
     },
-    
+
     // Get decrypted song URL and metadata
     getDecrypted: async function(token) {
         var rawData = await window.API.getSong(token);
         var songData = rawData.songs ? rawData.songs[0] : null;
         if (!songData) throw new Error('Song not found');
-        
-        var encrypted = songData.more_info ? songData.more_info.encrypted_media_url : null;
-        if (!encrypted) throw new Error('No encrypted URL found');
-        
-        if (typeof window.decryptMediaUrl !== 'function') {
-            throw new Error('decryptMediaUrl not available');
-        }
-        
-        var decryptedUrl = window.decryptMediaUrl(encrypted);
-        if (!decryptedUrl) throw new Error('Decryption failed');
 
-        decryptedUrl = window.Utils.formatters.formatUrlWithQuality(decryptedUrl, window.currentQuality || 96);
-
+        var decryptedUrl = window.Utils.getDecryptedUrl(songData, window.currentQuality || 96);
         return window.Utils.formatters.formatDecryptedSong(songData, decryptedUrl);
+    },
+
+    // Get lyrics for a song and cache them
+    getLyrics: async function(token) {
+        var cached = window.Cache.get('lyrics:' + token);
+        if (cached) {
+            return cached;
+        }
+
+        var data = await window.API.getLyrics(token);
+        var lyricsText = data.lyrics && data.lyrics.lyrics ? data.lyrics.lyrics : 'No lyrics available';
+        lyricsText = window.Utils.formatters.formatLyrics(lyricsText);
+
+        window.Cache.set('lyrics:' + token, lyricsText);
+        return lyricsText;
     }
 };
-
-console.log('[Services] Song loaded');
 
 
     // ============================================================
     // FILE: /js/services/album.js
     // ============================================================
 
-// ui/js/services/album.js
+// src/js/services/album.js
 
 window.Services = window.Services || {};
 
@@ -1835,7 +1706,7 @@ window.Services.Album = {
         var rawData = await window.API.searchAlbums(query, limit, page);
         return window.Utils.formatters.formatSearchResults(rawData, 'album');
     },
-    
+
     // Get album details with formatted songs
     getDetails: async function(token) {
         var rawData = await window.API.getAlbum(token);
@@ -1843,142 +1714,83 @@ window.Services.Album = {
     }
 };
 
-console.log('[Services] Album loaded');
 
     // ============================================================
     // FILE: /js/services/download.js
     // ============================================================
 
-// ui/js/services/download.js
+// src/js/services/download.js
 // Download business logic
 
 window.Services = window.Services || {};
 
 window.Services.Download = {
-    /**
-     * Download a song using token (legacy - uses API call)
-     * Kept for backward compatibility (URL detection, etc.)
-     */
-    song: async function(token, filename) {
-        console.log('[Services] Downloading song via API:', token);
-        
-        // Get decrypted song data
-        var song = await window.Services.Song.getDecrypted(token);
-        if (!song.url) throw new Error('No stream URL available');
-        
-        // Delegate to songFromData
-        return await window.Services.Download.songFromData(song, filename);
-    },
-    
-    /**
-     * Download all songs in an album
-     */
-    album: async function(albumToken) {
-        var album = await window.Services.Album.getDetails(albumToken);
-        console.log('[Services] Downloading album:', album.title, 
-                   '(' + album.songs.length + ' songs)');
-        
-        var results = [];
-        for (var i = 0; i < album.songs.length; i++) {
-            var song = album.songs[i];
-            try {
-                var filename = (i + 1).toString().padStart(2, '0') + '. ' + song.title + '.m4a';
-                // Use songFromData directly since we already have the data
-                await window.Services.Download.songFromData(song, filename);
-                results.push({ song: song.title, success: true });
-            } catch (error) {
-                console.error('[Services] Failed to download:', song.title, error.message);
-                results.push({ song: song.title, success: false, error: error.message });
+    // Download a song from pre-fetched data (no API call)
+    songFromData: async function(songData, filename) {
+        console.log('[Services] Downloading song from data:', songData.title);
+
+        var songUrl = songData.url;
+        if (!songUrl) throw new Error('No stream URL available');
+
+        // 1. Fetch audio
+        songUrl = window.Utils.formatters.formatUrlWithQuality(songUrl, window.currentQuality || 96);
+        var audioBuffer = await window.Utils.fetchResource(songUrl, 'arraybuffer');
+        var audioBytes = new Uint8Array(audioBuffer);
+        console.log('[Services] Audio fetched:', (audioBytes.length / 1024 / 1024).toFixed(2) + ' MB');
+
+        if (audioBytes.length === 0) {
+            throw new Error('Audio file is empty (0 bytes)');
+        }
+
+        // 2. Fetch album art
+        var albumArtData = null;
+        if (songData.image) {
+            albumArtData = await window.Utils.fetchAlbumArt(songData.image);
+            if (albumArtData) {
+                console.log('[Services] Album art ready for metadata');
             }
         }
-        return results;
-    }
-};
 
-/**
- * Download a song from pre-fetched data (no API call)
- * @param {Object} songData - Song data with all fields (title, artist, url, etc.)
- * @param {string} filename - Optional filename
- */
-window.Services.Download.songFromData = async function(songData, filename) {
-    console.log('[Services] Downloading song from data:', songData.title);
+        // 3. Fetch lyrics if available
+        var lyricsText = null;
+        if (songData.has_lyrics) {
+            var token = songData.token || songData.id;
 
-    var songUrl = songData.url;
-    if (!songUrl) throw new Error('No stream URL available');
-    
-    // 1. Fetch audio
-    songUrl = window.Utils.formatters.formatUrlWithQuality(songUrl, window.currentQuality || 96);
-    var audioBuffer = await window.Utils.fetchResource(songUrl, 'arraybuffer');
-    var audioBytes = new Uint8Array(audioBuffer);
-    console.log('[Services] Audio fetched:', (audioBytes.length / 1024 / 1024).toFixed(2) + ' MB');
-    
-    if (audioBytes.length === 0) {
-        throw new Error('Audio file is empty (0 bytes)');
-    }
-    
-    // 2. Fetch album art
-    var albumArtData = null;
-    if (songData.image) {
-        albumArtData = await window.Utils.fetchAlbumArt(songData.image);
-        if (albumArtData) {
-            console.log('[Services] Album art ready for metadata');
-        }
-    }
-    
-    // 3. Fetch lyrics if available
-    var lyricsText = null;
-    if (songData.has_lyrics) {
-        var token = songData.token || songData.id;
-    
-        // Check cache first
-        if (window.lyricsCache && window.lyricsCache[token]) {
-            lyricsText = window.lyricsCache[token];
-            console.log('[Services] Using cached lyrics for metadata');
-        } else {
             try {
-                var lyricsData = await window.API.getLyrics(token);
-                if (lyricsData && lyricsData.lyrics && lyricsData.lyrics.lyrics) {
-                    lyricsText = lyricsData.lyrics.lyrics;
-                    lyricsText = window.Utils.formatters.formatLyrics(lyricsText);
-                    // Store in cache
-                    if (!window.lyricsCache) {
-                        window.lyricsCache = {};
-                    }
-                    window.lyricsCache[token] = lyricsText;
-                    console.log('[Services] Lyrics fetched and cached');
-                }
+                lyricsText = await window.Services.Song.getLyrics(token);
             } catch (e) {
                 console.warn('[Services] Failed to fetch lyrics:', e.message);
             }
         }
-    }
-    
-    // 4. Build metadata
-    var metadata = window.Utils.buildMetadata(songData, albumArtData, lyricsText);
-    console.log('[Services] Metadata: title="' + songData.title + '", artist="' + (songData.artist || songData.all_artists) + '"');
-    
-    // 5. Write metadata to M4A
-    var dataToDownload = audioBytes;
-    if (typeof window.writeM4ABytes === 'function') {
-        try {
-            dataToDownload = window.writeM4ABytes(audioBytes, metadata);
-            console.log('[Services] Metadata written to M4A');
-        } catch (e) {
-            console.warn('[Services] Metadata write failed:', e.message);
-            dataToDownload = audioBytes;
+
+        // 4. Build metadata
+        var metadata = window.Utils.buildMetadata(songData, albumArtData, lyricsText);
+        console.log(
+            '[Services] Metadata: title="' + songData.title + '", artist="' +
+            (songData.artist || songData.all_artists) + '"');
+
+        // 5. Write metadata to M4A
+        var dataToDownload = audioBytes;
+        if (typeof window.writeM4ABytes === 'function') {
+            try {
+                dataToDownload = window.writeM4ABytes(audioBytes, metadata);
+                console.log('[Services] Metadata written to M4A');
+            } catch (e) {
+                console.warn('[Services] Metadata write failed:', e.message);
+                dataToDownload = audioBytes;
+            }
         }
+
+        // 6. Generate filename
+        var quality = window.currentQuality || 96;
+        var finalFilename = filename || window.Utils.buildFilename(songData, quality);
+        console.log('[Services] Filename:', finalFilename);
+
+        // 7. Trigger download
+        return window.Utils.downloadFile(dataToDownload, finalFilename);
     }
-    
-    // 6. Generate filename
-    var quality = window.currentQuality || 96;
-    var finalFilename = filename || window.Utils.buildFilename(songData, quality);
-    console.log('[Services] Filename:', finalFilename);
-    
-    // 7. Trigger download
-    return window.Utils.downloadFile(dataToDownload, finalFilename);
 };
 
-console.log('[Services] Download loaded');
 
     // ============================================================
     // FILE: /js/services/playlist.js
@@ -1990,25 +1802,18 @@ console.log('[Services] Download loaded');
 window.Services = window.Services || {};
 
 window.Services.Playlist = {
-    /**
-     * Search for playlists and format results
-     */
+    // Search for playlists and format results
     search: async function(query, limit, page) {
         var rawData = await window.API.searchPlaylists(query, limit, page);
         return window.Utils.formatters.formatSearchResults(rawData, 'playlist');
     },
-    
-    /**
-    * Get playlist details with formatted songs
-    * Supports pagination
-    */
+
+    // Get playlist details with formatted songs Supports pagination
     getDetails: async function(token, page, limit) {
         var rawData = await window.API.getPlaylist(token, page, limit);
         return window.Utils.formatters.formatPlaylistDetail(rawData);
     }
 };
-
-console.log('[Services] Playlist loaded');
 
 
     // ============================================================
@@ -2021,30 +1826,19 @@ console.log('[Services] Playlist loaded');
 window.Services = window.Services || {};
 
 window.Services.Artist = {
-    /**
-     * Search for artists and format results
-     */
+    // Search for artists and format results
     search: async function(query, limit, page) {
         var rawData = await window.API.searchArtists(query, limit, page);
         return window.Utils.formatters.formatSearchResults(rawData, 'artist');
     },
-    
-    /**
-     * Get artist details with formatted songs and albums
-     * @param {string} token - Artist token from perma_url
-     * @param {string} category - 'popular' or 'latest'
-     */
+
+    // Get artist details with formatted songs and albums
     getDetails: async function(token, category) {
         var rawData = await window.API.getArtist(token, category);
         return window.Utils.formatters.formatArtistDetail(rawData);
     },
-    
-    /**
-     * Get more songs by artist
-     * @param {string} artistId - Artist ID (not token)
-     * @param {number} page - Page number
-     * @param {string} category - 'popular' or 'latest'
-     */
+
+    // Get more songs by artist
     getMoreSongs: async function(artistId, page, category) {
         var rawData = await window.API.getArtistMoreSongs(artistId, page, category);
         // rawData.topSongs.songs contains the songs array
@@ -2055,13 +1849,8 @@ window.Services.Artist = {
             last_page: rawData.topSongs ? rawData.topSongs.last_page !== false : true
         };
     },
-    
-    /**
-     * Get more albums by artist
-     * @param {string} artistId - Artist ID (not token)
-     * @param {number} page - Page number
-     * @param {string} category - 'popular' or 'latest'
-     */
+
+    // Get more albums by artist
     getMoreAlbums: async function(artistId, page, category) {
         var rawData = await window.API.getArtistMoreAlbums(artistId, page, category);
         // rawData.topAlbums.albums contains the albums array
@@ -2074,12 +1863,12 @@ window.Services.Artist = {
     }
 };
 
-console.log('[Services] Artist loaded');
-
 
     // ============================================================
     // FILE: /js/ui/display/song-card.js
     // ============================================================
+
+// src/js/ui/display/song-card.js
 
 // ============ CREATE SONG CARD ============
 function createSongCard(song, index, context) {
@@ -2087,16 +1876,19 @@ function createSongCard(song, index, context) {
     var songId = song.id || song.token || 'song-' + (index || 0);
     var playCount = song.play_count ? parseInt(song.play_count).toLocaleString() : '0';
     var duration = formatDuration(song.duration || song.more_info?.duration);
-    var image = song.image || (context && context.image ? context.image : 'https://via.placeholder.com/80');
+    var image = song.image || (context && context.image ? context.image : '');
+    if (!image || image.includes('placeholder.com')) {
+        image = window.Utils.getDefaultImage('song');
+    }
     var contextLanguage = context ? context.language : '';
     var contextYear = context ? context.year : '';
     var titlePrefix = (index !== undefined && context) ? (index + 1) + '. ' : '';
     var hasLyrics = song.has_lyrics || false;
-    
+
     // Determine context type
     var isAlbumView = context && context.type === 'album';
     var isPlaylistView = context && context.type === 'playlist';
-    
+
     // Extract album token and name for more menu
     var albumToken = null;
     var albumName = '';
@@ -2104,29 +1896,26 @@ function createSongCard(song, index, context) {
         albumToken = window.Utils.formatters.extractToken(song.more_info.album_url);
         albumName = song.more_info.album || 'Album';
     }
-    
+
     // Extract artists from artistMap
     var artists = [];
     if (song.more_info && song.more_info.artistMap && song.more_info.artistMap.primary_artists) {
         artists = song.more_info.artistMap.primary_artists.map(function(artist) {
-            return {
-                name: artist.name,
-                token: window.Utils.formatters.extractToken(artist.perma_url)
-            };
+            return {name: artist.name, token: window.Utils.formatters.extractToken(artist.perma_url)};
         });
     }
-    
+
     // Show album in menu only if NOT in album view (playlist view should show album)
     var showAlbumInMenu = albumToken && !isAlbumView;
     var hasMoreActions = showAlbumInMenu || artists.length > 0;
-    
+
     // Context-specific display
     var artistDisplay = song.subtitle || '';
     if (isAlbumView && artistDisplay.includes(' - ')) {
         var parts = artistDisplay.split(' - ');
         artistDisplay = parts[0];
     }
-    
+
     // Album view: compact details (no language/year)
     var detailsHtml;
     if (isAlbumView) {
@@ -2137,8 +1926,10 @@ function createSongCard(song, index, context) {
                        ${playCount} plays • 
                        ${duration}`;
     }
-    
-    var html = `
+
+    var
+        html =
+            `
         <div class="song-card" data-token="${song.token || song.id}">
             <img src="${image}" alt="${escapeHtml(song.title)}" />
             <div class="song-info">
@@ -2154,301 +1945,57 @@ function createSongCard(song, index, context) {
                         ${!hasStream ? 'disabled' : ''}>
                         ⬇
                     </button>
-                    ${hasLyrics ? `<button class="btn-lyrics" data-token="${song.token}" data-songid="${songId}">📜</button>` : ''}
-                    ${hasMoreActions ? `<button class="btn-more" data-token="${song.token}" data-songid="${songId}">⋮</button>` : ''}
+                    ${
+                hasLyrics ?
+                    `<button class="btn-lyrics" data-token="${song.token}" data-songid="${songId}">📜</button>` :
+                    ''}
+                    ${
+                hasMoreActions ? `
+                    <div style="position: relative; display: inline-block;">
+                        <button class="btn-more" data-token="${song.token}" data-songid="${songId}">⋮</button>
+                        <div class="more-menu" id="more-menu-${
+                                     songId}" style="display:none; position: absolute; right: 0; top: 100%;">
+                            ${
+                                     showAlbumInMenu ? `<button class="more-item" data-action="album" data-token="${
+                                                           albumToken}">💿 ${escapeHtml(albumName)}</button>` :
+                                                       ''}
+                            ${artists.map(function(artist) {
+                                         return `<button class="more-item" data-action="artist" data-token="${
+                                             artist.token}">🎤 ${escapeHtml(artist.name)}</button>`;
+                                     }).join('')}
+                        </div>
+                    </div>
+                    ` :
+                                 ''}
                     <div class="play-progress" id="play-progress-${songId}">⏳ Decrypting...</div>
                     <div class="download-progress" id="download-progress-${songId}">⏳ Downloading...</div>
                     ${!hasStream ? '<span style="color:#999;font-size:12px;">No stream</span>' : ''}
                 </div>
-                ${hasMoreActions ? `
-                <div class="more-menu" id="more-menu-${songId}" style="display:none;">
-                    ${showAlbumInMenu ? `<button class="more-item" data-action="album" data-token="${albumToken}">💿 ${escapeHtml(albumName)}</button>` : ''}
-                    ${artists.map(function(artist) {
-                        return `<button class="more-item" data-action="artist" data-token="${artist.token}">🎤 ${escapeHtml(artist.name)}</button>`;
-                    }).join('')}
-                </div>
-                ` : ''}
             </div>
         </div>
     `;
-    
+
     return html;
 }
 
-// ============ ATTACH SONG EVENTS ============
-function attachSongEvents(container) {
-    if (!container._listenerAttached) {
-        container._listenerAttached = true;
-        
-        container.addEventListener('click', function(e) {
-            var target = e.target;
-            
-            // Play button
-            if (target.classList && target.classList.contains('btn-play')) {
-                var songCard = target.closest('.song-card');
-                var songData = songCard ? songCard._songData : null;
-                if (songData && typeof window.playSong === 'function') {
-                    window.playSong(songData);
-                }
-                e.preventDefault();
-                e.stopPropagation();
-                return;
-            }
-            
-            // Download button
-            if (target.classList && target.classList.contains('btn-download')) {
-                var songCard = target.closest('.song-card');
-                var songData = songCard ? songCard._songData : null;
-                if (songData && typeof window.downloadSong === 'function') {
-                    window.downloadSong(songData);
-                }
-                e.preventDefault();
-                e.stopPropagation();
-                return;
-            }
-            
-            // Lyrics button
-            if (target.classList && target.classList.contains('btn-lyrics')) {
-                var token = target.dataset.token;
-                var songId = target.dataset.songid;
-                if (token && typeof window.showLyrics === 'function') {
-                    window.showLyrics(token, songId);
-                }
-                e.preventDefault();
-                e.stopPropagation();
-                return;
-            }
-            
-            // More button
-            if (target.classList && target.classList.contains('btn-more')) {
-                e.stopPropagation();
-                var songId = target.dataset.songid;
-                var menu = document.getElementById('more-menu-' + songId);
-                if (!menu) return;
-                
-                document.querySelectorAll('.more-menu').forEach(function(m) {
-                    if (m.id !== 'more-menu-' + songId) {
-                        m.style.display = 'none';
-                    }
-                });
-                
-                menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-                e.preventDefault();
-                return;
-            }
-            
-            // More menu items
-            if (target.classList && target.classList.contains('more-item')) {
-                e.stopPropagation();
-                var action = target.dataset.action;
-                var token = target.dataset.token;
-                var menu = target.closest('.more-menu');
-                if (menu) menu.style.display = 'none';
-                
-                if (action === 'album') {
-                    if (typeof window.viewAlbum === 'function') {
-                        window.viewAlbum(token);
-                    }
-                } else if (action === 'artist') {
-                    if (typeof window.viewArtist === 'function') {
-                        window.viewArtist(token);
-                    } else {
-                        console.warn('[More] viewArtist not found');
-                    }
-                }
-                e.preventDefault();
-                return;
-            }
-        });
-    }
-    
-    // Click outside to close all menus (only once)
-    if (!window._menuClickListenerAttached) {
-        window._menuClickListenerAttached = true;
-        document.addEventListener('click', function() {
-            document.querySelectorAll('.more-menu').forEach(function(m) {
-                m.style.display = 'none';
-            });
-        });
-    }
-}
-
-
-    // ============================================================
-    // FILE: /js/ui/display/album-card.js
-    // ============================================================
-
-// ============ CREATE ALBUM CARD ============
-function createAlbumCard(album) {
-    var songCount = album.more_info?.song_count || 0;
-    
-    var html = `
-        <div class="album-card" data-token="${album.token}">
-            <img src="${album.image || 'https://via.placeholder.com/100'}" alt="${album.title}" />
-            <div class="album-info">
-                <div class="album-title">${escapeHtml(album.title)}</div>
-                <div class="album-artist">${escapeHtml(album.subtitle)}</div>
-                <div class="album-details">
-                    ${songCount} songs • 
-                    ${escapeHtml(album.language || 'Unknown')} • 
-                    ${album.year || 'N/A'}
-                </div>
-                <button class="btn-view-album" data-token="${album.token}">
-                    📂 View Album
-                </button>
-            </div>
-        </div>
-    `;
-    
-    return html;
-}
-
-// ============ ATTACH ALBUM EVENTS ============
-function attachAlbumEvents(container) {
-    // Album card click (open album)
-    container.querySelectorAll('.album-card').forEach(function(card) {
-        card.addEventListener('click', function() {
-            var token = this.dataset.token;
-            if (token && typeof window.viewAlbum === 'function') {
-                window.viewAlbum(token);
-            }
-        });
-    });
-    
-    // View album button click
-    container.querySelectorAll('.btn-view-album').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var token = this.dataset.token;
-            if (token && typeof window.viewAlbum === 'function') {
-                window.viewAlbum(token);
-            }
-        });
-    });
-}
-
-
-    // ============================================================
-    // FILE: /js/ui/display/playlist-card.js
-    // ============================================================
-
-// ============ CREATE PLAYLIST CARD ============
-function createPlaylistCard(playlist) {
-    var songCount = playlist.more_info?.song_count || playlist.song_count || '0';
-    
-    var html = `
-        <div class="playlist-card" data-token="${playlist.token}">
-            <img src="${playlist.image || 'https://via.placeholder.com/100'}" alt="${playlist.title}" />
-            <div class="playlist-info">
-                <div class="playlist-title">${escapeHtml(playlist.title)}</div>
-                <div class="playlist-artist">${escapeHtml(playlist.subtitle || '')}</div>
-                <div class="playlist-details">
-                    ${songCount} songs • 
-                    ${escapeHtml(playlist.language || 'Unknown')}
-                </div>
-                <button class="btn-view-playlist" data-token="${playlist.token}">
-                    📂 View Playlist
-                </button>
-            </div>
-        </div>
-    `;
-    
-    return html;
-}
-
-// ============ ATTACH PLAYLIST EVENTS ============
-function attachPlaylistEvents(container) {
-    // Playlist card click (open playlist)
-    container.querySelectorAll('.playlist-card').forEach(function(card) {
-        card.addEventListener('click', function() {
-            var token = this.dataset.token;
-            if (token && typeof window.viewPlaylist === 'function') {
-                window.viewPlaylist(token);
-            }
-        });
-    });
-    
-    // View playlist button click
-    container.querySelectorAll('.btn-view-playlist').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var token = this.dataset.token;
-            if (token && typeof window.viewPlaylist === 'function') {
-                window.viewPlaylist(token);
-            }
-        });
-    });
-}
-
-
-    // ============================================================
-    // FILE: /js/ui/display/artist-card.js
-    // ============================================================
-
-// ============ CREATE ARTIST CARD ============
-function createArtistCard(artist) {
-    var html = `
-        <div class="artist-card" data-token="${artist.token}">
-            <img src="${artist.image || 'https://via.placeholder.com/100'}" alt="${artist.name}" />
-            <div class="artist-info">
-                <div class="artist-name">${escapeHtml(artist.name)}</div>
-                <div class="artist-role">${escapeHtml(artist.role || 'Artist')}</div>
-                <button class="btn-view-artist" data-token="${artist.token}">
-                    🎤 View Artist
-                </button>
-            </div>
-        </div>
-    `;
-    
-    return html;
-}
-
-// ============ ATTACH ARTIST EVENTS ============
-function attachArtistEvents(container) {
-    // Artist card click (open artist)
-    container.querySelectorAll('.artist-card').forEach(function(card) {
-        card.addEventListener('click', function() {
-            var token = this.dataset.token;
-            if (token && typeof window.viewArtist === 'function') {
-                window.viewArtist(token);
-            }
-        });
-    });
-
-    // View artist button click
-    container.querySelectorAll('.btn-view-artist').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var token = this.dataset.token;
-            console.log('[ArtistCard] View Artist clicked, token:', token);
-            if (token && typeof window.viewArtist === 'function') {
-                window.viewArtist(token);
-            } else {
-                console.warn('[ArtistCard] viewArtist not found or token missing');
-            }
-        });
-    });
-}
-
-// ============ EXPOSE ============
-window.createArtistCard = createArtistCard;
-window.attachArtistEvents = attachArtistEvents;
 
     // ============================================================
     // FILE: /js/ui/display/display-results.js
     // ============================================================
 
+// src/js/ui/display/display-results.js
+
 // ============ DISPLAY SONGS ============
 function displaySongs(songs) {
     var html = '<div class="results">';
-    
+
     songs.forEach(function(song, index) {
         html += createSongCard(song, index);
     });
-    
+
     html += '</div>';
     DOM.results.innerHTML = html;
-    
+
     // Attach song data to cards
     var cards = DOM.results.querySelectorAll('.song-card');
     cards.forEach(function(card, index) {
@@ -2456,54 +2003,42 @@ function displaySongs(songs) {
             card._songData = songs[index];
         }
     });
-    
-    // Attach events to the results container
-    attachSongEvents(DOM.results);
 }
 
 // ============ DISPLAY ALBUMS ============
 function displayAlbums(albums) {
     var html = '<div class="results">';
-    
+
     albums.forEach(function(album) {
         html += createAlbumCard(album);
     });
-    
+
     html += '</div>';
     DOM.results.innerHTML = html;
-    
-    // Attach events to the results container
-    attachAlbumEvents(DOM.results);
 }
 
 // ============ DISPLAY PLAYLISTS ============
 function displayPlaylists(playlists) {
     var html = '<div class="results">';
-    
+
     playlists.forEach(function(playlist) {
         html += createPlaylistCard(playlist);
     });
-    
+
     html += '</div>';
     DOM.results.innerHTML = html;
-    
-    // Attach events to the results container
-    attachPlaylistEvents(DOM.results);
 }
 
 // ============ DISPLAY ARTISTS ============
 function displayArtists(artists) {
     var html = '<div class="results">';
-    
+
     artists.forEach(function(artist) {
         html += createArtistCard(artist);
     });
-    
+
     html += '</div>';
     DOM.results.innerHTML = html;
-    
-    // Attach events to the results container
-    attachArtistEvents(DOM.results);
 }
 
 // ============ DISPLAY SEARCH RESULTS ============
@@ -2530,30 +2065,32 @@ window.displayArtists = displayArtists;
     // FILE: /js/ui/display/album-view.js
     // ============================================================
 
+// src/js/ui/display/album-view.js
+
 // Extract rendering logic to a separate function
 function renderAlbum(album) {
+    var image = album.image;
+    if (!image || image.includes('placeholder.com')) {
+        image = window.Utils.getDefaultImage('album');
+    }
     var html = `
         <div class="album-header">
-            <img src="${album.image || 'https://via.placeholder.com/200'}" alt="${album.title}" />
+            <img src="${image}" alt="${album.title}" />
             <div class="album-header-info">
                 <h2>${escapeHtml(album.title)}</h2>
                 <p>${escapeHtml(album.subtitle || '')}</p>
-                <p>${album.song_count || album.songs?.length || 0} songs • ${escapeHtml(album.language || 'Unknown')} • ${album.year || 'N/A'}</p>
+                <p>${album.song_count || album.songs?.length || 0} songs • ${
+        escapeHtml(album.language || 'Unknown')} • ${album.year || 'N/A'}</p>
                 <div class="album-actions">
                     <button class="btn-back" id="btn-back-search">← Back</button>
                 </div>
             </div>
         </div>
-        <div class="song-list">
+        <div class="song-list album-songs-list">
     `;
 
-    var albumContext = {
-        type: 'album',
-        image: album.image,
-        language: album.language,
-        year: album.year,
-        title: album.title
-    };
+    var albumContext =
+        {type: 'album', image: album.image, language: album.language, year: album.year, title: album.title};
 
     if (album.songs && album.songs.length > 0) {
         album.songs.forEach(function(song, index) {
@@ -2565,7 +2102,7 @@ function renderAlbum(album) {
 
     html += '</div>';
     DOM.results.innerHTML = html;
-    
+
     // Attach song data to cards
     var cards = DOM.results.querySelectorAll('.song-card');
     if (album.songs && album.songs.length > 0) {
@@ -2575,44 +2112,19 @@ function renderAlbum(album) {
             }
         });
     }
-    
-    // Attach events
-    attachSongEvents(DOM.results);
-
-    var backBtn = document.getElementById('btn-back-search');
-    backBtn.addEventListener('click', function() {
-        console.log('[Back] Button clicked');
-    
-        // Pop the current view
-        var current = window.Nav.pop();
-        console.log('[Back] Popped:', current ? current.type : 'none');
-    
-        // Get the new top (previous view)
-        var prev = window.Nav.peek();
-        console.log('[Back] Previous view:', prev ? prev.type : 'none');
-    
-        if (prev) {
-            restoreView(prev);
-        } else {
-            console.log('[Back] No previous view, going to search');
-            if (typeof window.search === 'function') {
-                window.search();
-            }
-        }
-    });
 }
 
 // ============ VIEW ALBUM ============
 async function viewAlbum(token) {
     console.log('[View] viewAlbum called, isRestoring:', window._isRestoring);
-    
+
     // Only push if not restoring
     if (!window._isRestoring) {
-        window.Nav.push({ type: 'album', data: { token: token } });
+        window.Nav.push({type: 'album', data: {token: token}});
     }
-    
+
     var cacheKey = window.Cache.getDetailKey('album', token);
-    
+
     // Check cache first
     if (window.Cache.has(cacheKey)) {
         console.log('[Display] Using cached album:', token);
@@ -2620,18 +2132,19 @@ async function viewAlbum(token) {
         renderAlbum(album);
         return;
     }
-    
+
     DOM.results.innerHTML = '<div class="loading">📂 Loading album...</div>';
     DOM.stats.innerHTML = '';
 
     try {
         var album = await window.Services.Album.getDetails(token);
-        
+
         // Store in cache
         window.Cache.set(cacheKey, album);
         renderAlbum(album);
-        
+
     } catch (error) {
+        console.error('[View Album Error] Failed to load or render details:', error);
         DOM.results.innerHTML = `<div class="error">❌ Error loading album: ${error.message}</div>`;
     }
 }
@@ -2643,6 +2156,8 @@ window.viewAlbum = viewAlbum;
     // ============================================================
     // FILE: /js/ui/display/playlist-view.js
     // ============================================================
+
+// src/js/ui/display/playlist-view.js
 
 // ============ LOAD MORE PLAYLIST ============
 async function loadMorePlaylist() {
@@ -2656,28 +2171,26 @@ async function loadMorePlaylist() {
     }
 
     var nextPage = window._playlistState.currentPage + 1;
-    var cacheKey = window.Cache.getDetailKey('playlist', window._playlistState.token) + ':' + nextPage + ':' + window._playlistState.limit;
+    var cacheKey = window.Cache.getDetailKey('playlist', window._playlistState.token) + ':' + nextPage + ':' +
+        window._playlistState.limit;
 
     try {
         var data;
-        
+
         // Check cache first
         if (window.Cache.has(cacheKey)) {
             console.log('[Display] Using cached playlist page:', nextPage);
             data = window.Cache.get(cacheKey);
         } else {
             data = await window.Services.Playlist.getDetails(
-                window._playlistState.token,
-                nextPage,
-                window._playlistState.limit
-            );
+                window._playlistState.token, nextPage, window._playlistState.limit);
             window.Cache.set(cacheKey, data);
         }
 
         // Append songs
         if (data.songs && data.songs.length > 0) {
             var resultsDiv = document.getElementById('results');
-            
+
             // Remove load more button
             var oldBtn = document.getElementById('playlist-load-more-btn');
             if (oldBtn) oldBtn.remove();
@@ -2696,19 +2209,9 @@ async function loadMorePlaylist() {
             window._playlistState.currentPage = nextPage;
             window._playlistLoadedPages.push(cacheKey);
 
-            // ============ UPDATE STACK WITH LOADED PAGES ============
-            var currentStack = window.Nav.getStack();
-            for (var i = currentStack.length - 1; i >= 0; i--) {
-                if (currentStack[i].type === 'playlist') {
-                    currentStack[i].data.loadedPages = window._playlistLoadedPages.slice();
-                    console.log('[Nav] Updated playlist stack with loaded pages:', window._playlistLoadedPages.length);
-                    break;
-                }
-            }
+            // Update active stack data using helper
+            window.Nav.updateCurrent({loadedPages: window._playlistLoadedPages.slice()});
 
-            // Attach events to new cards
-            attachSongEvents(resultsDiv);
-            
             // Attach song data to new cards
             var cards = resultsDiv.querySelectorAll('.song-card');
             cards.forEach(function(card, idx) {
@@ -2743,11 +2246,11 @@ async function loadMorePlaylist() {
 function showPlaylistLoadMoreButton() {
     var resultsDiv = document.getElementById('results');
     if (!resultsDiv) return;
-    
+
     // Remove existing load more button
     var existingBtn = document.getElementById('playlist-load-more-btn');
     if (existingBtn) existingBtn.remove();
-    
+
     // Check if more results exist
     var hasMore = false;
     if (window._playlistState.total > 0) {
@@ -2759,7 +2262,7 @@ function showPlaylistLoadMoreButton() {
             hasMore = lastData.songs.length >= window._playlistState.limit;
         }
     }
-    
+
     if (!hasMore) {
         var endMsg = document.createElement('div');
         endMsg.className = 'end-of-results';
@@ -2768,7 +2271,7 @@ function showPlaylistLoadMoreButton() {
         resultsDiv.appendChild(endMsg);
         return;
     }
-    
+
     var btn = document.createElement('button');
     btn.id = 'playlist-load-more-btn';
     btn.className = 'btn-load-more';
@@ -2781,20 +2284,25 @@ function showPlaylistLoadMoreButton() {
 
 // ============ RENDER PLAYLIST ============
 function renderPlaylist(playlist) {
+    var image = playlist.image;
+    if (!image || image.includes('placeholder.com')) {
+        image = window.Utils.getDefaultImage('playlist');
+    }
     var html = `
         <div class="playlist-header">
-            <img src="${playlist.image || 'https://via.placeholder.com/200'}" alt="${playlist.title}" />
+            <img src="${image}" alt="${playlist.title}" />
             <div class="playlist-header-info">
                 <h2>${escapeHtml(playlist.title)}</h2>
                 <p>${escapeHtml(playlist.subtitle || '')}</p>
-                <p>${playlist.list_count || playlist.song_count || 0} songs • ${escapeHtml(playlist.language || 'Unknown')}</p>
+                <p>${playlist.list_count || playlist.song_count || 0} songs • ${
+        escapeHtml(playlist.language || 'Unknown')}</p>
                 ${playlist.description ? `<p class="playlist-description">${escapeHtml(playlist.description)}</p>` : ''}
                 <div class="playlist-actions">
                     <button class="btn-back" id="btn-back-search">← Back</button>
                 </div>
             </div>
         </div>
-        <div class="song-list">
+        <div class="song-list playlist-songs-list">
     `;
 
     var playlistContext = {
@@ -2816,7 +2324,7 @@ function renderPlaylist(playlist) {
 
     html += '</div>';
     DOM.results.innerHTML = html;
-    
+
     // Attach song data to cards
     var cards = DOM.results.querySelectorAll('.song-card');
     if (playlist.songs && playlist.songs.length > 0) {
@@ -2826,41 +2334,16 @@ function renderPlaylist(playlist) {
             }
         });
     }
-    
-    // Attach events
-    attachSongEvents(DOM.results);
-
-    var backBtn = document.getElementById('btn-back-search');
-    backBtn.addEventListener('click', function() {
-        console.log('[Back] Button clicked');
-    
-        // Pop the current view
-        var current = window.Nav.pop();
-        console.log('[Back] Popped:', current ? current.type : 'none');
-    
-        // Get the new top (previous view)
-        var prev = window.Nav.peek();
-        console.log('[Back] Previous view:', prev ? prev.type : 'none');
-    
-        if (prev) {
-            restoreView(prev);
-        } else {
-            console.log('[Back] No previous view, going to search');
-            if (typeof window.search === 'function') {
-                window.search();
-            }
-        }
-    });
 }
 
 async function viewPlaylist(token) {
     console.log('[View] viewPlaylist called, isRestoring:', window._isRestoring);
-    
+
     // Only push if not restoring
     if (!window._isRestoring) {
-        window.Nav.push({ type: 'playlist', data: { token: token, page: 1, loadedPages: [] } });
+        window.Nav.push({type: 'playlist', data: {token: token, page: 1, loadedPages: []}});
     }
-    
+
     // Reset playlist state
     window._playlistState.token = token;
     window._playlistState.currentPage = 1;
@@ -2882,7 +2365,7 @@ async function viewPlaylist(token) {
         var playlist = window.Cache.get(cacheKey);
         window._playlistState.total = parseInt(playlist.list_count) || parseInt(playlist.song_count) || 0;
         window._playlistLoadedPages.push(cacheKey);
-        
+
         // Update stack entry with the first page
         var currentStack = window.Nav.getStack();
         for (var i = currentStack.length - 1; i >= 0; i--) {
@@ -2892,7 +2375,7 @@ async function viewPlaylist(token) {
                 break;
             }
         }
-        
+
         renderPlaylist(playlist);
         showPlaylistLoadMoreButton();
         return;
@@ -2900,12 +2383,12 @@ async function viewPlaylist(token) {
 
     try {
         var playlist = await window.Services.Playlist.getDetails(token, page, limit);
-        
+
         // Store in cache
         window.Cache.set(cacheKey, playlist);
         window._playlistState.total = parseInt(playlist.list_count) || parseInt(playlist.song_count) || 0;
         window._playlistLoadedPages.push(cacheKey);
-        
+
         // Update stack entry with the first page
         var currentStack = window.Nav.getStack();
         for (var i = currentStack.length - 1; i >= 0; i--) {
@@ -2915,11 +2398,12 @@ async function viewPlaylist(token) {
                 break;
             }
         }
-        
+
         renderPlaylist(playlist);
         showPlaylistLoadMoreButton();
-        
+
     } catch (error) {
+        console.error('[View Playlist Error] Failed to load or render details:', error);
         DOM.results.innerHTML = `<div class="error">❌ Error loading playlist: ${error.message}</div>`;
     }
 }
@@ -2935,7 +2419,8 @@ window.showPlaylistLoadMoreButton = showPlaylistLoadMoreButton;
     // FILE: /js/ui/display/artist-view.js
     // ============================================================
 
-// ============ ARTIST STATE ============
+// src/js/ui/display/artist-view.js
+
 window._artistState = {
     token: '',
     artistId: '',
@@ -2944,9 +2429,7 @@ window._artistState = {
     albumPage: 1,
     limit: 10,
     isLoadingSongs: false,
-    isLoadingAlbums: false,
-    totalSongs: 0,
-    totalAlbums: 0
+    isLoadingAlbums: false
 };
 window._artistSongPages = [];
 window._artistAlbumPages = [];
@@ -2966,13 +2449,21 @@ function renderHeader(artist) {
         }
     }
 
+    var image = artist.image;
+    if (!image || image.includes('placeholder.com')) {
+        image = window.Utils.getDefaultImage('artist');
+    }
+
     var html = `
         <div class="artist-header">
-            <img src="${artist.image || 'https://via.placeholder.com/200'}" alt="${artist.name}" />
+            <img src="${image}" alt="${artist.name}" />
             <div class="artist-header-info">
                 <h2>${escapeHtml(artist.name)} ${artist.isVerified ? '✅' : ''}</h2>
                 <p>${escapeHtml(artist.subtitle || '')}</p>
-                ${bioText ? `<p class="artist-bio">${escapeHtml(bioText.substring(0, 200))}${bioText.length > 200 ? '...' : ''}</p>` : ''}
+                ${
+        bioText ?
+            `<p class="artist-bio">${escapeHtml(bioText.substring(0, 200))}${bioText.length > 200 ? '...' : ''}</p>` :
+            ''}
                 <div class="artist-actions">
                     <button class="btn-back" id="btn-back">← Back</button>
                 </div>
@@ -2995,9 +2486,12 @@ function renderFooter(artist) {
             <div class="artist-playlists-section" id="artist-dedicated-playlists">
                 <h3>Dedicated Playlists</h3>
                 <div class="playlist-list">
-                    ${artist.dedicatedPlaylists.map(function(playlist) {
-                        return createPlaylistCard(playlist);
-                    }).join('')}
+                    ${
+            artist.dedicatedPlaylists
+                .map(function(playlist) {
+                    return createPlaylistCard(playlist);
+                })
+                .join('')}
                 </div>
             </div>
         `;
@@ -3008,9 +2502,12 @@ function renderFooter(artist) {
             <div class="artist-playlists-section" id="artist-featured-playlists">
                 <h3>Featured In</h3>
                 <div class="playlist-list">
-                    ${artist.featuredPlaylists.map(function(playlist) {
-                        return createPlaylistCard(playlist);
-                    }).join('')}
+                    ${
+            artist.featuredPlaylists
+                .map(function(playlist) {
+                    return createPlaylistCard(playlist);
+                })
+                .join('')}
                 </div>
             </div>
         `;
@@ -3021,9 +2518,12 @@ function renderFooter(artist) {
             <div class="artist-albums-section" id="artist-singles">
                 <h3>Singles</h3>
                 <div class="album-list">
-                    ${artist.singles.map(function(single) {
-                        return createAlbumCard(single);
-                    }).join('')}
+                    ${
+            artist.singles
+                .map(function(single) {
+                    return createAlbumCard(single);
+                })
+                .join('')}
                 </div>
             </div>
         `;
@@ -3034,9 +2534,12 @@ function renderFooter(artist) {
             <div class="artist-albums-section" id="artist-latest-releases">
                 <h3>Latest Releases</h3>
                 <div class="album-list">
-                    ${artist.latestReleases.map(function(release) {
-                        return createAlbumCard(release);
-                    }).join('')}
+                    ${
+            artist.latestReleases
+                .map(function(release) {
+                    return createAlbumCard(release);
+                })
+                .join('')}
                 </div>
             </div>
         `;
@@ -3054,13 +2557,7 @@ function renderSongsSectionHTML(songs, category, totalSongs) {
     `;
 
     if (songs && songs.length > 0) {
-        var artistContext = {
-            type: 'artist',
-            image: '',
-            language: '',
-            year: '',
-            title: window._artistState.token
-        };
+        var artistContext = {type: 'artist', image: '', language: '', year: '', title: window._artistState.token};
         songs.forEach(function(song, index) {
             html += createSongCard(song, index, artistContext);
         });
@@ -3110,49 +2607,14 @@ function setActiveTab(category) {
     });
 }
 
-// ============ ATTACH ARTIST EVENTS ============
-function attachArtistViewEvents() {
-    // Back button
-    var backBtn = document.getElementById('btn-back');
-    if (backBtn) {
-        var newBackBtn = backBtn.cloneNode(true);
-        backBtn.parentNode.replaceChild(newBackBtn, backBtn);
-        newBackBtn.addEventListener('click', function() {        
-            // Pop the current view
-            var current = window.Nav.pop();
-            // Get the new top (previous view)
-            var prev = window.Nav.peek();
-            if (prev) {
-                restoreView(prev);
-            } else {
-                if (typeof window.search === 'function') {
-                    window.search();
-                }
-            }
-        });
-    }
-
-    // Tab clicks
-    var tabs = document.querySelectorAll('.artist-tab');
-    tabs.forEach(function(tab) {
-        // Remove old listeners
-        var newTab = tab.cloneNode(true);
-        tab.parentNode.replaceChild(newTab, tab);
-        newTab.addEventListener('click', function() {
-            var category = this.dataset.category;
-            switchArtistCategory(category);
-        });
-    });
-}
-
-
 // ============ RENDER ARTIST ============
 function renderArtist(artist) {
     // 1. Build full HTML with correct order
     var headerHtml = renderHeader(artist);
     var songsHtml = renderSongsSectionHTML(artist.songs, window._artistState.category || 'popular', artist.totalSongs);
-    var albumsHtml = renderAlbumsSectionHTML(artist.albums, window._artistState.category || 'popular', artist.totalAlbums);
-    var footerHtml = renderFooter(artist); // Static sections at the bottom
+    var albumsHtml =
+        renderAlbumsSectionHTML(artist.albums, window._artistState.category || 'popular', artist.totalAlbums);
+    var footerHtml = renderFooter(artist);  // Static sections at the bottom
 
     var fullHtml = headerHtml + songsHtml + albumsHtml + footerHtml;
     DOM.results.innerHTML = fullHtml;
@@ -3167,26 +2629,18 @@ function renderArtist(artist) {
         }
     });
 
-    // 3. Attach events
-    attachSongEvents(DOM.results);
-    attachAlbumEvents(DOM.results);
-    attachPlaylistEvents(DOM.results);
-
-    // 4. Show load more buttons
+    // 3. Show load more buttons
     showArtistSongsLoadMore();
     showArtistAlbumsLoadMore();
 
-    // 5. Attach back button and tab events
-    attachArtistViewEvents();
-
-    // 6. Set active tab
+    // 4. Set active tab
     setActiveTab(window._artistState.category || 'popular');
 }
 
 // ============ VIEW ARTIST ============
 async function viewArtist(token, category) {
-    console.log('[DEBUG] viewArtist called with:', { token, category });
-    
+    console.log('[DEBUG] viewArtist called with:', {token, category});
+
     // If category is undefined, try to get it from the navigation stack
     if (!category) {
         var stack = window.Nav.getStack();
@@ -3203,12 +2657,12 @@ async function viewArtist(token, category) {
             console.log('[DEBUG] Using default category: popular');
         }
     }
-    
+
     console.log('[View] viewArtist called, isRestoring:', window._isRestoring);
     category = category || 'popular';
 
     if (!window._isRestoring) {
-        window.Nav.push({ type: 'artist', data: { token: token, category: category } });
+        window.Nav.push({type: 'artist', data: {token: token, category: category}});
     }
 
     // Reset state with the category
@@ -3218,8 +2672,7 @@ async function viewArtist(token, category) {
     window._artistState.albumPage = 1;
     window._artistState.isLoadingSongs = false;
     window._artistState.isLoadingAlbums = false;
-    window._artistState.totalSongs = 0;
-    window._artistState.totalAlbums = 0;
+
     window._artistSongPages = [];
     window._artistAlbumPages = [];
 
@@ -3231,6 +2684,7 @@ async function viewArtist(token, category) {
     if (window.Cache.has(cacheKey)) {
         console.log('[DEBUG] Cache FOUND for key:', cacheKey);
         var artist = window.Cache.get(cacheKey);
+        window._artistState.artistId = artist.artistId || artist.id;
         renderArtist(artist);
         return;
     } else {
@@ -3243,6 +2697,7 @@ async function viewArtist(token, category) {
         window._artistState.artistId = artist.artistId || artist.id;
         renderArtist(artist);
     } catch (error) {
+        console.error('[View Artist Error] Failed to load or render details:', error);
         DOM.results.innerHTML = `<div class="error">❌ Error loading artist: ${error.message}</div>`;
     }
 }
@@ -3298,8 +2753,10 @@ async function switchArtistCategory(category) {
         window._artistState.totalAlbums = artist.totalAlbums || 0;
 
     } catch (error) {
-        if (songsContainer) songsContainer.innerHTML = `<div class="error">❌ Error loading songs: ${error.message}</div>`;
-        if (albumsContainer) albumsContainer.innerHTML = `<div class="error">❌ Error loading albums: ${error.message}</div>`;
+        if (songsContainer)
+            songsContainer.innerHTML = `<div class="error">❌ Error loading songs: ${error.message}</div>`;
+        if (albumsContainer)
+            albumsContainer.innerHTML = `<div class="error">❌ Error loading albums: ${error.message}</div>`;
     }
 }
 
@@ -3334,10 +2791,7 @@ function updateDynamicParts(songs, albums, category) {
         }
     });
 
-    // 4. Attach events
-    attachSongEvents(DOM.results);
-    attachAlbumEvents(DOM.results);
-    attachPlaylistEvents(DOM.results);
+
 
     // 5. Show load more buttons
     showArtistSongsLoadMore();
@@ -3349,26 +2803,27 @@ function showArtistSongsLoadMore() {
     var container = document.getElementById('artist-songs-load-more');
     if (!container) return;
 
-    var totalSongs = window._artistState.totalSongs || 0;
-    var loadedCount = window._artistSongPages.length * window._artistState.limit;
-    var hasMore = totalSongs === 0 || loadedCount < totalSongs;
+    var totalSongs = 0;
+    var loadedCount = (window._artistSongPages.length + 1) * window._artistState.limit;
 
-    // Also check if we have a last_page flag from the API
-    // For now, assume more if totalSongs > loadedCount
-
-    if (!hasMore && totalSongs > 0) {
-        container.innerHTML = '<div class="end-of-results">🏁 End of songs</div>';
-        return;
+    var hasMore = false;
+    if (totalSongs > 0) {
+        hasMore = loadedCount < totalSongs;
+    } else {
+        var songsContainer = document.querySelector('.artist-songs-section .song-list');
+        var currentCount = songsContainer ? songsContainer.querySelectorAll('.song-card').length : 0;
+        if (window._artistSongPages.length === 0) {
+            hasMore = currentCount >= window._artistState.limit;
+        } else {
+            var lastPageKey = window._artistSongPages[window._artistSongPages.length - 1];
+            var lastData = lastPageKey ? window.Cache.get(lastPageKey) : null;
+            hasMore = lastData && lastData.songs && lastData.songs.length >= window._artistState.limit;
+        }
     }
 
-    if (!hasMore && totalSongs === 0) {
-        // If we don't know total, check if we got less than limit
-        // For now, show button if we have songs
-        var lastData = window.Cache.get(window._artistSongPages[window._artistSongPages.length - 1]);
-        if (lastData && lastData.length < window._artistState.limit) {
-            container.innerHTML = '<div class="end-of-results">🏁 End of songs</div>';
-            return;
-        }
+    if (!hasMore) {
+        container.innerHTML = '<div class="end-of-results">🏁 End of songs</div>';
+        return;
     }
 
     container.innerHTML = `
@@ -3410,7 +2865,7 @@ async function loadMoreArtistSongs() {
 
         // Append songs
         if (songs.length > 0) {
-            appendArtistSongs(songs, nextPage, total);
+            appendArtistSongs(songs, nextPage, total, cacheKey);
         } else {
             var container = document.getElementById('artist-songs-load-more');
             if (container) {
@@ -3431,17 +2886,13 @@ async function loadMoreArtistSongs() {
         var total = result.total || 0;
 
         // ============ STORE IN CACHE ============
-        window.Cache.set(cacheKey, { songs: songs, total: total });
+        window.Cache.set(cacheKey, {songs: songs, total: total});
 
-        if (total > 0) {
-            window._artistState.totalSongs = total;
-        } else {
-            window._artistState.totalSongs += songs.length;
-        }
+
 
         // Append songs
         if (songs.length > 0) {
-            appendArtistSongs(songs, nextPage, total);
+            appendArtistSongs(songs, nextPage, total, cacheKey);
         } else {
             var container = document.getElementById('artist-songs-load-more');
             if (container) {
@@ -3470,17 +2921,11 @@ async function loadMoreArtistSongs() {
 }
 
 // ============ APPEND ARTIST SONGS ============
-function appendArtistSongs(songs, page, total) {
+function appendArtistSongs(songs, page, total, cacheKey) {
     var songsContainer = document.querySelector('.artist-songs-section .song-list');
     if (!songsContainer) return;
 
-    var artistContext = {
-        type: 'artist',
-        image: '',
-        language: '',
-        year: '',
-        title: window._artistState.token
-    };
+    var artistContext = {type: 'artist', image: '', language: '', year: '', title: window._artistState.token};
 
     // Get current card count BEFORE appending
     var cardsBefore = songsContainer.querySelectorAll('.song-card').length;
@@ -3502,12 +2947,12 @@ function appendArtistSongs(songs, page, total) {
         }
     });
 
-    // Attach events
-    attachSongEvents(songsContainer);
-
     // Update state
     window._artistState.songPage = page;
-    window._artistSongPages.push('artist_songs_' + window._artistState.artistId + '_' + page);
+    window._artistSongPages.push(cacheKey || ('artist_songs_' + window._artistState.artistId + '_' + page));
+
+    // Update active stack data using helper
+    window.Nav.updateCurrent({loadedSongPages: window._artistSongPages.slice()});
 
     // Update load more button
     showArtistSongsLoadMore();
@@ -3515,8 +2960,8 @@ function appendArtistSongs(songs, page, total) {
     // Update stats
     var h3 = document.querySelector('.artist-songs-section h3');
     if (h3) {
-        var totalDisplay = window._artistState.totalSongs || songs.length;
-        h3.textContent = 'Top Songs (' + totalDisplay + ')';
+        var currentCount = songsContainer.querySelectorAll('.song-card').length;
+        h3.textContent = 'Top Songs (' + currentCount + ')';
     }
 }
 
@@ -3526,20 +2971,27 @@ function showArtistAlbumsLoadMore() {
     if (!container) return;
 
     var totalAlbums = window._artistState.totalAlbums || 0;
-    var loadedCount = window._artistAlbumPages.length * window._artistState.limit;
-    var hasMore = totalAlbums === 0 || loadedCount < totalAlbums;
+    var loadedCount = (window._artistAlbumPages.length + 1) * window._artistState.limit;
 
-    if (!hasMore && totalAlbums > 0) {
-        container.innerHTML = '<div class="end-of-results">🏁 End of albums</div>';
-        return;
+    var hasMore = false;
+    if (totalAlbums > 0) {
+        hasMore = loadedCount < totalAlbums;
+    } else {
+        var albumsContainer = document.getElementById('artist-dynamic-albums');
+        var albumList = albumsContainer ? albumsContainer.querySelector('.album-list') : null;
+        var currentCount = albumList ? albumList.querySelectorAll('.album-card').length : 0;
+        if (window._artistAlbumPages.length === 0) {
+            hasMore = currentCount >= window._artistState.limit;
+        } else {
+            var lastPageKey = window._artistAlbumPages[window._artistAlbumPages.length - 1];
+            var lastData = lastPageKey ? window.Cache.get(lastPageKey) : null;
+            hasMore = lastData && lastData.albums && lastData.albums.length >= window._artistState.limit;
+        }
     }
 
-    if (!hasMore && totalAlbums === 0) {
-        var lastData = window.Cache.get(window._artistAlbumPages[window._artistAlbumPages.length - 1]);
-        if (lastData && lastData.length < window._artistState.limit) {
-            container.innerHTML = '<div class="end-of-results">🏁 End of albums</div>';
-            return;
-        }
+    if (!hasMore) {
+        container.innerHTML = '<div class="end-of-results">🏁 End of albums</div>';
+        return;
     }
 
     container.innerHTML = `
@@ -3580,7 +3032,7 @@ async function loadMoreArtistAlbums() {
         var total = cachedData.total || 0;
 
         if (albums.length > 0) {
-            appendArtistAlbums(albums, nextPage, total);
+            appendArtistAlbums(albums, nextPage, total, cacheKey);
         } else {
             var container = document.getElementById('artist-albums-load-more');
             if (container) {
@@ -3601,13 +3053,9 @@ async function loadMoreArtistAlbums() {
         var total = result.total || 0;
 
         // ============ STORE IN CACHE ============
-        window.Cache.set(cacheKey, { albums: albums, total: total });
+        window.Cache.set(cacheKey, {albums: albums, total: total});
 
-        if (total > 0) {
-            window._artistState.totalAlbums = total;
-        } else {
-            window._artistState.totalAlbums += albums.length;
-        }
+
 
         if (albums.length > 0) {
             appendArtistAlbums(albums, nextPage, total);
@@ -3638,8 +3086,7 @@ async function loadMoreArtistAlbums() {
     }
 }
 
-// ============ APPEND ARTIST ALBUMS ============
-function appendArtistAlbums(albums, page, total) {
+function appendArtistAlbums(albums, page, total, cacheKey) {
     var albumsContainer = document.getElementById('artist-dynamic-albums');
     if (!albumsContainer) return;
 
@@ -3651,12 +3098,12 @@ function appendArtistAlbums(albums, page, total) {
         albumList.insertAdjacentHTML('beforeend', albumCard);
     });
 
-    // Attach events to new cards
-    attachAlbumEvents(albumList);
-
     // Update state
     window._artistState.albumPage = page;
-    window._artistAlbumPages.push('artist_albums_' + window._artistState.artistId + '_' + page);
+    window._artistAlbumPages.push(cacheKey || ('artist_albums_' + window._artistState.artistId + '_' + page));
+
+    // Update active stack data using helper
+    window.Nav.updateCurrent({loadedAlbumPages: window._artistAlbumPages.slice()});
 
     // Update load more button
     showArtistAlbumsLoadMore();
@@ -3664,16 +3111,49 @@ function appendArtistAlbums(albums, page, total) {
     // Update stats
     var h3 = albumsContainer.querySelector('h3');
     if (h3) {
-        var totalDisplay = window._artistState.totalAlbums || albums.length;
-        h3.textContent = 'Top Albums (' + totalDisplay + ')';
+        var currentCount = albumList.querySelectorAll('.album-card').length;
+        h3.textContent = 'Top Albums (' + currentCount + ')';
     }
 }
 
 // ============ RESTORE ARTIST ============
-function restoreArtist(data) {
+async function restoreArtist(data) {
     console.log('[Restore] Artist:', data);
     var category = data.category || 'popular';
-    viewArtist(data.token, category);
+    var token = data.token;
+    var loadedSongPages = data.loadedSongPages || [];
+    var loadedAlbumPages = data.loadedAlbumPages || [];
+
+    window._isRestoring = true;
+
+    // First, load structural view (page 1)
+    await viewArtist(token, category);
+
+    // Append paged songs
+    for (var i = 0; i < loadedSongPages.length; i++) {
+        var pageKey = loadedSongPages[i];
+        if (window.Cache.has(pageKey)) {
+            var cachedVal = window.Cache.get(pageKey);
+            var pageNum = parseInt(pageKey.split(':').pop()) || 2;
+            var songs = cachedVal.songs || [];
+            var total = cachedVal.total || 0;
+            appendArtistSongs(songs, pageNum, total, pageKey);
+        }
+    }
+
+    // Append paged albums
+    for (var j = 0; j < loadedAlbumPages.length; j++) {
+        var pageKey = loadedAlbumPages[j];
+        if (window.Cache.has(pageKey)) {
+            var cachedVal = window.Cache.get(pageKey);
+            var pageNum = parseInt(pageKey.split(':').pop()) || 2;
+            var albums = cachedVal.albums || [];
+            var total = cachedVal.total || 0;
+            appendArtistAlbums(albums, pageNum, total, pageKey);
+        }
+    }
+
+    window._isRestoring = false;
 }
 
 // ============ EXPOSE ============
@@ -3687,41 +3167,21 @@ window.renderArtist = renderArtist;
     // FILE: /js/ui/display/lyrics.js
     // ============================================================
 
+// src/js/ui/display/lyrics.js
+
 // ============ SHOW LYRICS ============
 async function showLyrics(token, songId) {
     console.log('[Display] Fetching lyrics for:', token);
-    
+
     // Check if lyrics overlay already exists
     var existingOverlay = document.getElementById('lyrics-overlay');
     if (existingOverlay) {
         existingOverlay.remove();
     }
-    
-    // Check cache first
-    if (window.lyricsCache && window.lyricsCache[token]) {
-        console.log('[Display] Using cached lyrics for:', token);
-        var cachedLyrics = window.lyricsCache[token];
-        displayLyricsOverlay(cachedLyrics);
-        return;
-    }
-    
+
     try {
-        var data = await window.API.getLyrics(token);
-        var lyricsText = data.lyrics && data.lyrics.lyrics ? data.lyrics.lyrics : 'No lyrics available';
-        
-        // Format lyrics (replace <br> with newlines)
-        lyricsText = window.Utils.formatters.formatLyrics(lyricsText);
-        
-        // Store in cache
-        if (!window.lyricsCache) {
-            window.lyricsCache = {};
-        }
-        window.lyricsCache[token] = lyricsText;
-        console.log('[Display] Lyrics cached for:', token);
-        
-        // Display lyrics overlay
+        var lyricsText = await window.Services.Song.getLyrics(token);
         displayLyricsOverlay(lyricsText);
-        
     } catch (error) {
         console.error('[Display] Lyrics fetch error:', error);
         alert('Failed to fetch lyrics: ' + error.message);
@@ -3747,7 +3207,7 @@ function displayLyricsOverlay(lyricsText) {
         padding: 20px;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     `;
-    
+
     overlay.innerHTML = `
         <div style="
             max-width: 600px;
@@ -3786,35 +3246,8 @@ ${lyricsText}
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(overlay);
-    
-    // Close button event listener
-    var closeBtn = document.getElementById('lyrics-close-btn');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', function() {
-            closeLyricsOverlay();
-        });
-    }
-    
-    // Click outside to close
-    overlay.addEventListener('click', function(e) {
-        if (e.target === overlay) {
-            closeLyricsOverlay();
-        }
-    });
-    
-    // ESC key to close (using a single listener)
-    var escHandler = function(e) {
-        if (e.key === 'Escape') {
-            var overlayEl = document.getElementById('lyrics-overlay');
-            if (overlayEl) {
-                closeLyricsOverlay();
-                document.removeEventListener('keydown', escHandler);
-            }
-        }
-    };
-    document.addEventListener('keydown', escHandler);
 }
 
 function closeLyricsOverlay() {
@@ -3834,17 +3267,19 @@ window.closeLyricsOverlay = closeLyricsOverlay;
     // FILE: /js/ui/display/navigation.js
     // ============================================================
 
+// src/js/ui/display/navigation.js
+
 // ============ RESTORE SEARCH ============
 function restoreSearch(data) {
     console.log('[Restore] Search:', data);
-    
+
     var searchType = data.type || 'songs';
     var query = data.query;
     var loadedPages = data.loadedPages || [];
-    
+
     // Get first page from cache
     var firstPageKey = window.Cache.getSearchKey(searchType, query, 1, 20);
-    
+
     if (!window.Cache.has(firstPageKey)) {
         console.log('[Restore] No cache for search, falling back to search');
         if (typeof window.search === 'function') {
@@ -3852,7 +3287,7 @@ function restoreSearch(data) {
         }
         return;
     }
-    
+
     // Collect all results from all loaded pages
     var allResults = [];
     if (loadedPages.length > 0) {
@@ -3867,7 +3302,7 @@ function restoreSearch(data) {
         allResults = data.results || [];
         loadedPages = [firstPageKey];
     }
-    
+
     if (allResults.length === 0) {
         console.log('[Restore] No results found, falling back to search');
         if (typeof window.search === 'function') {
@@ -3875,45 +3310,45 @@ function restoreSearch(data) {
         }
         return;
     }
-    
+
     // Restore state
     window._searchState.type = searchType;
     window._searchState.query = query;
     window._searchState.currentPage = loadedPages.length;
     window._searchLoadedPages = loadedPages.slice();
-    
+
     // Display results
     displaySearchResults(allResults, searchType);
     showLoadMoreButton('search');
-    
+
     var statsDiv = document.getElementById('stats');
     if (statsDiv) statsDiv.innerHTML = 'Found ' + allResults.length + ' ' + searchType + ' (cached)';
-    
+
     console.log('[Restore] Search restored with', allResults.length, 'results');
 }
 
 // ============ RESTORE PLAYLIST ============
 function restorePlaylist(data) {
     console.log('[Restore] Playlist:', data);
-    
+
     var token = data.token;
     var loadedPages = data.loadedPages || [];
-    
+
     // Get first page from cache
     var firstPageKey = 'playlist:' + token + ':' + 1 + ':' + 50;
-    
+
     if (!window.Cache.has(firstPageKey)) {
         console.log('[Restore] No cache for playlist, falling back to viewPlaylist');
-        window._isRestoring = false; // Temporarily allow push
+        window._isRestoring = false;  // Temporarily allow push
         viewPlaylist(token);
         window._isRestoring = true;
         return;
     }
-    
+
     // Collect all songs from all loaded pages
     var allSongs = [];
     var playlistData = null;
-    
+
     if (loadedPages.length > 0) {
         loadedPages.forEach(function(pageKey) {
             var pageData = window.Cache.get(pageKey);
@@ -3928,7 +3363,7 @@ function restorePlaylist(data) {
         allSongs = data.songs || [];
         loadedPages = [firstPageKey];
     }
-    
+
     if (allSongs.length === 0) {
         console.log('[Restore] No songs found, falling back to viewPlaylist');
         window._isRestoring = false;
@@ -3936,7 +3371,7 @@ function restorePlaylist(data) {
         window._isRestoring = true;
         return;
     }
-    
+
     // Restore state
     if (playlistData) {
         playlistData.songs = allSongs;
@@ -3944,11 +3379,11 @@ function restorePlaylist(data) {
     window._playlistState.token = token;
     window._playlistState.currentPage = loadedPages.length;
     window._playlistLoadedPages = loadedPages.slice();
-    
+
     // Display playlist
     renderPlaylist(playlistData);
     showPlaylistLoadMoreButton();
-    
+
     console.log('[Restore] Playlist restored with', allSongs.length, 'songs');
 }
 
@@ -3959,12 +3394,12 @@ function restoreAlbum(data) {
 }
 
 // ============ RESTORE VIEW ============
-function restoreView(view) {
+async function restoreView(view) {
     console.log('[Restore] Restoring:', view.type, 'Data:', view.data);
-    
+
     window._isRestoring = true;
-    
-    switch(view.type) {
+
+    switch (view.type) {
         case 'search':
             restoreSearch(view.data);
             break;
@@ -3975,7 +3410,7 @@ function restoreView(view) {
             restoreAlbum(view.data);
             break;
         case 'artist':
-            restoreArtist(view.data);
+            await restoreArtist(view.data);
             break;
         default:
             console.log('[Restore] Unknown type:', view.type);
@@ -3983,7 +3418,7 @@ function restoreView(view) {
                 window.search();
             }
     }
-    
+
     window._isRestoring = false;
     console.log('[Restore] Done, isRestoring:', window._isRestoring);
 }
@@ -3993,108 +3428,89 @@ function restoreView(view) {
     // FILE: /js/ui/search.js
     // ============================================================
 
-// ui/js/search.js
-
-async function search() {
-    var searchInput = document.getElementById('searchInput');
+// Handle searches where the query is a parsed URL target
+async function handleUrlSearch(parsed) {
     var resultsDiv = document.getElementById('results');
     var statsDiv = document.getElementById('stats');
     var playerDiv = document.getElementById('player');
-    
-    if (!searchInput || !resultsDiv) {
-        console.error('[Search] Required DOM elements not found');
-        return;
-    }
-    
-    var query = searchInput.value.trim();
-    if (!query) {
-        alert('Please enter a search term');
-        return;
-    }
 
-    // Check if it's a valid URL
-    var parsed = window.Utils.parseUrl(query);
-    if (parsed && parsed.token) {
-        // Clear previous results
-        resultsDiv.innerHTML = '<div class="loading">🔍 Loading...</div>';
-        if (statsDiv) statsDiv.innerHTML = '';
-        if (playerDiv) playerDiv.innerHTML = '';
-    
-        try {
-            if (parsed.type === 'song' || parsed.type === 'lyrics') {
-                // Switch to Songs tab if needed
-                if (window.currentSearchType !== 'songs') {
-                    switchTab('songs');
-                }
-            
-                // Get song details
-                var songData = await window.API.getSong(parsed.token);
-                var song = songData.songs ? songData.songs[0] : null;
-            
-                if (song) {
-                    var formattedSong = window.Utils.formatters.formatSong(song);
-                    if (statsDiv) statsDiv.innerHTML = 'Found 1 song';
-                    displaySongs([formattedSong]);
-                } else {
-                    resultsDiv.innerHTML = '<div class="no-results">😕 Song not found</div>';
-                }
-            
-            } else if (parsed.type === 'album') {
-                // Switch to Albums tab if needed
-                if (window.currentSearchType !== 'albums') {
-                    switchTab('albums');
-                }
-            
-                // Get album details
-                var albumData = await window.API.getAlbum(parsed.token);
-            
-                if (albumData && albumData.id) {
-                    if (statsDiv) statsDiv.innerHTML = 'Found 1 album';
-                    viewAlbum(parsed.token);
-                } else {
-                    resultsDiv.innerHTML = '<div class="no-results">😕 Album not found</div>';
-                }
+    // Clear previous results
+    resultsDiv.innerHTML = '<div class="loading">🔍 Loading...</div>';
+    if (statsDiv) statsDiv.innerHTML = '';
+    if (playerDiv) playerDiv.innerHTML = '';
 
-            } else if (parsed.type === 'playlist') {
-                // Switch to Playlists tab if needed
-                if (window.currentSearchType !== 'playlists') {
-                    switchTab('playlists');
-                }
-    
-                // Get playlist details
-                var playlistData = await window.API.getPlaylist(parsed.token);
-    
-                if (playlistData && playlistData.id) {
-                    if (statsDiv) statsDiv.innerHTML = 'Found 1 playlist';
-                    viewPlaylist(parsed.token);
-                } else {
-                    resultsDiv.innerHTML = '<div class="no-results">😕 Playlist not found</div>';
-                }
-            } else if (parsed.type === 'artist') {
-                // Switch to Artists tab if needed
-                if (window.currentSearchType !== 'artists') {
-                    switchTab('artists');
-                }
-
-                // Get artist details
-                var artistData = await window.API.getArtist(parsed.token);
-                if (artistData && artistData.artistId) {
-                    if (statsDiv) statsDiv.innerHTML = 'Found 1 artist';
-                    viewArtist(parsed.token);
-                } else {
-                    resultsDiv.innerHTML = '<div class="no-results">😕 Artist not found</div>';
-                }
+    try {
+        if (parsed.type === 'song' || parsed.type === 'lyrics') {
+            if (window.currentSearchType !== 'songs') {
+                switchTab('songs');
             }
-        } catch (error) {
-            console.error('[Search] URL fetch error:', error);
-            resultsDiv.innerHTML = '<div class="error">❌ Failed to load: ' + error.message + '</div>';
-        }
 
-        return; // Exit after handling URL
+            var songData = await window.API.getSong(parsed.token);
+            var song = songData.songs ? songData.songs[0] : null;
+
+            if (song) {
+                var formattedSong = window.Utils.formatters.formatSong(song);
+                if (statsDiv) statsDiv.innerHTML = 'Found 1 song';
+                displaySongs([formattedSong]);
+            } else {
+                resultsDiv.innerHTML = '<div class="no-results">😕 Song not found</div>';
+            }
+
+        } else if (parsed.type === 'album') {
+            if (window.currentSearchType !== 'albums') {
+                switchTab('albums');
+            }
+
+            var albumData = await window.API.getAlbum(parsed.token);
+
+            if (albumData && albumData.id) {
+                if (statsDiv) statsDiv.innerHTML = 'Found 1 album';
+                viewAlbum(parsed.token);
+            } else {
+                resultsDiv.innerHTML = '<div class="no-results">😕 Album not found</div>';
+            }
+
+        } else if (parsed.type === 'playlist') {
+            if (window.currentSearchType !== 'playlists') {
+                switchTab('playlists');
+            }
+
+            var playlistData = await window.API.getPlaylist(parsed.token);
+
+            if (playlistData && playlistData.id) {
+                if (statsDiv) statsDiv.innerHTML = 'Found 1 playlist';
+                viewPlaylist(parsed.token);
+            } else {
+                resultsDiv.innerHTML = '<div class="no-results">😕 Playlist not found</div>';
+            }
+
+        } else if (parsed.type === 'artist') {
+            if (window.currentSearchType !== 'artists') {
+                switchTab('artists');
+            }
+
+            var artistData = await window.API.getArtist(parsed.token);
+            if (artistData && artistData.artistId) {
+                if (statsDiv) statsDiv.innerHTML = 'Found 1 artist';
+                viewArtist(parsed.token);
+            } else {
+                resultsDiv.innerHTML = '<div class="no-results">😕 Artist not found</div>';
+            }
+        }
+    } catch (error) {
+        console.error('[Search] URL fetch error:', error);
+        resultsDiv.innerHTML = '<div class="error">❌ Failed to load: ' + error.message + '</div>';
     }
+}
+
+// Handle searches where the query is plain search text
+async function handleTextSearch(query) {
+    var resultsDiv = document.getElementById('results');
+    var statsDiv = document.getElementById('stats');
+    var playerDiv = document.getElementById('player');
 
     var searchType = window.currentSearchType || 'songs';
-    
+
     // Reset search state for new search
     window._searchState.type = searchType;
     window._searchState.query = query;
@@ -4107,7 +3523,7 @@ async function search() {
     var page = window._searchState.currentPage;
     var limit = window._searchState.limit;
     var cacheKey = window.Cache.getSearchKey(searchType, query, page, limit);
-    
+
     console.log('[Search] Searching for:', query, 'Type:', searchType);
 
     resultsDiv.innerHTML = '<div class="loading">🔍 Searching</div>';
@@ -4116,16 +3532,15 @@ async function search() {
 
     // Check cache for page 1
     if (window.Cache.has(cacheKey)) {
-        // Clear navigation stack and push search view
         window.Nav.clear();
-        window.Nav.push({ 
-            type: 'search', 
-            data: { 
-                type: searchType, 
+        window.Nav.push({
+            type: 'search',
+            data: {
+                type: searchType,
                 query: query,
                 page: 1,
                 loadedPages: window._searchLoadedPages ? window._searchLoadedPages.slice() : []
-            } 
+            }
         });
         console.log('[Search] Using cached results for page 1');
         var data = window.Cache.get(cacheKey);
@@ -4161,16 +3576,15 @@ async function search() {
         window._searchState.total = data.total || 0;
         window._searchLoadedPages.push(cacheKey);
 
-        // Clear navigation stack and push search view
         window.Nav.clear();
-        window.Nav.push({ 
-            type: 'search', 
-            data: { 
-                type: searchType, 
+        window.Nav.push({
+            type: 'search',
+            data: {
+                type: searchType,
                 query: query,
                 page: window._searchState.currentPage || 1,
                 loadedPages: window._searchLoadedPages ? window._searchLoadedPages.slice() : []
-            } 
+            }
         });
 
         if (data.results && data.results.length > 0) {
@@ -4187,6 +3601,30 @@ async function search() {
     }
 }
 
+// Coordinate search input queries
+async function search() {
+    var searchInput = document.getElementById('searchInput');
+    var resultsDiv = document.getElementById('results');
+
+    if (!searchInput || !resultsDiv) {
+        console.error('[Search] Required DOM elements not found');
+        return;
+    }
+
+    var query = searchInput.value.trim();
+    if (!query) {
+        alert('Please enter a search term');
+        return;
+    }
+
+    var parsed = window.Utils.parseUrl(query);
+    if (parsed && parsed.token) {
+        await handleUrlSearch(parsed);
+    } else {
+        await handleTextSearch(query);
+    }
+}
+
 // ============ LOAD MORE SEARCH ============
 async function loadMoreSearch() {
     if (window._searchState.isLoading) return;
@@ -4200,11 +3638,7 @@ async function loadMoreSearch() {
 
     var nextPage = window._searchState.currentPage + 1;
     var cacheKey = window.Cache.getSearchKey(
-        window._searchState.type,
-        window._searchState.query,
-        nextPage,
-        window._searchState.limit
-    );
+        window._searchState.type, window._searchState.query, nextPage, window._searchState.limit);
 
     try {
         var data;
@@ -4216,30 +3650,18 @@ async function loadMoreSearch() {
             data = window.Cache.get(cacheKey);
         } else {
             if (type === 'songs') {
-                data = await window.Services.Song.search(
-                    window._searchState.query,
-                    window._searchState.limit,
-                    nextPage
-                );
+                data =
+                    await window.Services.Song.search(window._searchState.query, window._searchState.limit, nextPage);
             } else if (type === 'albums') {
-                data = await window.Services.Album.search(
-                    window._searchState.query,
-                    window._searchState.limit,
-                    nextPage
-                );
+                data =
+                    await window.Services.Album.search(window._searchState.query, window._searchState.limit, nextPage);
             } else if (type === 'playlists') {
                 data = await window.Services.Playlist.search(
-                    window._searchState.query,
-                    window._searchState.limit,
-                    nextPage
-                );
-} else if (type === 'artists') {
-    data = await window.Services.Artist.search(
-        window._searchState.query,
-        window._searchState.limit,
-        nextPage
-    );
-}
+                    window._searchState.query, window._searchState.limit, nextPage);
+            } else if (type === 'artists') {
+                data =
+                    await window.Services.Artist.search(window._searchState.query, window._searchState.limit, nextPage);
+            }
             window.Cache.set(cacheKey, data);
         }
 
@@ -4248,7 +3670,7 @@ async function loadMoreSearch() {
             // Get existing results container
             var resultsDiv = document.getElementById('results');
             var existingCards = resultsDiv.querySelectorAll('.song-card, .album-card, .playlist-card');
-            
+
             // Remove load more button
             var oldBtn = document.getElementById('load-more-btn');
             if (oldBtn) oldBtn.remove();
@@ -4266,14 +3688,17 @@ async function loadMoreSearch() {
                 data.results.forEach(function(playlist) {
                     resultsDiv.insertAdjacentHTML('beforeend', createPlaylistCard(playlist));
                 });
-} else if (type === 'artists') {
-    data.results.forEach(function(artist) {
-        resultsDiv.insertAdjacentHTML('beforeend', createArtistCard(artist));
-    });
-}
+            } else if (type === 'artists') {
+                data.results.forEach(function(artist) {
+                    resultsDiv.insertAdjacentHTML('beforeend', createArtistCard(artist));
+                });
+            }
             // Update state
             window._searchState.currentPage = nextPage;
             window._searchLoadedPages.push(cacheKey);
+
+            // Persist loaded pages state so back-button recalls pagination
+            window.Nav.updateCurrent({loadedPages: window._searchLoadedPages.slice()});
 
             // Show load more button again
             showLoadMoreButton('search');
@@ -4301,11 +3726,11 @@ async function loadMoreSearch() {
 function showLoadMoreButton(source) {
     var resultsDiv = document.getElementById('results');
     if (!resultsDiv) return;
-    
+
     // Remove existing load more button
     var existingBtn = document.getElementById('load-more-btn');
     if (existingBtn) existingBtn.remove();
-    
+
     // Check if more results exist
     var hasMore = false;
     if (window._searchState.total > 0) {
@@ -4318,7 +3743,7 @@ function showLoadMoreButton(source) {
             hasMore = lastData.results.length >= window._searchState.limit;
         }
     }
-    
+
     if (!hasMore) {
         var endMsg = document.createElement('div');
         endMsg.className = 'end-of-results';
@@ -4327,7 +3752,7 @@ function showLoadMoreButton(source) {
         resultsDiv.appendChild(endMsg);
         return;
     }
-    
+
     var btn = document.createElement('button');
     btn.id = 'load-more-btn';
     btn.className = 'btn-load-more';
@@ -4348,15 +3773,14 @@ window.loadMoreSearch = loadMoreSearch;
 
 // src/js/ui/player.js
 
+// Play a song and initialize the audio element
 async function playSong(songData) {
     if (!songData) {
         console.error('[Player] No song data provided');
         return;
     }
-    
+
     var token = songData.token || songData.id;
-    var title = songData.title || 'Song';
- 
     console.log('[Player] Playing song:', token);
 
     // If player already exists, remove it
@@ -4367,7 +3791,7 @@ async function playSong(songData) {
     }
 
     var progressDiv = document.getElementById('play-progress-' + token);
-    
+
     if (progressDiv) {
         progressDiv.style.display = 'block';
         progressDiv.textContent = '⏳ Decrypting...';
@@ -4380,24 +3804,11 @@ async function playSong(songData) {
     });
 
     try {
-        var decryptedUrl = decryptedUrlCache.get(token);
-        
+        var decryptedUrl = window.Cache.get('decrypt:' + token);
+
         if (!decryptedUrl) {
-            // Get encrypted URL from songData
-            var encrypted = songData.more_info && songData.more_info.encrypted_media_url;
-            if (!encrypted) {
-                throw new Error('No encrypted URL found');
-            }
-            
-            if (typeof window.decryptMediaUrl !== 'function') {
-                throw new Error('decryptMediaUrl not available');
-            }
-            
-            decryptedUrl = window.decryptMediaUrl(encrypted);
-            if (!decryptedUrl) throw new Error('Decryption failed');
-            
-            decryptedUrlCache.set(token, decryptedUrl);
-            setTimeout(function() { decryptedUrlCache.delete(token); }, 3600000);
+            decryptedUrl = window.Utils.getDecryptedUrl(songData, window.currentQuality || 96);
+            window.Cache.set('decrypt:' + token, decryptedUrl);
         }
 
         if (progressDiv) {
@@ -4416,7 +3827,7 @@ async function playSong(songData) {
             // Fallback: try to find by id
             songCard = document.getElementById('song-' + token) || document.getElementById('album-song-' + token);
         }
-        
+
         if (songCard) {
             var titleEl = songCard.querySelector('.song-title');
             if (titleEl) displayTitle = titleEl.textContent || displayTitle;
@@ -4428,7 +3839,7 @@ async function playSong(songData) {
         }
 
         var audioHtml = `
-            <div id="player-container" style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 15px;">
+            <div id="player-container" style="background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-top: 15px; color: #fff;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <strong>Now Playing: ${displayTitle}</strong>
                     <button id="player-close-btn" style="background: #dc3545; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer;">✕ Close</button>
@@ -4439,7 +3850,7 @@ async function playSong(songData) {
                 </audio>
             </div>
         `;
-        
+
         var tempDiv = document.createElement('div');
         tempDiv.innerHTML = audioHtml;
         var playerElement = tempDiv.firstElementChild;
@@ -4448,7 +3859,7 @@ async function playSong(songData) {
         if (songCard && songCard.parentNode) {
             // Insert as next sibling of the song card
             songCard.parentNode.insertBefore(playerElement, songCard.nextSibling);
-    
+
             // Add a margin to separate from the card
             playerElement.style.marginTop = '10px';
         } else {
@@ -4463,8 +3874,9 @@ async function playSong(songData) {
         currentPlayerElement = playerElement;
         currentSongCard = songCard;
 
-        window.currentAudio = playerElement.querySelector('audio');
-        
+        var audio = playerElement.querySelector('audio');
+        window.currentAudio = audio;
+
         var closeBtn = playerElement.querySelector('#player-close-btn');
         if (closeBtn) {
             closeBtn.addEventListener('click', function() {
@@ -4491,6 +3903,7 @@ async function playSong(songData) {
     }
 }
 
+// Close the active audio player and release elements
 function closePlayer() {
     console.log('[Player] closePlayer called');
     if (window.currentAudio) {
@@ -4505,14 +3918,13 @@ function closePlayer() {
         }
         window.currentAudio = null;
     }
-    
+
     if (currentPlayerElement) {
         currentPlayerElement.remove();
         currentPlayerElement = null;
         currentSongCard = null;
     }
 }
-
 
 window.playSong = playSong;
 window.closePlayer = closePlayer;
@@ -4521,50 +3933,36 @@ window.closePlayer = closePlayer;
     // FILE: /js/ui/download.js
     // ============================================================
 
-// ui/js/download.js
+// src/js/ui/download.js
 
 async function downloadSong(songData) {
     if (!songData) {
         console.error('[Download] No song data provided');
         return;
     }
-    
+
     var token = songData.token || songData.id;
     console.log('[Download] Downloading song:', token);
-    
+
     var progressDiv = document.getElementById('download-progress-' + token);
     if (progressDiv) {
         progressDiv.style.display = 'block';
         progressDiv.textContent = '⏳ Downloading...';
     }
-    
+
     var buttons = document.querySelectorAll('[data-token="' + token + '"] .btn-download');
     buttons.forEach(function(btn) {
         btn.textContent = '⏳';
         btn.disabled = true;
     });
-    
+
     try {
-        // Get encrypted URL from songData
-        var encrypted = songData.more_info && songData.more_info.encrypted_media_url;
-        if (!encrypted) {
-            throw new Error('No encrypted URL found');
-        }
-        
-        if (typeof window.decryptMediaUrl !== 'function') {
-            throw new Error('decryptMediaUrl not available');
-        }
-        
-        var decryptedUrl = window.decryptMediaUrl(encrypted);
-        if (!decryptedUrl) throw new Error('Decryption failed');
-        
-        // Format song data using the existing formatter
-        // formatDecryptedSong will use songData._raw if available
+        var decryptedUrl = window.Utils.getDecryptedUrl(songData, window.currentQuality || 96);
         var song = window.Utils.formatters.formatDecryptedSong(songData, decryptedUrl);
-        
+
         // Use existing download logic
         await window.Services.Download.songFromData(song);
-        
+
         if (progressDiv) {
             progressDiv.textContent = '✅ Done!';
             progressDiv.style.color = '#1db954';
@@ -4605,41 +4003,29 @@ window.downloadSong = downloadSong;
 window.currentAudio = null;
 window.currentSearchType = 'songs';
 window.currentQuery = '';
-window.decryptedUrlCache = new Map();
-window.lyricsCache = {};
-// Quality setting (default: 96 kbps)
 window.currentQuality = 96;
 // ============ CACHE ============
 window.Cache = {
     store: {},
-    
+
     set: function(key, data) {
-        this.store[key] = {
-            data: data,
-            timestamp: Date.now()
-        };
+        this.store[key] = data;
     },
-    
+
     get: function(key) {
-        return this.store[key] ? this.store[key].data : null;
+        return this.store[key] !== undefined ? this.store[key] : null;
     },
-    
+
     has: function(key) {
-        return !!this.store[key];
+        return this.store[key] !== undefined;
     },
-    
-    delete: function(key) {
-        delete this.store[key];
-    },
-    
-    clear: function() {
-        this.store = {};
-    },
-    
+
+
+
     getSearchKey: function(type, query, page, limit) {
         return 'search:' + type + ':' + query + ':' + (page || 1) + ':' + (limit || 20);
     },
-    
+
     getDetailKey: function(type, token) {
         return 'detail:' + type + ':' + token;
     }
@@ -4689,6 +4075,13 @@ window.Nav = {
     },
     getStack: function() {
         return window._navStack;
+    },
+    updateCurrent: function(dataUpdates) {
+        var current = this.peek();
+        if (current && current.data) {
+            Object.assign(current.data, dataUpdates);
+            console.log('[Nav] Updated active stack view data:', current.type, dataUpdates);
+        }
     }
 };
 
@@ -4709,39 +4102,11 @@ var DOM = {
     closeBtn: null,
 };
 
-// WAIT FOR DOM ELEMENTS
-function waitForElements(callback, retries) {
-    retries = retries || 0;
-    
-    DOM.searchInput = document.getElementById('searchInput');
-    DOM.results = document.getElementById('results');
-    DOM.stats = document.getElementById('stats');
-    DOM.tabs = document.querySelectorAll('.tab');
-    DOM.overlay = document.getElementById('ui-overlay');
-    DOM.toggleBtn = document.getElementById('ui-toggle-btn');
-    DOM.closeBtn = document.getElementById('ui-close-btn');
-    
-    if (DOM.searchInput && DOM.results && DOM.overlay) {
-        console.log('[UI] DOM elements found');
-        callback();
-        return;
-    }
-    
-    if (retries > 30) {
-        console.warn('[UI] DOM elements not found after 3 seconds');
-        callback();
-        return;
-    }
-    
-    setTimeout(function() {
-        waitForElements(callback, retries + 1);
-    }, 100);
-}
-
+// Prefill search query if current tab URL matches a platform item
 function detectAndPrefillUrl() {
     var searchInput = document.getElementById('searchInput');
     if (!searchInput) return;
-    
+
     var parsed = window.Utils.parseUrl(window.location.href);
     if (parsed && parsed.token) {
         searchInput.value = window.location.href;
@@ -4749,52 +4114,29 @@ function detectAndPrefillUrl() {
     }
 }
 
+// Close overlay Dialog panel
 function closeUI() {
     console.log('[UI] closeUI called');
-    
+
     if (!DOM.overlay) return;
     if (!isOpen) return;
-    
+
     // Close player first
     if (typeof window.closePlayer === 'function') {
         window.closePlayer();
     }
-    
+
     DOM.overlay.classList.remove('active');
     if (DOM.toggleBtn) DOM.toggleBtn.textContent = '🎵';
-    
+
     isOpen = false;
     console.log('[UI] Closed');
 }
 
-// EXPOSE
+// Expose variables
 window.DOM = DOM;
-window.waitForElements = waitForElements;
 window.closeUI = closeUI;
 
-// FORCE INIT
-(function forceInit() {
-    console.log('[UI] Force init...');
-    
-    if (typeof window.createUI === 'function') {
-        window.createUI();
-        return;
-    }
-    
-    setTimeout(function() {
-        if (typeof window.createUI === 'function') {
-            window.createUI();
-            return;
-        }
-        setTimeout(function() {
-            if (typeof window.createUI === 'function') {
-                window.createUI();
-            }
-        }, 500);
-    }, 200);
-})();
-
-console.log('[UI] Core module loaded');
 
     // ============================================================
     // FILE: /js/ui/builder.js
@@ -4804,12 +4146,12 @@ console.log('[UI] Core module loaded');
 
 window.createUI = function() {
     console.log('[UI] Creating UI...');
-    
+
     if (isInitialized) {
         console.log('[UI] Already initialized');
         return;
     }
-    
+
     var overlay = document.createElement('div');
     overlay.id = 'ui-overlay';
     overlay.innerHTML = `
@@ -4846,34 +4188,39 @@ window.createUI = function() {
         </div>
     `;
     document.body.appendChild(overlay);
-    
+
     var toggleBtn = document.createElement('button');
     toggleBtn.id = 'ui-toggle-btn';
     toggleBtn.textContent = '🎵';
     toggleBtn.title = 'Open Song Downloader (Alt+J)';
     document.body.appendChild(toggleBtn);
-    
+
     isInitialized = true;
-    
-    waitForElements(function() {
-        setupEventListeners();
-        setupAppEventListeners();
-        console.log('[UI] UI ready');
-    });
-    
-    console.log('[UI] UI created');
+
+    // Populate DOM references synchronously
+    DOM.searchInput = document.getElementById('searchInput');
+    DOM.results = document.getElementById('results');
+    DOM.stats = document.getElementById('stats');
+    DOM.tabs = document.querySelectorAll('.tab');
+    DOM.overlay = document.getElementById('ui-overlay');
+    DOM.toggleBtn = document.getElementById('ui-toggle-btn');
+    DOM.closeBtn = document.getElementById('ui-close-btn');
+
+    setupEventListeners();
+    setupAppEventListeners();
+    console.log('[UI] UI ready');
 };
 
 function toggleUI() {
     if (isToggling) return;
     isToggling = true;
-    
+
     if (isOpen) {
         closeUI();
     } else {
         openUI();
     }
-    
+
     setTimeout(function() {
         isToggling = false;
     }, 300);
@@ -4882,7 +4229,7 @@ function toggleUI() {
 function openUI() {
     if (!DOM.overlay) return;
     if (isOpen) return;
-    
+
     DOM.overlay.classList.add('active');
 
     // Prefill URL from current page if available
@@ -4894,7 +4241,7 @@ function openUI() {
             DOM.searchInput.focus();
         }, 100);
     }
-    
+
     isOpen = true;
     console.log('[UI] Opened');
 }
@@ -4902,13 +4249,12 @@ function openUI() {
 window.toggleUI = toggleUI;
 window.openUI = openUI;
 
-console.log('[UI] Builder module loaded');
 
     // ============================================================
     // FILE: /js/ui/handlers.js
     // ============================================================
 
-// ui/js/ui-handlers.js
+// src/js/ui/handlers.js
 
 // ============================================================
 // APP EVENT LISTENERS
@@ -4925,7 +4271,7 @@ function setupAppEventListeners() {
         DOM.searchInput.focus();
         console.log('[UI] App event listeners attached');
     }
-    
+
     if (typeof window.API !== 'undefined') {
         console.log('[UI] API loaded');
     }
@@ -4936,40 +4282,37 @@ function setupAppEventListeners() {
 // ============================================================
 function setupEventListeners() {
     console.log('[UI] Setting up event listeners...');
-    
+
     // Toggle button
     if (DOM.toggleBtn) {
         DOM.toggleBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             e.preventDefault();
-            console.log('[UI] Toggle button clicked');
             toggleUI();
         });
     }
-    
+
     // Close button
     if (DOM.closeBtn) {
         DOM.closeBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             e.preventDefault();
-            console.log('[UI] Close button clicked');
             closeUI();
         });
     }
-    
+
     // Search button
     var searchBtn = document.getElementById('searchBtn');
     if (searchBtn) {
         searchBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             e.preventDefault();
-            console.log('[UI] Search button clicked');
             if (typeof window.search === 'function') {
                 window.search();
             }
         });
     }
-    
+
     // Songs tab
     var songsTab = document.getElementById('tab-songs');
     if (songsTab) {
@@ -4979,7 +4322,7 @@ function setupEventListeners() {
             switchTab('songs');
         });
     }
-    
+
     // Albums tab
     var albumsTab = document.getElementById('tab-albums');
     if (albumsTab) {
@@ -5019,6 +4362,185 @@ function setupEventListeners() {
         });
     }
 
+    // Global delegated click listener on results container
+    var results = document.getElementById('results');
+    if (results) {
+        results.addEventListener('click', function(e) {
+            var target = e.target;
+
+            // 1. Back navigation click handling
+            var backBtn =
+                target.closest('.btn-back') || (target.id === 'btn-back-search') || (target.id === 'btn-back');
+            if (backBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                var current = window.Nav.pop();
+                var prev = window.Nav.peek();
+                if (prev) {
+                    restoreView(prev);
+                } else if (typeof window.search === 'function') {
+                    window.search();
+                }
+                return;
+            }
+
+            // 2. Play button click handling
+            var playBtn = target.closest('.btn-play');
+            if (playBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                var songCard = playBtn.closest('.song-card');
+                var songData = songCard ? songCard._songData : null;
+                if (songData && typeof window.playSong === 'function') {
+                    window.playSong(songData);
+                }
+                return;
+            }
+
+            // 3. Download button click handling
+            var downloadBtn = target.closest('.btn-download');
+            if (downloadBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                var songCard = downloadBtn.closest('.song-card');
+                var songData = songCard ? songCard._songData : null;
+                if (songData && typeof window.downloadSong === 'function') {
+                    window.downloadSong(songData);
+                }
+                return;
+            }
+
+            // 4. Lyrics button click handling
+            var lyricsBtn = target.closest('.btn-lyrics');
+            if (lyricsBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                var token = lyricsBtn.dataset.token;
+                var songId = lyricsBtn.dataset.songid;
+                if (token && typeof window.showLyrics === 'function') {
+                    window.showLyrics(token, songId);
+                }
+                return;
+            }
+
+            // 5. More actions menu toggle button
+            var moreBtn = target.closest('.btn-more');
+            if (moreBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                var songId = moreBtn.dataset.songid;
+                var menu = document.getElementById('more-menu-' + songId);
+                if (menu) {
+                    document.querySelectorAll('.more-menu').forEach(function(m) {
+                        if (m.id !== 'more-menu-' + songId) {
+                            m.style.display = 'none';
+                        }
+                    });
+                    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+                }
+                return;
+            }
+
+            // 6. Action items inside the more menu
+            var moreItem = target.closest('.more-item');
+            if (moreItem) {
+                e.preventDefault();
+                e.stopPropagation();
+                var action = moreItem.dataset.action;
+                var token = moreItem.dataset.token;
+                var menu = moreItem.closest('.more-menu');
+                if (menu) menu.style.display = 'none';
+                if (action === 'album' && typeof window.viewAlbum === 'function') {
+                    window.viewAlbum(token);
+                } else if (action === 'artist' && typeof window.viewArtist === 'function') {
+                    window.viewArtist(token);
+                }
+                return;
+            }
+
+            // 7. View transition for Albums (either .album-card or its inner .btn-view-album)
+            var viewAlbumBtn = target.closest('.btn-view-album') || target.closest('.album-card');
+            if (viewAlbumBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                var token = viewAlbumBtn.dataset.token;
+                if (token && typeof window.viewAlbum === 'function') {
+                    window.viewAlbum(token);
+                }
+                return;
+            }
+
+            // 8. View transition for Playlists (either .playlist-card or its inner .btn-view-playlist)
+            var viewPlaylistBtn = target.closest('.btn-view-playlist') || target.closest('.playlist-card');
+            if (viewPlaylistBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                var token = viewPlaylistBtn.dataset.token;
+                if (token && typeof window.viewPlaylist === 'function') {
+                    window.viewPlaylist(token);
+                }
+                return;
+            }
+
+            // 9. View transition for Artists (either .artist-card or its inner .btn-view-artist)
+            var viewArtistBtn = target.closest('.btn-view-artist') || target.closest('.artist-card');
+            if (viewArtistBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                var token = viewArtistBtn.dataset.token;
+                if (token && typeof window.viewArtist === 'function') {
+                    window.viewArtist(token);
+                }
+                return;
+            }
+
+            // 10. Category switching sub-tabs in Artist detail view
+            var artistTab = target.closest('.artist-tab');
+            if (artistTab) {
+                e.preventDefault();
+                e.stopPropagation();
+                var category = artistTab.dataset.category;
+                if (typeof window.switchArtistCategory === 'function') {
+                    window.switchArtistCategory(category);
+                }
+                return;
+            }
+        });
+
+        // Global document click listener for menus and overlays closing
+        document.addEventListener('click', function(e) {
+            var target = e.target;
+
+            // Close more actions menus on outside click
+            if (!target.closest('.btn-more') && !target.closest('.more-menu')) {
+                document.querySelectorAll('.more-menu').forEach(function(m) {
+                    m.style.display = 'none';
+                });
+            }
+
+            // Close lyrics overlay on close button click
+            var lyricsCloseBtn = target.closest('#lyrics-close-btn');
+            if (lyricsCloseBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof window.closeLyricsOverlay === 'function') {
+                    window.closeLyricsOverlay();
+                }
+                return;
+            }
+
+            // Close lyrics overlay on click outside modal backdrop
+            var lyricsOverlay = document.getElementById('lyrics-overlay');
+            if (lyricsOverlay && target === lyricsOverlay) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof window.closeLyricsOverlay === 'function') {
+                    window.closeLyricsOverlay();
+                }
+            }
+        });
+    }
+
     // Keyboard shortcuts
     document.addEventListener('keydown', function(e) {
         if (e.altKey && e.key === 'j') {
@@ -5026,10 +4548,21 @@ function setupEventListeners() {
             e.stopPropagation();
             toggleUI();
         }
-        if (e.key === 'Escape' && DOM.overlay && DOM.overlay.classList.contains('active')) {
-            e.preventDefault();
-            e.stopPropagation();
-            closeUI();
+        if (e.key === 'Escape') {
+            var lyricsOverlay = document.getElementById('lyrics-overlay');
+            if (lyricsOverlay) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof window.closeLyricsOverlay === 'function') {
+                    window.closeLyricsOverlay();
+                }
+                return;
+            }
+            if (DOM.overlay && DOM.overlay.classList.contains('active')) {
+                e.preventDefault();
+                e.stopPropagation();
+                closeUI();
+            }
         }
     });
 
@@ -5042,7 +4575,7 @@ function setupEventListeners() {
 function switchTab(type) {
     console.log('[UI] Switching to tab:', type);
     window.currentSearchType = type;
-    
+
     var songsTab = document.getElementById('tab-songs');
     var albumsTab = document.getElementById('tab-albums');
     var playlistsTab = document.getElementById('tab-playlists');
@@ -5050,13 +4583,13 @@ function switchTab(type) {
     var stats = document.getElementById('stats');
     var results = document.getElementById('results');
     var player = document.getElementById('player');
-    
+
     // Remove active class from all tabs
     if (songsTab) songsTab.classList.remove('active');
     if (albumsTab) albumsTab.classList.remove('active');
     if (playlistsTab) playlistsTab.classList.remove('active');
     if (artistsTab) artistsTab.classList.remove('active');
-    
+
     // Add active class to selected tab
     if (type === 'songs' && songsTab) {
         songsTab.classList.add('active');
@@ -5067,7 +4600,7 @@ function switchTab(type) {
     } else if (type === 'artists' && artistsTab) {
         artistsTab.classList.add('active');
     }
-    
+
     // Clear results for other tabs
     if (results) results.innerHTML = '';
     if (stats) stats.innerHTML = '';
@@ -5082,13 +4615,19 @@ window.switchTab = switchTab;
 
 // Debug helper
 window.__UI_DEBUG = {
-    isOpen: function() { return isOpen; },
+    isOpen: function() {
+        return isOpen;
+    },
     toggle: toggleUI,
     open: openUI,
     close: closeUI
 };
 
-console.log('[UI] Handlers module loaded');
+// Start the application UI initialization immediately in browser context
+if (typeof window.createUI === 'function' && typeof document !== 'undefined') {
+    window.createUI();
+}
+
 console.log('[UI] Press Alt+J to toggle, or click the 🎵 button');
 
 })();
