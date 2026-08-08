@@ -16,10 +16,36 @@ function formatDuration(seconds) {
     return `${mins}:${remainingSecs.toString().padStart(2, '0')}`;
 }
 
+// Get a standard SVG vector placeholder matching the component type
+function getDefaultImage(type) {
+    var emoji = '🎵';
+    if (type === 'artist') {
+        emoji = '🎤';
+    } else if (type === 'album') {
+        emoji = '💿';
+    } else if (type === 'playlist') {
+        emoji = '🎶';
+    }
+
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">' +
+        '<rect width="200" height="200" fill="#282828"/>' +
+        '<text x="50%" y="60%" font-size="80" text-anchor="middle" dominant-baseline="middle">' + emoji +
+        '</text></svg>';
+
+    return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+}
+
+// Expose getDefaultImage to utility scope
+window.Utils = window.Utils || {};
+window.Utils.getDefaultImage = getDefaultImage;
+
 function buildCard(options) {
     var type = options.type;
     var token = options.token;
-    var image = options.image || 'https://via.placeholder.com/100';
+    var image = options.image;
+    if (!image || image.includes('placeholder.com')) {
+        image = getDefaultImage(type);
+    }
     var title = options.title || '';
     var subtitle = options.subtitle || '';
     var details = options.details || '';

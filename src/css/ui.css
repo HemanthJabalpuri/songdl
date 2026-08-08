@@ -322,6 +322,8 @@
 /* Unified grid layout for card elements in detail views */
 #ui-overlay .album-list,
 #ui-overlay .playlist-list,
+#ui-overlay .album-songs-list,
+#ui-overlay .playlist-songs-list,
 #ui-overlay .artist-songs-section .song-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

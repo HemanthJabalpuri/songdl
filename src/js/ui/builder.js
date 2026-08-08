@@ -53,13 +53,18 @@ window.createUI = function() {
 
     isInitialized = true;
 
-    waitForElements(function() {
-        setupEventListeners();
-        setupAppEventListeners();
-        console.log('[UI] UI ready');
-    });
+    // Populate DOM references synchronously
+    DOM.searchInput = document.getElementById('searchInput');
+    DOM.results = document.getElementById('results');
+    DOM.stats = document.getElementById('stats');
+    DOM.tabs = document.querySelectorAll('.tab');
+    DOM.overlay = document.getElementById('ui-overlay');
+    DOM.toggleBtn = document.getElementById('ui-toggle-btn');
+    DOM.closeBtn = document.getElementById('ui-close-btn');
 
-    console.log('[UI] UI created');
+    setupEventListeners();
+    setupAppEventListeners();
+    console.log('[UI] UI ready');
 };
 
 function toggleUI() {

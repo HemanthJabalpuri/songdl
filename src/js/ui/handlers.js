@@ -251,11 +251,37 @@ function setupEventListeners() {
             }
         });
 
-        // Hide all more menus when clicking outside
-        document.addEventListener('click', function() {
-            document.querySelectorAll('.more-menu').forEach(function(m) {
-                m.style.display = 'none';
-            });
+        // Global document click listener for menus and overlays closing
+        document.addEventListener('click', function(e) {
+            var target = e.target;
+
+            // Close more actions menus on outside click
+            if (!target.closest('.btn-more') && !target.closest('.more-menu')) {
+                document.querySelectorAll('.more-menu').forEach(function(m) {
+                    m.style.display = 'none';
+                });
+            }
+
+            // Close lyrics overlay on close button click
+            var lyricsCloseBtn = target.closest('#lyrics-close-btn');
+            if (lyricsCloseBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof window.closeLyricsOverlay === 'function') {
+                    window.closeLyricsOverlay();
+                }
+                return;
+            }
+
+            // Close lyrics overlay on click outside modal backdrop
+            var lyricsOverlay = document.getElementById('lyrics-overlay');
+            if (lyricsOverlay && target === lyricsOverlay) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof window.closeLyricsOverlay === 'function') {
+                    window.closeLyricsOverlay();
+                }
+            }
         });
     }
 
@@ -266,10 +292,21 @@ function setupEventListeners() {
             e.stopPropagation();
             toggleUI();
         }
-        if (e.key === 'Escape' && DOM.overlay && DOM.overlay.classList.contains('active')) {
-            e.preventDefault();
-            e.stopPropagation();
-            closeUI();
+        if (e.key === 'Escape') {
+            var lyricsOverlay = document.getElementById('lyrics-overlay');
+            if (lyricsOverlay) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof window.closeLyricsOverlay === 'function') {
+                    window.closeLyricsOverlay();
+                }
+                return;
+            }
+            if (DOM.overlay && DOM.overlay.classList.contains('active')) {
+                e.preventDefault();
+                e.stopPropagation();
+                closeUI();
+            }
         }
     });
 
@@ -329,5 +366,10 @@ window.__UI_DEBUG = {
     open: openUI,
     close: closeUI
 };
+
+// Start the application UI initialization immediately in browser context
+if (typeof window.createUI === 'function' && typeof document !== 'undefined') {
+    window.createUI();
+}
 
 console.log('[UI] Press Alt+J to toggle, or click the 🎵 button');

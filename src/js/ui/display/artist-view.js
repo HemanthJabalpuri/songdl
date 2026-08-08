@@ -28,9 +28,14 @@ function renderHeader(artist) {
         }
     }
 
+    var image = artist.image;
+    if (!image || image.includes('placeholder.com')) {
+        image = window.Utils.getDefaultImage('artist');
+    }
+
     var html = `
         <div class="artist-header">
-            <img src="${artist.image || 'https://via.placeholder.com/200'}" alt="${artist.name}" />
+            <img src="${image}" alt="${artist.name}" />
             <div class="artist-header-info">
                 <h2>${escapeHtml(artist.name)} ${artist.isVerified ? '✅' : ''}</h2>
                 <p>${escapeHtml(artist.subtitle || '')}</p>

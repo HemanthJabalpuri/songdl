@@ -82,7 +82,6 @@ Refactored/
                 └── navigation.js        # Restore views from stack data
 ```
 
-
 ### Module Responsibilities
 
 | Folder | Responsibility | Examples |

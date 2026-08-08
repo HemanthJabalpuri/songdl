@@ -125,9 +125,13 @@ function showPlaylistLoadMoreButton() {
 
 // ============ RENDER PLAYLIST ============
 function renderPlaylist(playlist) {
+    var image = playlist.image;
+    if (!image || image.includes('placeholder.com')) {
+        image = window.Utils.getDefaultImage('playlist');
+    }
     var html = `
         <div class="playlist-header">
-            <img src="${playlist.image || 'https://via.placeholder.com/200'}" alt="${playlist.title}" />
+            <img src="${image}" alt="${playlist.title}" />
             <div class="playlist-header-info">
                 <h2>${escapeHtml(playlist.title)}</h2>
                 <p>${escapeHtml(playlist.subtitle || '')}</p>
@@ -139,7 +143,7 @@ function renderPlaylist(playlist) {
                 </div>
             </div>
         </div>
-        <div class="song-list">
+        <div class="song-list playlist-songs-list">
     `;
 
     var playlistContext = {

@@ -6,7 +6,10 @@ function createSongCard(song, index, context) {
     var songId = song.id || song.token || 'song-' + (index || 0);
     var playCount = song.play_count ? parseInt(song.play_count).toLocaleString() : '0';
     var duration = formatDuration(song.duration || song.more_info?.duration);
-    var image = song.image || (context && context.image ? context.image : 'https://via.placeholder.com/80');
+    var image = song.image || (context && context.image ? context.image : '');
+    if (!image || image.includes('placeholder.com')) {
+        image = window.Utils.getDefaultImage('song');
+    }
     var contextLanguage = context ? context.language : '';
     var contextYear = context ? context.year : '';
     var titlePrefix = (index !== undefined && context) ? (index + 1) + '. ' : '';

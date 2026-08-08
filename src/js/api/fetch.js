@@ -9,7 +9,9 @@ window.API._fetchAPI = function(url, options) {
     // Proxy mode (local development)
     if (window.isProxy) {
         console.log('[API] Using proxy for:', url.substring(0, 60) + '...');
-        return fetch('/proxy', {
+        var proxyEndpoint =
+            (typeof window !== 'undefined' && window.location) ? '/proxy' : 'http://localhost:3000/proxy';
+        return fetch(proxyEndpoint, {
                    method: 'POST',
                    headers: {
                        'X-Proxy-URL': url,

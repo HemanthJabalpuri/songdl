@@ -103,35 +103,7 @@ var DOM = {
     closeBtn: null,
 };
 
-// WAIT FOR DOM ELEMENTS
-function waitForElements(callback, retries) {
-    retries = retries || 0;
-
-    DOM.searchInput = document.getElementById('searchInput');
-    DOM.results = document.getElementById('results');
-    DOM.stats = document.getElementById('stats');
-    DOM.tabs = document.querySelectorAll('.tab');
-    DOM.overlay = document.getElementById('ui-overlay');
-    DOM.toggleBtn = document.getElementById('ui-toggle-btn');
-    DOM.closeBtn = document.getElementById('ui-close-btn');
-
-    if (DOM.searchInput && DOM.results && DOM.overlay) {
-        console.log('[UI] DOM elements found');
-        callback();
-        return;
-    }
-
-    if (retries > 30) {
-        console.warn('[UI] DOM elements not found after 3 seconds');
-        callback();
-        return;
-    }
-
-    setTimeout(function() {
-        waitForElements(callback, retries + 1);
-    }, 100);
-}
-
+// Prefill search query if current tab URL matches a platform item
 function detectAndPrefillUrl() {
     var searchInput = document.getElementById('searchInput');
     if (!searchInput) return;
@@ -143,6 +115,7 @@ function detectAndPrefillUrl() {
     }
 }
 
+// Close overlay Dialog panel
 function closeUI() {
     console.log('[UI] closeUI called');
 
@@ -161,29 +134,6 @@ function closeUI() {
     console.log('[UI] Closed');
 }
 
-// EXPOSE
+// Expose variables
 window.DOM = DOM;
-window.waitForElements = waitForElements;
 window.closeUI = closeUI;
-
-// FORCE INIT
-(function forceInit() {
-    console.log('[UI] Force init...');
-
-    if (typeof window.createUI === 'function') {
-        window.createUI();
-        return;
-    }
-
-    setTimeout(function() {
-        if (typeof window.createUI === 'function') {
-            window.createUI();
-            return;
-        }
-        setTimeout(function() {
-            if (typeof window.createUI === 'function') {
-                window.createUI();
-            }
-        }, 500);
-    }, 200);
-})();

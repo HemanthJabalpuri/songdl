@@ -79,33 +79,6 @@ ${lyricsText}
     `;
 
     document.body.appendChild(overlay);
-
-    // Close button event listener
-    var closeBtn = document.getElementById('lyrics-close-btn');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', function() {
-            closeLyricsOverlay();
-        });
-    }
-
-    // Click outside to close
-    overlay.addEventListener('click', function(e) {
-        if (e.target === overlay) {
-            closeLyricsOverlay();
-        }
-    });
-
-    // ESC key to close (using a single listener)
-    var escHandler = function(e) {
-        if (e.key === 'Escape') {
-            var overlayEl = document.getElementById('lyrics-overlay');
-            if (overlayEl) {
-                closeLyricsOverlay();
-                document.removeEventListener('keydown', escHandler);
-            }
-        }
-    };
-    document.addEventListener('keydown', escHandler);
 }
 
 function closeLyricsOverlay() {

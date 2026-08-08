@@ -36,7 +36,7 @@ function getScriptFilesFromHTML() {
 
 function build() {
     console.log('========================================');
-    console.log('📦 Building Tampermonkey Userscript');
+    console.log('📦 Building Userscript');
     console.log('========================================\n');
 
     if (!fs.existsSync(OUTPUT_DIR)) {
@@ -77,6 +77,7 @@ function build() {
 (function() {
     'use strict';
     
+
     console.log('[Userscript] Song Downloader loaded');
     console.log('[Userscript] Click the 🎵 button or press Alt+J to open');
     

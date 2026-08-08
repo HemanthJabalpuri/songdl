@@ -2,9 +2,13 @@
 
 // Extract rendering logic to a separate function
 function renderAlbum(album) {
+    var image = album.image;
+    if (!image || image.includes('placeholder.com')) {
+        image = window.Utils.getDefaultImage('album');
+    }
     var html = `
         <div class="album-header">
-            <img src="${album.image || 'https://via.placeholder.com/200'}" alt="${album.title}" />
+            <img src="${image}" alt="${album.title}" />
             <div class="album-header-info">
                 <h2>${escapeHtml(album.title)}</h2>
                 <p>${escapeHtml(album.subtitle || '')}</p>
@@ -15,7 +19,7 @@ function renderAlbum(album) {
                 </div>
             </div>
         </div>
-        <div class="song-list">
+        <div class="song-list album-songs-list">
     `;
 
     var albumContext =
