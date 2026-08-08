@@ -81,7 +81,7 @@ Refactored/
                 ├── lyrics.js            # Render lyrics overlays
                 └── navigation.js        # Restore views from stack data
 ```
-```
+
 
 ### Module Responsibilities
 
