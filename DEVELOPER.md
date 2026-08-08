@@ -12,12 +12,12 @@
 - Quality selection (12, 48, 96, 160, 320 kbps)
 - Lyrics fetching and embedding
 - URL detection (paste song/album/lyrics URLs)
-- Cross-platform: Userscript, Browser (split/bundle), Node.js (proxy only)
+- Cross-platform: Userscript browser extension OR standalone Node.js CLI tool
 
 ### Target Environment
-- **Primary:** Firefox Android + Violentmonkey
+- **Primary:** Firefox Android + Violentmonkey (or Chrome Desktop + Tampermonkey)
 - **Development:** Any modern browser with Node.js server
-- **Testing:** Browser with bundled userscript
+- **Command-Line:** Terminal shell with Node.js v22+
 
 ---
 
@@ -30,8 +30,17 @@ Refactored/
 ├── build.js                 # Build script for userscript generation
 ├── server.js                # Development server with CORS proxy
 ├── package.json             # Dependencies and scripts
+├── songdl-cli.js            # Node CLI tool runner
+├── run-tests.js             # Test runner orchestrator
 ├── dist/                    # Build output
 │   └── song-downloader.user.js
+├── tests/                   # Automated unit testing suite
+│   ├── bootstrap.js         # Loads split scripts in Node globally
+│   ├── mock-fetch.js        # Mocks global.fetch in-memory during tests
+│   ├── url-helper.test.js   # Tests for URL parsing
+│   ├── decrypt.test.js      # Tests for DES decryption
+│   ├── formatters.test.js   # Tests for data formatters keys/types
+│   └── services.test.js     # Tests for services API operations
 └── src/                     # Source code (served as root in dev)
     ├── index.html           # Main HTML (split mode) + script order
     ├── css/
@@ -153,6 +162,16 @@ Installed in Violentmonkey on supported music platform
 - Uses `GM_xmlhttpRequest` for cross-origin requests
 - `window.isProxy` is `undefined` (falls through to GM)
 
+### CLI Mode (Terminal Developer Tool)
+```
+node songdl-cli.js [--mock] [command]
+```
+- Fits developers running queries or automated checks inside terminal shells (Node.js v22+ required).
+- Dynamic in-memory script loader parser translates index scripts directly from `/src/js/` sources (no userscript compiling needed).
+- Direct connections: If `--mock` is not defined, query calls bypass the local proxy server entirely and connect directly to the target platform HTTPS API (since Node has no browser CORS restrictions).
+- In-memory mock mapping: If `--mock` is present, it intercepts global raw fetch calls in-process, querying `mock-server.js` offline and reading assets directly from disk (0% ports or TCP sockets used).
+- Outputs `.m4a` audio files directly inside the `/downloads` folder.
+
 ---
 
 ## How to Build and Run
@@ -164,11 +183,43 @@ node build.js
 # Start development server
 node server.js
 
+# Run automated tests
+node run-tests.js
+
+# Run CLI commands (with mock)
+node songdl-cli.js --mock search songs jingle
+
 # Test modes:
 # Split mode: http://localhost:3000/
 # Bundle mode: http://localhost:3000/bundle
 # Userscript: Install dist/song-downloader.user.js in Violentmonkey
 ```
+
+---
+
+## Automated Testing
+
+The project includes a robust, modular automated testing suite located in the `/tests` directory that runs natively in Node.js (version 22+) without requiring any external testing packages (like Jest or Mocha).
+
+To run the entire test suite, execute:
+```bash
+node run-tests.js
+```
+
+### Testing Architecture
+
+- **[tests/bootstrap.js](./tests/bootstrap.js)**: Dynamically parses the scripts list from `src/index.html`, reads their split contents, and executes them globally inside a single V8 context sandbox using `new Function()()`. This guarantees the tests always evaluate the latest modifications in `src/js/` without needing userscript build steps.
+- **[tests/mock-fetch.js](./tests/mock-fetch.js)**: Intercepts `global.fetch` calls:
+  - Proxy requests (`/proxy`) are routed programmatically to `mock-server.js`'s request handler in-memory.
+  - CDN media files are routed to filesystem readers, loading assets directly from the `mock/assets/` directory.
+  This allows tests to run fully offline without opening network ports or firing TCP sockets.
+
+### Test Specifications
+
+1. **URL helper ([`tests/url-helper.test.js`](./tests/url-helper.test.js))**: Validates token and format parsing across songs, albums, playlists, and artists URLs.
+2. **Decryption ([`tests/decrypt.test.js`](./tests/decrypt.test.js))**: Validates the cryptographic DES decryption maths on a mock song record.
+3. **Formatters ([`tests/formatters.test.js`](./tests/formatters.test.js))**: Strictly asserts keys and output data types (strings, arrays, booleans) returned by all 5 platform formatters, preventing runtime UI template crashes.
+4. **Services ([`tests/services.test.js`](./tests/services.test.js))**: Validates high-level business logic workflows (decrypted URLs, lyric formatting, track search) offline using mock fetch intercepts.
 
 ---
 

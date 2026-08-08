@@ -1,12 +1,18 @@
 #!/usr/bin/env node
 
-// src/js/node-loader.js
-
 const fs = require('fs');
 const path = require('path');
 
+// Parse command line arguments at startup
+const args = process.argv.slice(2);
+const mockIndex = args.indexOf('--mock');
+const isMockEnabled = mockIndex !== -1;
+if (isMockEnabled) {
+    args.splice(mockIndex, 1);
+}
+
 // Configure global mock objects for Node environments
-global.isProxy = true;
+global.isProxy = isMockEnabled;
 global.document = undefined;
 
 // Prepend Node.js safety wrapper
@@ -35,19 +41,16 @@ try {
     process.exit(1);
 }
 
-// Override browser download dumper to write decrypted M4A files to local disk
+// Override browser download dumper to write decrypted M4A files to local downloads folder
 window.Utils.downloadFile = function(data, filename) {
-    fs.writeFileSync(filename, Buffer.from(data));
-    console.log(`\n💾 Saved: ${filename} (${(data.length / 1024 / 1024).toFixed(2)} MB)`);
+    const downloadDir = path.join(__dirname, 'downloads');
+    if (!fs.existsSync(downloadDir)) {
+        fs.mkdirSync(downloadDir);
+    }
+    const outputPath = path.join(downloadDir, filename);
+    fs.writeFileSync(outputPath, Buffer.from(data));
+    console.log(`\n💾 Saved: downloads/${filename} (${(data.length / 1024 / 1024).toFixed(2)} MB)`);
 };
-
-// Parse command line arguments
-const args = process.argv.slice(2);
-const mockIndex = args.indexOf('--mock');
-const isMockEnabled = mockIndex !== -1;
-if (isMockEnabled) {
-    args.splice(mockIndex, 1);
-}
 
 // Set up in-memory mock server routing if --mock flag is present
 if (isMockEnabled) {
@@ -110,8 +113,10 @@ const command = args[0];
 
 if (!command || command === '--help' || command === '-h') {
     console.log('Usage:');
-    console.log('  node songdl-cli.js [--mock] search <type> <query>   # Type: songs|albums|playlists|artists');
-    console.log('  node songdl-cli.js [--mock] download <token>        # Download a song by token');
+    console.log(
+        '  node songdl-cli.js [--mock] search <type> <query>             # Type: songs|albums|playlists|artists');
+    console.log('  node songdl-cli.js [--mock] details [type] <url|token>        # View tracklists & details');
+    console.log('  node songdl-cli.js [--mock] download [type] <url|token> [-y]  # Type optional, defaults to song');
     process.exit(0);
 }
 
@@ -148,10 +153,26 @@ if (command === 'search') {
             console.log('\nResults:');
             if (data.results && data.results.length > 0) {
                 data.results.forEach((item, i) => {
-                    console.log(`[${i + 1}] ${item.title || item.name}`);
+                    console.log(`[${i + 1}] ${item.title || item.name || 'Unknown'}`);
+
+                    if (type === 'songs') {
+                        if (item.subtitle) console.log(`    Artist/Subtitle: ${item.subtitle}`);
+                        if (item.more_info?.album) console.log(`    Album: ${item.more_info.album}`);
+                        console.log(`    Language: ${item.language || 'N/A'} | Year: ${item.year || 'N/A'} | Plays: ${
+                            parseInt(item.play_count || 0).toLocaleString()}`);
+                    } else if (type === 'albums') {
+                        if (item.subtitle) console.log(`    Artist: ${item.subtitle}`);
+                        console.log(`    Tracks: ${item.more_info?.song_count || 0} | Year: ${
+                            item.year || 'N/A'} | Language: ${item.language || 'N/A'}`);
+                    } else if (type === 'playlists') {
+                        if (item.subtitle) console.log(`    Detail/Subtitle: ${item.subtitle}`);
+                        console.log(
+                            `    Tracks: ${item.more_info?.song_count || 0} | Language: ${item.language || 'N/A'}`);
+                    } else if (type === 'artists') {
+                        if (item.role) console.log(`    Role: ${item.role}`);
+                    }
+
                     console.log(`    Token: ${item.token}`);
-                    if (item.artist) console.log(`    Artist: ${item.artist}`);
-                    if (item.songs) console.log(`    Tracks Count: ${item.songs.length}`);
                 });
             } else {
                 console.log('No results found.');
@@ -162,21 +183,203 @@ if (command === 'search') {
         });
 
 } else if (command === 'download') {
-    const token = args[1];
-    if (!token) {
-        console.error('Error: Please provide a track token.');
+    const inputArg1 = args[1];  // Could be type (song/album/playlist) OR url OR token
+    const inputArg2 = args[2];  // Could be token OR -y flag
+
+    if (!inputArg1) {
+        console.error('Error: Please provide a token, platform URL, or type parameter.');
         process.exit(1);
     }
 
-    console.log(`Fetching track details for token: ${token}...`);
-    Services.Song.getDecrypted(token)
-        .then(async song => {
-            console.log(`Starting download for: ${song.title} - ${song.artist}`);
+    // Check for auto-approve flag anywhere in arguments list
+    const hasYesFlag =
+        args.includes('-y') || args.includes('--yes') || process.argv.includes('-y') || process.argv.includes('--yes');
+
+    const supportedTypes = ['song', 'album', 'playlist'];
+    let type = 'song';
+    let token = '';
+
+    if (supportedTypes.includes(inputArg1)) {
+        type = inputArg1;
+        token = inputArg2;
+        if (!token || token.startsWith('-')) {
+            console.error('Error: Please provide a token after the type.');
+            process.exit(1);
+        }
+    } else {
+        token = inputArg1;
+        if (token.startsWith('http://') || token.startsWith('https://')) {
+            const parsed = window.Utils.parseUrl(token);
+            if (parsed) {
+                type = parsed.type;
+                token = parsed.token;
+                console.log(`[CLI] Resolved URL: type=${type}, token=${token}`);
+            } else {
+                console.warn('[CLI] Warning: URL could not be parsed. Defaulting to type=song.');
+            }
+        }
+    }
+
+    // Interactive downloads runner
+    async function startDownload() {
+        if (type === 'song') {
+            console.log(`Fetching track details for token: ${token}...`);
+            const song = await Services.Song.getDecrypted(token);
+            console.log(`Starting download: ${song.title} - ${song.artist}`);
             await Services.Download.songFromData(song);
-        })
-        .catch(err => {
-            console.error('Error: Download failed:', err);
-        });
+        } else if (type === 'album') {
+            console.log(`Fetching album details for token: ${token}...`);
+            const album = await Services.Album.getDetails(token);
+            const count = album.songs.length;
+            console.log(`Album: "${album.title}" contains ${count} tracks.`);
+
+            if (count > 3 && !hasYesFlag) {
+                const proceed = await askConfirmation(`Proceed with downloading ${count} songs? (y/N): `);
+                if (!proceed) {
+                    console.log('Cancelled.');
+                    process.exit(0);
+                }
+            }
+
+            for (let i = 0; i < count; i++) {
+                const song = album.songs[i];
+                console.log(`\n[${i + 1}/${count}] Fetching: ${song.title}`);
+                try {
+                    const decryptedSong = await Services.Song.getDecrypted(song.token);
+                    await Services.Download.songFromData(decryptedSong);
+                } catch (e) {
+                    console.error(`❌ Failed to download track "${song.title}":`, e.message);
+                }
+            }
+        } else if (type === 'playlist') {
+            console.log(`Fetching playlist details for token: ${token}...`);
+            const playlist = await Services.Playlist.getDetails(token, 1, 50);
+            const count = playlist.songs.length;
+            console.log(`Playlist: "${playlist.title}" contains ${count} tracks.`);
+
+            if (count > 3 && !hasYesFlag) {
+                const proceed = await askConfirmation(`Proceed with downloading ${count} songs? (y/N): `);
+                if (!proceed) {
+                    console.log('Cancelled.');
+                    process.exit(0);
+                }
+            }
+
+            for (let i = 0; i < count; i++) {
+                const song = playlist.songs[i];
+                console.log(`\n[${i + 1}/${count}] Fetching: ${song.title}`);
+                try {
+                    const decryptedSong = await Services.Song.getDecrypted(song.token);
+                    await Services.Download.songFromData(decryptedSong);
+                } catch (e) {
+                    console.error(`❌ Failed to download track "${song.title}":`, e.message);
+                }
+            }
+        } else {
+            console.error(`Error: Dynamic downloads not supported for type "${type}".`);
+            process.exit(1);
+        }
+    }
+
+    startDownload().catch(err => {
+        console.error('Error: Download task failed:', err);
+    });
+} else if (command === 'details') {
+    const inputArg1 = args[1];  // type OR url OR token
+    const inputArg2 = args[2];  // token
+
+    if (!inputArg1) {
+        console.error('Error: Please provide a token, platform URL, or type parameter.');
+        process.exit(1);
+    }
+
+    const supportedTypes = ['song', 'album', 'playlist', 'artist'];
+    let type = '';
+    let token = '';
+
+    if (supportedTypes.includes(inputArg1)) {
+        type = inputArg1;
+        token = inputArg2;
+        if (!token) {
+            console.error('Error: Please provide a token after the type.');
+            process.exit(1);
+        }
+    } else {
+        token = inputArg1;
+        if (token.startsWith('http://') || token.startsWith('https://')) {
+            const parsed = window.Utils.parseUrl(token);
+            if (parsed) {
+                type = parsed.type;
+                token = parsed.token;
+                console.log(`[CLI] Resolved URL: type=${type}, token=${token}`);
+            } else {
+                console.warn('[CLI] Warning: URL could not be parsed. Defaulting to type=song.');
+                type = 'song';
+            }
+        } else {
+            type = 'song';
+        }
+    }
+
+    async function showDetails() {
+        if (type === 'song') {
+            console.log(`Fetching track details for token: ${token}...`);
+            const song = await Services.Song.getDecrypted(token);
+            console.log(`\n🎵 Song: ${song.title}`);
+            console.log(`    Artist: ${song.artist}`);
+            console.log(`    Album: ${song.album || 'N/A'}`);
+            console.log(`    Year: ${song.year || 'N/A'} | Language: ${song.language || 'N/A'}`);
+            console.log(`    Lyrics: ${song.has_lyrics ? 'Yes' : 'No'}`);
+            console.log(`    Token: ${song.token}`);
+        } else if (type === 'album') {
+            console.log(`Fetching album details for token: ${token}...`);
+            const album = await Services.Album.getDetails(token);
+            console.log(`\n📀 Album: ${album.title}`);
+            console.log(`    Artist/Subtitle: ${album.subtitle || 'N/A'}`);
+            console.log(`    Language: ${album.language || 'N/A'} | Year: ${album.year || 'N/A'} | Tracks: ${
+                album.songs.length}`);
+            console.log('\nTracklist:');
+            album.songs.forEach((song, i) => {
+                console.log(`  [${i + 1}] ${song.title}`);
+                console.log(`      Token: ${song.token}`);
+            });
+        } else if (type === 'playlist') {
+            console.log(`Fetching playlist details for token: ${token}...`);
+            const playlist = await Services.Playlist.getDetails(token, 1, 50);
+            console.log(`\n🎶 Playlist: ${playlist.title}`);
+            console.log(`    Description: ${playlist.description || 'N/A'}`);
+            console.log(`    Language: ${playlist.language || 'N/A'} | Tracks Available: ${playlist.songs.length}`);
+            console.log('\nTracklist:');
+            playlist.songs.forEach((song, i) => {
+                console.log(`  [${i + 1}] ${song.title} (${song.subtitle || 'N/A'})`);
+                console.log(`      Token: ${song.token}`);
+            });
+        } else if (type === 'artist') {
+            console.log(`Fetching artist details for token: ${token}...`);
+            const artist = await Services.Artist.getDetails(token);
+            console.log(`\n🎤 Artist: ${artist.name} ${artist.isVerified ? '✅' : ''}`);
+            console.log(`    Biography: ${artist.bio || 'N/A'}`);
+            console.log('\nPopular Songs:');
+            artist.songs.slice(0, 10).forEach((song, i) => {
+                console.log(`  [${i + 1}] ${song.title}`);
+                console.log(`      Token: ${song.token}`);
+            });
+            if (artist.albums && artist.albums.length > 0) {
+                console.log('\nAlbums:');
+                artist.albums.slice(0, 5).forEach((album, i) => {
+                    console.log(`  [${i + 1}] ${album.title} (${album.year || 'N/A'})`);
+                    console.log(`      Token: ${album.token}`);
+                });
+            }
+        } else {
+            console.error(`Error: Details view not supported for type "${type}".`);
+            process.exit(1);
+        }
+    }
+
+    showDetails().catch(err => {
+        console.error('Error: Details lookup failed:', err);
+    });
 } else {
     console.error(`Error: Unknown command "${command}". Use search or download.`);
     process.exit(1);

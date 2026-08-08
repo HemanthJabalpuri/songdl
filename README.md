@@ -125,6 +125,31 @@ All audio files, decryptions, search pages, and details records are stored in a 
 
 ---
 
+## Command-Line Interface (CLI Tool)
+
+The project includes an isomorphic CLI tool (`songdl-cli.js`) which allows developers to run searches, view detail tracklists, and download songs directly from the terminal.
+
+### Usage Syntax
+```bash
+# View help
+node songdl-cli.js --help
+
+# Search for music (songs, albums, playlists, artists)
+node songdl-cli.js search songs "query text"
+
+# View track listings and tokens
+node songdl-cli.js details album mock_album_001
+
+# Download a song, album, or playlist (confines matches to /downloads subdirectory)
+node songdl-cli.js download album mock_album_001 -y
+```
+
+### Modes
+- **Direct Live Mode (Default)**: Since Node.js does not enforce browser CORS constraints, running without `--mock` will query and download directly from the live platform CDN. No local running servers are required!
+- **In-Memory Mock Mode**: Adding a `--mock` flag (e.g. `node songdl-cli.js --mock search songs jingle`) intercepts network calls in-memory, querying mock database registries and local assets offline.
+
+---
+
 ## Disclaimer
 
 - ⚠️ **For personal use only** - This tool is for learning and personal enjoyment

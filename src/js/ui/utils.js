@@ -114,4 +114,6 @@ function createArtistCard(artist) {
 }
 
 // Expose card creators to global window scope
+window.Utils = window.Utils || {};
+window.Utils.formatDuration = formatDuration;
 window.createArtistCard = createArtistCard;
