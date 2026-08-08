@@ -91,7 +91,7 @@ function generateArtist(index, prefix) {
         name: name,
         image: 'http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg',
         bio: name + ' is a talented ' + genre + ' artist. They have released several hit songs and albums over the years.',
-        perma_url: 'https://music.example.com/artist/artist-' + (index + 1) + '/' + token,
+        perma_url: 'https://www.mymusic.com/artist/artist-' + (index + 1) + '/' + token,
         token: token
     };
 }
@@ -110,7 +110,7 @@ function pickRandomArtists(count) {
 }
 
 // ============ SONG GENERATION ============
-function generateSong(albumId, albumTitle, globalIndex, prefix, artistIds) {
+function generateSong(albumId, albumToken, albumTitle, globalIndex, prefix, artistIds) {
     var id = generateRandomId();
     var token = generateToken(prefix);
     var hasLyrics = getHasLyrics();
@@ -140,7 +140,7 @@ function generateSong(albumId, albumTitle, globalIndex, prefix, artistIds) {
         subtitle: primaryArtists.map(function(a) { return a.name; }).join(', '),
         header_desc: '',
         type: 'song',
-        perma_url: 'https://music.example.com/song/' + prefix + '-song-' + (globalIndex + 1) + '/' + token,
+        perma_url: 'https://www.mymusic.com/song/' + prefix + '-song-' + (globalIndex + 1) + '/' + token,
         image: 'http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg',
         language: language,
         year: year,
@@ -162,7 +162,7 @@ function generateSong(albumId, albumTitle, globalIndex, prefix, artistIds) {
             encrypted_cache_url: '',
             encrypted_drm_cache_url: '',
             encrypted_drm_media_url: '',
-            album_url: 'https://music.example.com/album/' + prefix + '-album-' + (globalIndex + 1) + '/' + albumId,
+            album_url: 'https://www.mymusic.com/album/' + prefix + '-album-' + (globalIndex + 1) + '/' + albumToken,
             duration: duration,
             rights: {
                 code: '0',
@@ -240,7 +240,7 @@ function generateAlbums(count, prefix) {
         var songs = [];
         
         for (var j = 0; j < songCount; j++) {
-            var result = generateSong(id, albumTitle, globalSongIndex, prefix, artists.map(function(a) { return a.id; }));
+            var result = generateSong(id, token, albumTitle, globalSongIndex, prefix, artists.map(function(a) { return a.id; }));
             songs.push(result.song);
             allSongs.push(result.song);
             if (result.lyrics) {
@@ -258,7 +258,7 @@ function generateAlbums(count, prefix) {
             subtitle: artistName,
             header_desc: songCount + ' songs from various artists',
             type: 'album',
-            perma_url: 'https://music.example.com/album/' + prefix + '-album-' + (i + 1) + '/' + token,
+            perma_url: 'https://www.mymusic.com/album/' + prefix + '-album-' + (i + 1) + '/' + token,
             image: 'http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg',
             language: getLanguage(),
             year: getYear(),
@@ -310,7 +310,7 @@ function generateAlbums(count, prefix) {
             subtitle: artistName,
             header_desc: '',
             type: 'album',
-            perma_url: 'https://music.example.com/album/' + prefix + '-album-' + (i + 1) + '/' + token,
+            perma_url: 'https://www.mymusic.com/album/' + prefix + '-album-' + (i + 1) + '/' + token,
             image: 'http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg',
             language: getLanguage(),
             year: getYear(),
@@ -401,7 +401,7 @@ function generatePlaylists(count, prefix, songPool) {
             subtitle: songCount + ' Songs',
             header_desc: '',
             type: 'playlist',
-            perma_url: 'https://music.example.com/featured/' + prefix + '-playlist-' + (i + 1) + '/' + token,
+            perma_url: 'https://www.mymusic.com/featured/' + prefix + '-playlist-' + (i + 1) + '/' + token,
             image: 'http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg',
             language: getLanguage(),
             year: '',
@@ -440,7 +440,7 @@ function generatePlaylists(count, prefix, songPool) {
                         role: 'music',
                         image: '',
                         type: 'artist',
-                        perma_url: 'https://music.example.com/artist/artist-' + (i + 1) + '/' + generateToken(prefix)
+                        perma_url: 'https://www.mymusic.com/artist/artist-' + (i + 1) + '/' + generateToken(prefix)
                     }
                 ],
                 subtitle_desc: [
@@ -463,7 +463,7 @@ function generatePlaylists(count, prefix, songPool) {
             subtitle: songCount + ' Songs',
             type: 'playlist',
             image: 'http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg',
-            perma_url: 'https://music.example.com/featured/' + prefix + '-playlist-' + (i + 1) + '/' + token,
+            perma_url: 'https://www.mymusic.com/featured/' + prefix + '-playlist-' + (i + 1) + '/' + token,
             more_info: {
                 uid: 'mock_user',
                 firstname: 'Mock',
