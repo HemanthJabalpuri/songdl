@@ -1,12 +1,12 @@
 # 🎵 Song Downloader
 
-Download songs from supported music platform with full metadata, right in your browser.
+Download songs, albums, artists, and playlists from supported music platform with full metadata, right in your browser.
 
 ---
 
 ## Why This Exists
 
-I built this project mainly to learn JavaScript and practice pair programming with GenAI (DeepSeek). The entire development was done on Android, proving that you can build serious projects on mobile.
+I built this project mainly to learn JavaScript and practice pair programming with GenAI (DeepSeek and Gemini). The entire development was done on Android, proving that you can build serious projects on mobile.
 
 This userscript solves common problems:
 - ✅ **No server needed** - Runs entirely in your browser
@@ -16,15 +16,20 @@ This userscript solves common problems:
 
 ## Features
 
-- 🔍 **Search** - Find songs and albums
+- 🔍 **Search** - Find songs, albums, playlists, and artists
 - ⬇️ **Download** - Save songs with full metadata (M4A format)
 - 📜 **Lyrics** - View and embed lyrics (when available)
 - 🎵 **Player** - Listen to songs right in the UI
 - 🎚️ **Quality** - Choose from 12, 48, 96, 160, 320 kbps
-- 🔗 **URL Detection** - Paste any supported music platform URL or open UI on a song/album page and it's auto-filled
-- 💿 **Album Downloads** - Download entire albums at once
+- 🔗 **URL Detection** - Paste any supported music platform URL (song, album, playlist, artist) and the UI resolves it automatically
+- 📀 **Details Views**:
+  - **Albums**: View tracklists and download individual tracks or the entire album at once.
+  - **Playlists**: View curations and download tracks with dynamic "Load More" pagination support.
+  - **Artists**: Explore artist details, switch between Popular and Latest tabs, and load more relative songs/albums.
 - 🖼️ **Album Art** - Embedded in downloaded files
 - 🏷️ **Full Metadata** - Title, artist, album, year, genre, lyrics, cover art
+- ⚡ **Unified Session Cache** - Instant loading of previously fetched tracks and search results.
+- 🧭 **Navigation History Memory** - Back and forward navigation stack that recalls exact scroll settings and pagination pages.
 
 ---
 
@@ -51,9 +56,9 @@ This userscript solves common problems:
 - Or press **Alt+J** on your keyboard
 
 ### Searching
-1. Type a song or album name in the search box
+1. Type a song, album, playlist, or artist name in the search box
 2. Click the **Search** button
-3. Switch between **Songs** and **Albums** tabs
+3. Switch between **Songs**, **Albums**, **Playlists**, and **Artists** tabs
 
 ### Playing
 - Click the **▶ Play** button on any song
@@ -63,7 +68,7 @@ This userscript solves common problems:
 ### Downloading
 - Click the **⬇ Download** button on any song
 - The song downloads with full metadata (M4A format)
-- Album downloads: Click **View Album** → Download individual songs
+- Album downloads: Click **View Album** → Download individual songs or the whole list
 
 ### Quality Selection
 - Use the **Quality** dropdown in the header
@@ -78,19 +83,23 @@ This userscript solves common problems:
 
 ### URL Detection
 - **Paste any supported music platform URL** in the search box:
-  - Song URL: `https://supported music platform/song/...`
-  - Album URL: `https://supported music platform/album/...`
-  - Lyrics URL: `https://supported music platform/lyrics/...`
+  - Song URL: `https://www.mymusic.com/song/...`
+  - Album URL: `https://www.mymusic.com/album/...`
+  - Playlist URL: `https://www.mymusic.com/featured/...`
+  - Artist URL: `https://www.mymusic.com/artist/...`
 - **Auto-detect:** If you're on a song/album page and open the UI, the URL is auto-filled
 
 ---
 
-## What Happens on Song/Album Pages
+## Technical Details
 
-When you're on a supported music platform song or album page and open the UI:
-- The URL is automatically prefilled in the search box
-- Click **Search** to load the song/album
-- No need to copy-paste URLs manually
+### Navigation History Memory
+The client maintains a local navigation history stack:
+- **Back Button**: Restores previous views instantly.
+- **State Preservation**: Persists loaded pages and quality settings, avoiding redundant backend requests when navigating between cards.
+
+### Unified caching
+All audio files, decryptions, search pages, and details records are stored in a unified session cache (`window.Cache`). This guarantees instantaneous transitions back and forth.
 
 ---
 
@@ -126,7 +135,7 @@ When you're on a supported music platform song or album page and open the UI:
 
 ## Built With
 
-- 💻 **DeepSeek** - AI pair programming
+- 💻 **DeepSeek & Gemini** - AI pair programming
 - 📱 **Android** - Entirely developed on mobile
 - 🟢 **JavaScript** - Vanilla JS, no frameworks
 

@@ -41,9 +41,12 @@ Refactored/
         │   ├── constants.js # API endpoints, headers, defaults
         │   ├── fetch.js     # Low-level HTTP + callAPI wrapper
         │   ├── songs.js     # Song API endpoints
-        │   └── albums.js    # Album API endpoints
+        │   ├── albums.js    # Album API endpoints
+        │   ├── playlists.js # Playlist API endpoints
+        │   └── artists.js   # Artist API endpoints
         │
         ├── utils/           # Pure utility functions (no side effects)
+        │   ├── logger.js            # Global logging interceptor controller
         │   ├── decrypt.js           # supported music platform URL decryption
         │   ├── resource.js          # Fetch audio, album art
         │   ├── formatters.js        # Data formatting
@@ -57,17 +60,27 @@ Refactored/
         ├── services/        # Business logic (orchestrates API + Utils)
         │   ├── song.js      # Song operations (search, get, decrypt)
         │   ├── album.js     # Album operations (search, get details)
-        │   └── download.js  # Download operations (single, album)
+        │   ├── playlist.js  # Playlist operations (search, get details)
+        │   ├── artist.js    # Artist operations (search, get, popular/latest pagination)
+        │   └── download.js  # Download operations (single, album, playlist)
         │
         └── ui/              # UI rendering and interaction
-            ├── core.js      # State management, DOM references
-            ├── builder.js   # UI construction (overlay, toggle button)
-            ├── handlers.js  # Event listeners (keyboard, clicks)
-            ├── display.js   # Render songs, albums, album view
-            ├── search.js    # Search logic + URL detection
-            ├── player.js    # Audio player (play, close)
-            ├── download.js  # Download UI logic (progress, buttons)
-            └── utils.js     # UI utilities (escapeHtml, formatDuration)
+            ├── utils.js             # UI template utils and cards templates
+            ├── builder.js           # UI core construction (overlay dialog)
+            ├── core.js              # State initialization, Cache, Navigation stack
+            ├── handlers.js          # Click event delegation, hotkeys
+            ├── search.js            # Search coordinator (URL vs Text)
+            ├── player.js            # Audio player controls
+            ├── download.js          # Download UI logic (progress buttons)
+            └── display/             # Specific rendering views
+                ├── song-card.js         # Song line formatting
+                ├── display-results.js   # Render search results
+                ├── album-view.js        # Render album details
+                ├── playlist-view.js     # Render playlist details
+                ├── artist-view.js       # Render artist details popular/latest paging
+                ├── lyrics.js            # Render lyrics overlays
+                └── navigation.js        # Restore views from stack data
+```
 ```
 
 ### Module Responsibilities
@@ -78,19 +91,20 @@ Refactored/
 | **utils/** | Pure functions, no side effects | `formatSong()`, `decode()`, `fetchResource()` |
 | **libs/** | Third-party libraries | DES decryption, M4A writer |
 | **services/** | Business logic, orchestrates API + Utils | `downloadSong()`, `getDecryptedSong()` |
-| **ui/** | UI rendering and interaction | Display results, player, event handlers |
+| **ui/** | UI rendering and event delegation | Display cards, player, handlers |
 
 ### Key Global Objects
 
 | Object | Purpose |
 |--------|---------|
-| `window.API` | Raw API calls (constants, fetch, songs, albums) |
-| `window.Services` | Business logic (song, album, download) |
+| `window.API` | Raw API calls (constants, fetch, songs, albums, playlists, artists) |
+| `window.Services` | Business logic (song, album, playlist, artist, download) |
 | `window.Utils` | Pure utilities (formatters, resource, download-helper, url-helper) |
 | `window.DOM` | UI DOM references |
 | `window.isProxy` | Mode detection flag |
 | `window.currentQuality` | Selected bitrate (12, 48, 96, 160, 320) |
-| `window.decryptedUrlCache` | Cache for decrypted URLs |
+| `window.Cache` | Unified runtime cache for search results, lyrics, and details |
+| `window.Nav` | Browser-like navigation history stack |
 
 ---
 
@@ -273,15 +287,17 @@ Browser → fetch('/proxy') → server.js → supported music platform API
 ```
 User clicks Download
     ↓
-UI: download.js → Calls Services.Download.song(token)
+UI: download.js
+    ├── Decrypts media URL via Utils.getDecryptedUrl()
+    ├── Formats decrypted track via Utils.formatters.formatDecryptedSong()
+    └── Calls Services.Download.songFromData(song)
     ↓
-Services: download.js
-    ├── Calls Services.Song.getDecrypted(token)
-    ├── Fetches lyrics if has_lyrics is true
-    ├── Fetches audio via Utils.fetchResource()
+Services: download.js (songFromData)
+    ├── Fetches audio bytes via Utils.fetchResource()
     ├── Fetches album art via Utils.fetchAlbumArt()
-    ├── Builds metadata via Utils.buildMetadata()
-    ├── Writes M4A via writeM4ABytes()
+    ├── Fetches lyrics via Services.Song.getLyrics() (if has_lyrics is true)
+    ├── Builds metadata objects via Utils.buildMetadata()
+    ├── Writes M4A tags via writeM4ABytes()
     └── Triggers download via Utils.downloadFile()
     ↓
 Services: song.js
@@ -302,23 +318,17 @@ Response → Audio file with metadata → Downloads
 ### URL Detection Flow
 
 ```
-User pastes URL or opens UI on song page
+User pastes URL or opens UI on page
     ↓
 Utils.parseUrl(url) checks:
     ├── Contains supported music platform link?
     ├── Contains /song/? → type: 'song'
     ├── Contains /album/? → type: 'album'
-    ├── Contains /lyrics/? → type: 'lyrics'
+    ├── Contains /featured/? → type: 'playlist'
+    ├── Contains /artist/? → type: 'artist'
     └── Extracts token (last part after /)
     ↓
-If type is 'song' or 'lyrics':
-    ├── Switch to Songs tab
-    ├── Call API.getSong(token)
-    └── Display song
-If type is 'album':
-    ├── Switch to Albums tab
-    ├── Call API.getAlbum(token)
-    └── Display album
+Switches tab, queries endpoint details, and updates the display panel.
 ```
 
 ---
@@ -375,12 +385,12 @@ function renderNewComponent(data) {
     displaySongs(data);
 }
 
-// Add event listener in handlers.js (not onclick)
-var newBtn = document.getElementById('new-btn');
-if (newBtn) {
-    newBtn.addEventListener('click', function() {
-        renderNewComponent();
-    });
+// Register click event inside handlers.js global click listener delegation (do not use direct addEventListener on elements)
+var target = e.target;
+var clickBtn = target.closest('#new-btn');
+if (clickBtn) {
+    e.preventDefault();
+    renderNewComponent();
 }
 ```
 
@@ -441,6 +451,12 @@ The order in `index.html` defines the load order. Dependencies must load before 
 - `api/constants.js` must load before `api/fetch.js`
 - `api/fetch.js` must load before `api/songs.js`
 
+### 6. Stats counts on back-navigation
+When restoring layouts from cache, stats counts (e.g. `Top Songs (20)`) should be resolved directly by counting corresponding card elements rendered in the DOM, rather than referring to variables in `_artistState`, so they remain cumulative and accurate.
+
+### 7. Dynamic pagination bounds
+Since the music platform details API does not return total item count values, pagination triggers dynamically by checking if the last loaded page size is less than the page limit (10). If the size is less than 10, the pager terminates immediately, printing `🏁 End of results`.
+
 ---
 
 ## Common Commands
@@ -457,28 +473,39 @@ node server.js
 
 ## File Loading Order (from index.html)
 
-1. `ui/utils.js` - UI utilities
-2. `libs/des.js` - Pure DES implementation
-3. `libs/writem4a.js` - M4A metadata writer
-4. `utils/decrypt.js` - supported music platform URL decryption
-5. `utils/resource.js` - Fetch audio, album art
-6. `utils/formatters.js` - Data formatting
-7. `utils/url-helper.js` - URL parsing
-8. `utils/download-helper.js` - File download, metadata
-9. `api/constants.js` - API endpoints, headers
-10. `api/fetch.js` - HTTP requests, callAPI
-11. `api/songs.js` - Song API calls
-12. `api/albums.js` - Album API calls
-13. `services/song.js` - Song business logic
-14. `services/album.js` - Album business logic
-15. `services/download.js` - Download business logic
-16. `ui/search.js` - Search logic
-17. `ui/display.js` - Render songs/albums
-18. `ui/player.js` - Audio player
-19. `ui/download.js` - Download UI logic
-20. `ui/core.js` - State management
-21. `ui/builder.js` - UI construction
-22. `ui/handlers.js` - Event listeners
+1. `utils/logger.js` - Global logging controller
+2. `ui/utils.js` - UI utilities and card factories
+3. `libs/des.js` - Pure DES implementation
+4. `libs/writem4a.js` - M4A container writer
+5. `utils/decrypt.js` - Media URL decryption helper
+6. `utils/resource.js` - Fetch audio/art CDN requests
+7. `utils/formatters.js` - JSON normalization formatters
+8. `utils/url-helper.js` - URL pattern parsers
+9. `utils/download-helper.js` - Filename and file metadata writers
+10. `api/constants.js` - API domains and configuration constants
+11. `api/fetch.js` - HTTP queries wrapper
+12. `api/songs.js` - Song detail API calls
+13. `api/albums.js` - Album detail API calls
+14. `api/playlists.js` - Playlist detail API calls
+15. `api/artists.js` - Artist detail API calls
+16. `services/song.js` - Song business logic
+17. `services/album.js` - Album business logic
+18. `services/download.js` - Download compilation manager
+19. `services/playlist.js` - Playlist business logic
+20. `services/artist.js` - Artist business logic
+21. `ui/display/song-card.js` - Card formatting
+22. `ui/display/display-results.js` - Render search results
+23. `ui/display/album-view.js` - Render album panels
+24. `ui/display/playlist-view.js` - Render playlist panels
+25. `ui/display/artist-view.js` - Render artist panels popular/latest paging
+26. `ui/display/lyrics.js` - Render scrollable lyrics overlay
+27. `ui/display/navigation.js` - Navigation view state restorer
+28. `ui/search.js` - Search coordinator (URL vs Text)
+29. `ui/player.js` - Audio player controllers
+30. `ui/download.js` - Download progress buttons
+31. `ui/core.js` - Split/bundle initializer coordinator
+32. `ui/builder.js` - Overlay templates assembler
+33. `ui/handlers.js` - Shared click event delegation
 
 ---
 

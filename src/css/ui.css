@@ -139,6 +139,7 @@
 /* Results */
 #ui-overlay .results {
     display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 15px;
 }
 
@@ -316,6 +317,15 @@
 #ui-overlay .song-list {
     display: grid;
     gap: 8px;
+}
+
+/* Unified grid layout for card elements in detail views */
+#ui-overlay .album-list,
+#ui-overlay .playlist-list,
+#ui-overlay .artist-songs-section .song-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
 }
 #ui-overlay .song-item {
     background: #1a1a1a;
@@ -771,5 +781,14 @@
         text-align: center;
         padding: 8px 12px;
         font-size: 13px;
+    }
+    #ui-overlay .playlist-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    #ui-overlay .playlist-header img {
+        width: 150px;
+        height: 150px;
     }
 }

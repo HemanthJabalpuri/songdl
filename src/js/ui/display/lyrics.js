@@ -1,38 +1,18 @@
+// src/js/ui/display/lyrics.js
+
 // ============ SHOW LYRICS ============
 async function showLyrics(token, songId) {
     console.log('[Display] Fetching lyrics for:', token);
-    
+
     // Check if lyrics overlay already exists
     var existingOverlay = document.getElementById('lyrics-overlay');
     if (existingOverlay) {
         existingOverlay.remove();
     }
-    
-    // Check cache first
-    if (window.lyricsCache && window.lyricsCache[token]) {
-        console.log('[Display] Using cached lyrics for:', token);
-        var cachedLyrics = window.lyricsCache[token];
-        displayLyricsOverlay(cachedLyrics);
-        return;
-    }
-    
+
     try {
-        var data = await window.API.getLyrics(token);
-        var lyricsText = data.lyrics && data.lyrics.lyrics ? data.lyrics.lyrics : 'No lyrics available';
-        
-        // Format lyrics (replace <br> with newlines)
-        lyricsText = window.Utils.formatters.formatLyrics(lyricsText);
-        
-        // Store in cache
-        if (!window.lyricsCache) {
-            window.lyricsCache = {};
-        }
-        window.lyricsCache[token] = lyricsText;
-        console.log('[Display] Lyrics cached for:', token);
-        
-        // Display lyrics overlay
+        var lyricsText = await window.Services.Song.getLyrics(token);
         displayLyricsOverlay(lyricsText);
-        
     } catch (error) {
         console.error('[Display] Lyrics fetch error:', error);
         alert('Failed to fetch lyrics: ' + error.message);
@@ -58,7 +38,7 @@ function displayLyricsOverlay(lyricsText) {
         padding: 20px;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     `;
-    
+
     overlay.innerHTML = `
         <div style="
             max-width: 600px;
@@ -97,9 +77,9 @@ ${lyricsText}
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(overlay);
-    
+
     // Close button event listener
     var closeBtn = document.getElementById('lyrics-close-btn');
     if (closeBtn) {
@@ -107,14 +87,14 @@ ${lyricsText}
             closeLyricsOverlay();
         });
     }
-    
+
     // Click outside to close
     overlay.addEventListener('click', function(e) {
         if (e.target === overlay) {
             closeLyricsOverlay();
         }
     });
-    
+
     // ESC key to close (using a single listener)
     var escHandler = function(e) {
         if (e.key === 'Escape') {
