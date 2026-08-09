@@ -26,3 +26,18 @@ test('Utils.getDecryptedUrl decrypts mock tokens', function() {
     // So we use standard RegExp test:
     assert.ok(/^http.*\.mp4/.test(decrypted), 'Decrypted URL did not match expected pattern: ' + decrypted);
 });
+
+test('desEncrypt and desDecrypt round-trip parity', function() {
+    var key = window.Utils.DES_KEY;
+    var plaintext = 'Hello World!';
+    
+    var ciphertext = window.desEncrypt(plaintext, key);
+    assert.strictEqual(typeof ciphertext, 'string', 'Ciphertext must be a string');
+    assert.ok(ciphertext.length > 0, 'Ciphertext must be non-empty');
+    assert.notStrictEqual(ciphertext, plaintext, 'Ciphertext must be different from plaintext');
+    
+    var decrypted = window.desDecrypt(ciphertext, key);
+    // Strip PKCS7 padding just like decryptMediaUrl does
+    var cleanDecrypted = decrypted.slice(0, -decrypted.charCodeAt(decrypted.length - 1));
+    assert.strictEqual(cleanDecrypted, plaintext, 'Decrypted text must match plaintext');
+});

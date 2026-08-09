@@ -20,17 +20,8 @@ function readFile(filePath) {
 }
 
 function getScriptFilesFromHTML() {
-    var html = readFile(path.join(ROOT_DIR, 'index.html'));
-    var scripts = [];
-
-    // Match src="/js/..." - capture full path with leading slash
-    var regex = /src="(\/js\/[^"]+)"/g;
-    var match;
-    while ((match = regex.exec(html)) !== null) {
-        scripts.push(match[1]);
-    }
-
-    return scripts;
+    var appScripts = require(path.join(ROOT_DIR, 'js', 'app-scripts.js')).scripts;
+    return appScripts;
 }
 
 function build() {
@@ -42,20 +33,13 @@ function build() {
         fs.mkdirSync(OUTPUT_DIR);
     }
 
-    // Read CSS
-    var cssContent = '';
-    try {
-        cssContent = readFile(path.join(CSS_DIR, 'ui.css'));
-        console.log('✅ Read ui.css (' + cssContent.length + ' bytes)');
-    } catch (e) {
-        console.warn('⚠️ ui.css not found, proceeding without CSS');
-    }
+
 
     // Get files from index.html
     var files = getScriptFilesFromHTML();
-    console.log('📋 Found ' + files.length + ' scripts in index.html:');
+    console.log('📋 Found ' + files.length + ' scripts in app-scripts.js:');
     for (var i = 0; i < files.length; i++) {
-        console.log('   ' + (i + 1) + '. ' + files[i]);
+        console.log('   ' + (i + 1) + '. /js/' + files[i]);
     }
     console.log('');
 
@@ -77,21 +61,11 @@ function build() {
         '    console.log(\'[Userscript] Song Downloader loaded\');\n' +
         '    console.log(\'[Userscript] Click the 🎵 button or press Alt+J to open\');\n\n';
 
-    if (cssContent) {
-        combined += '    // ============================================================\n' +
-            '    // EMBEDDED CSS\n' +
-            '    // ============================================================\n' +
-            '    var UI_CSS = ' + JSON.stringify(cssContent) + ';\n\n' +
-            '    // Add CSS to page\n' +
-            '    var styleEl = document.createElement(\'style\');\n' +
-            '    styleEl.textContent = UI_CSS;\n' +
-            '    document.head.appendChild(styleEl);\n' +
-            '    console.log(\'[Userscript] CSS injected\');\n\n';
-    }
+
 
     for (var i = 0; i < files.length; i++) {
         var file = files[i];
-        var content = readFile(path.join(ROOT_DIR, file));
+        var content = readFile(path.join(ROOT_DIR, 'js', file));
 
         // Remove userscript headers
         content = content.replace(/\/\/ ==UserScript==[\s\S]*?\/\/ ==\/UserScript==\n/, '');

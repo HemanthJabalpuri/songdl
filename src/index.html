@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Song Downloader</title>
-    <link rel="stylesheet" href="/css/ui.css">
     <style>
         body {
             margin: 0;
@@ -109,52 +108,16 @@
         <span class="badge">Development</span>
     </div>
 
-    <!-- JavaScript - ORDER MATTERS! -->
-    <script src="/js/api/constants.js"></script>
-    <script src="/js/utils/logger.js"></script>
-    <script src="/js/ui/utils.js"></script>
-    
-    <!-- Libraries -->
-    <script src="/js/libs/des.js"></script>
-    <script src="/js/libs/writem4a.js"></script>
-    
-    <!-- Utils -->
-    <script src="/js/utils/promise.js"></script>
-    <script src="/js/utils/decrypt.js"></script>
-    <script src="/js/utils/resource.js"></script>
-    <script src="/js/utils/formatters.js"></script>
-    <script src="/js/utils/url-helper.js"></script>
-    <script src="/js/utils/download-helper.js"></script>
-    
-    <!-- API (Pure API calls) -->
-    <script src="/js/api/fetch.js"></script>
-    <script src="/js/api/songs.js"></script>
-    <script src="/js/api/albums.js"></script>
-    <script src="/js/api/playlists.js"></script>
-    <script src="/js/api/artists.js"></script>
-    
-    <!-- Services (Business logic) -->
-    <script src="/js/services/song.js"></script>
-    <script src="/js/services/album.js"></script>
-    <script src="/js/services/download.js"></script>
-    <script src="/js/services/playlist.js"></script>
-    <script src="/js/services/artist.js"></script>
-
-    <!-- UI - Display -->
-    <script src="/js/ui/display/song-card.js"></script>
-    <script src="/js/ui/display/display-results.js"></script>
-    <script src="/js/ui/display/album-view.js"></script>
-    <script src="/js/ui/display/playlist-view.js"></script>
-    <script src="/js/ui/display/artist-view.js"></script>
-    <script src="/js/ui/display/lyrics.js"></script>
-    <script src="/js/ui/display/navigation.js"></script>
-
-    <!-- UI -->
-    <script src="/js/ui/search.js"></script>
-    <script src="/js/ui/player.js"></script>
-    <script src="/js/ui/download.js"></script>
-    <script src="/js/ui/core.js"></script>
-    <script src="/js/ui/builder.js"></script>
-    <script src="/js/ui/handlers.js"></script>
+    <!-- Script list registry and dynamic loader -->
+    <script src="/js/app-scripts.js"></script>
+    <script>
+        (function() {
+            if (window.APP_SCRIPTS) {
+                window.APP_SCRIPTS.forEach(function(src) {
+                    document.write('<script src="/js/' + src + '"><\/script>');
+                });
+            }
+        })();
+    </script>
 </body>
 </html>

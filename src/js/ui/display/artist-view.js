@@ -41,20 +41,24 @@ function renderHeader(artist) {
 
     var checkedIcon = artist.isVerified ? '✅' : '';
 
-    var html = '\n        <div class="artist-header">\n' +
-        '            <img src="' + image + '" alt="' + artist.name + '" />\n' +
-        '            <div class="artist-header-info">\n' +
-        '                <h2>' + escapeHtml(artist.name) + ' ' + checkedIcon + '</h2>\n' +
-        '                <p>' + escapeHtml(artist.subtitle || '') + '</p>\n' +
-        '                ' + bioTagHtml + '                <div class="artist-actions">\n' +
-        '                    <button class="btn-back" id="btn-back">← Back</button>\n' +
-        '                </div>\n' +
-        '            </div>\n' +
-        '        </div>\n' +
-        '        <div class="artist-tabs">\n' +
-        '            <button class="artist-tab active" data-category="popular">🔥 Popular</button>\n' +
-        '            <button class="artist-tab" data-category="latest">🕐 Latest</button>\n' +
-        '        </div>\n    ';
+    /* clang-format off */
+    var html = window.Utils.compileHTML([
+        '<div class="artist-header">',
+        '    <img src="' + image + '" alt="' + artist.name + '" />',
+        '    <div class="artist-header-info">',
+        '        <h2>' + escapeHtml(artist.name) + ' ' + checkedIcon + '</h2>',
+        '        <p>' + escapeHtml(artist.subtitle || '') + '</p>',
+        '        ' + bioTagHtml + '        <div class="artist-actions">',
+        '            <button class="btn-back" id="btn-back">← Back</button>',
+        '        </div>',
+        '    </div>',
+        '</div>',
+        '<div class="artist-tabs">',
+        '    <button class="artist-tab active" data-category="popular">🔥 Popular</button>',
+        '    <button class="artist-tab" data-category="latest">🕐 Latest</button>',
+        '</div>'
+    ]);
+    /* clang-format on */
     return html;
 }
 
@@ -63,63 +67,63 @@ function renderFooter(artist) {
     var html = '';
 
     if (artist.dedicatedPlaylists && artist.dedicatedPlaylists.length > 0) {
-        html += '\n            <div class="artist-playlists-section" id="artist-dedicated-playlists">\n' +
-            '                <h3>Dedicated Playlists</h3>\n' +
-            '                <div class="playlist-list">\n' +
-            '                    ' +
-            artist.dedicatedPlaylists
-                .map(function(playlist) {
-                    return createPlaylistCard(playlist);
-                })
-                .join('') +
-            '\n' +
-            '                </div>\n' +
-            '            </div>\n        ';
+        /* clang-format off */
+        html += window.Utils.compileHTML([
+            '<div class="artist-playlists-section" id="artist-dedicated-playlists">',
+            '    <h3>Dedicated Playlists</h3>',
+            '    <div class="playlist-list">',
+            '        ' + artist.dedicatedPlaylists.map(function(playlist) {
+                return createPlaylistCard(playlist);
+            }).join(''),
+            '    </div>',
+            '</div>'
+        ]);
+        /* clang-format on */
     }
 
     if (artist.featuredPlaylists && artist.featuredPlaylists.length > 0) {
-        html += '\n            <div class="artist-playlists-section" id="artist-featured-playlists">\n' +
-            '                <h3>Featured In</h3>\n' +
-            '                <div class="playlist-list">\n' +
-            '                    ' +
-            artist.featuredPlaylists
-                .map(function(playlist) {
-                    return createPlaylistCard(playlist);
-                })
-                .join('') +
-            '\n' +
-            '                </div>\n' +
-            '            </div>\n        ';
+        /* clang-format off */
+        html += window.Utils.compileHTML([
+            '<div class="artist-playlists-section" id="artist-featured-playlists">',
+            '    <h3>Featured In</h3>',
+            '    <div class="playlist-list">',
+            '        ' + artist.featuredPlaylists.map(function(playlist) {
+                return createPlaylistCard(playlist);
+            }).join(''),
+            '    </div>',
+            '</div>'
+        ]);
+        /* clang-format on */
     }
 
     if (artist.singles && artist.singles.length > 0) {
-        html += '\n            <div class="artist-albums-section" id="artist-singles">\n' +
-            '                <h3>Singles</h3>\n' +
-            '                <div class="album-list">\n' +
-            '                    ' +
-            artist.singles
-                .map(function(single) {
-                    return createAlbumCard(single);
-                })
-                .join('') +
-            '\n' +
-            '                </div>\n' +
-            '            </div>\n        ';
+        /* clang-format off */
+        html += window.Utils.compileHTML([
+            '<div class="artist-albums-section" id="artist-singles">',
+            '    <h3>Singles</h3>',
+            '    <div class="album-list">',
+            '        ' + artist.singles.map(function(single) {
+                return createAlbumCard(single);
+            }).join(''),
+            '    </div>',
+            '</div>'
+        ]);
+        /* clang-format on */
     }
 
     if (artist.latestReleases && artist.latestReleases.length > 0) {
-        html += '\n            <div class="artist-albums-section" id="artist-latest-releases">\n' +
-            '                <h3>Latest Releases</h3>\n' +
-            '                <div class="album-list">\n' +
-            '                    ' +
-            artist.latestReleases
-                .map(function(release) {
-                    return createAlbumCard(release);
-                })
-                .join('') +
-            '\n' +
-            '                </div>\n' +
-            '            </div>\n        ';
+        /* clang-format off */
+        html += window.Utils.compileHTML([
+            '<div class="artist-albums-section" id="artist-latest-releases">',
+            '    <h3>Latest Releases</h3>',
+            '    <div class="album-list">',
+            '        ' + artist.latestReleases.map(function(release) {
+                return createAlbumCard(release);
+            }).join(''),
+            '    </div>',
+            '</div>'
+        ]);
+        /* clang-format on */
     }
 
     return html;
@@ -128,10 +132,13 @@ function renderFooter(artist) {
 // ============ RENDER DYNAMIC SONGS SECTION ============
 function renderSongsSectionHTML(songs, category, totalSongs) {
     var songHeaderCount = songs ? songs.length : 0;
-    var html = '\n        <div class="artist-songs-section" id="artist-dynamic-songs" data-category="' + category +
-        '">\n' +
-        '            <h3>Top Songs (' + songHeaderCount + ')</h3>\n' +
-        '            <div class="song-list">\n    ';
+    /* clang-format off */
+    var html = window.Utils.compileHTML([
+        '<div class="artist-songs-section" id="artist-dynamic-songs" data-category="' + category + '">',
+        '    <h3>Top Songs (' + songHeaderCount + ')</h3>',
+        '    <div class="song-list">'
+    ]);
+    /* clang-format on */
 
     if (songs && songs.length > 0) {
         var artistContext = {type: 'artist', image: '', language: '', year: '', title: window._artistState.token};
@@ -142,9 +149,13 @@ function renderSongsSectionHTML(songs, category, totalSongs) {
         html += '<div class="no-results">No songs found</div>';
     }
 
-    html += '\n            </div>\n' +
-        '            <div id="artist-songs-load-more"></div>\n' +
-        '        </div>\n    ';
+    /* clang-format off */
+    html += window.Utils.compileHTML([
+        '    </div>',
+        '    <div id="artist-songs-load-more"></div>',
+        '</div>'
+    ]);
+    /* clang-format on */
 
     return html;
 }
@@ -152,10 +163,13 @@ function renderSongsSectionHTML(songs, category, totalSongs) {
 // ============ RENDER DYNAMIC ALBUMS SECTION ============
 function renderAlbumsSectionHTML(albums, category, totalAlbums) {
     var albumHeaderCount = albums ? albums.length : 0;
-    var html = '\n        <div class="artist-albums-section" id="artist-dynamic-albums" data-category="' + category +
-        '">\n' +
-        '            <h3>Top Albums (' + albumHeaderCount + ')</h3>\n' +
-        '            <div class="album-list">\n    ';
+    /* clang-format off */
+    var html = window.Utils.compileHTML([
+        '<div class="artist-albums-section" id="artist-dynamic-albums" data-category="' + category + '">',
+        '    <h3>Top Albums (' + albumHeaderCount + ')</h3>',
+        '    <div class="album-list">'
+    ]);
+    /* clang-format on */
 
     if (albums && albums.length > 0) {
         albums.forEach(function(album) {
@@ -165,9 +179,13 @@ function renderAlbumsSectionHTML(albums, category, totalAlbums) {
         html += '<div class="no-results">No albums found</div>';
     }
 
-    html += '\n            </div>\n' +
-        '            <div id="artist-albums-load-more"></div>\n' +
-        '        </div>\n    ';
+    /* clang-format off */
+    html += window.Utils.compileHTML([
+        '    </div>',
+        '    <div id="artist-albums-load-more"></div>',
+        '</div>'
+    ]);
+    /* clang-format on */
 
     return html;
 }
@@ -399,9 +417,13 @@ function showArtistSongsLoadMore() {
         return;
     }
 
-    container.innerHTML = '\n        <button class="btn-load-more" id="artist-songs-load-more-btn">\n' +
-        '            Load ' + window._artistState.limit + ' More Songs\n' +
-        '        </button>\n    ';
+    /* clang-format off */
+    container.innerHTML = window.Utils.compileHTML([
+        '<button class="btn-load-more" id="artist-songs-load-more-btn">',
+        '    Load ' + window._artistState.limit + ' More Songs',
+        '</button>'
+    ]);
+    /* clang-format on */
 
     var btn = document.getElementById('artist-songs-load-more-btn');
     if (btn) {
@@ -565,9 +587,13 @@ function showArtistAlbumsLoadMore() {
         return;
     }
 
-    container.innerHTML = '\n        <button class="btn-load-more" id="artist-albums-load-more-btn">\n' +
-        '            Load ' + window._artistState.limit + ' More Albums\n' +
-        '        </button>\n    ';
+    /* clang-format off */
+    container.innerHTML = window.Utils.compileHTML([
+        '<button class="btn-load-more" id="artist-albums-load-more-btn">',
+        '    Load ' + window._artistState.limit + ' More Albums',
+        '</button>'
+    ]);
+    /* clang-format on */
 
     var btn = document.getElementById('artist-albums-load-more-btn');
     if (btn) {
@@ -731,3 +757,160 @@ window.loadMoreArtistSongs = loadMoreArtistSongs;
 window.loadMoreArtistAlbums = loadMoreArtistAlbums;
 window.renderArtist = renderArtist;
 window.restoreArtist = restoreArtist;
+
+/* clang-format off */
+// Register artist card and detail page styling rules
+window.Utils.registerStyle([
+    '/* ===== Artist Header ===== */',
+    '.artist-header {',
+    '    background: #1a1a1a;',
+    '    padding: 20px;',
+    '    border-radius: 8px;',
+    '    display: flex;',
+    '    gap: 20px;',
+    '    margin-bottom: 20px;',
+    '    border: 1px solid #222;',
+    '}',
+    '.artist-header img {',
+    '    width: 150px;',
+    '    height: 150px;',
+    '    border-radius: 50%;',
+    '    object-fit: cover;',
+    '    background: #222;',
+    '}',
+    '.artist-header-info {',
+    '    flex: 1;',
+    '}',
+    '.artist-header-info h2 {',
+    '    margin-bottom: 5px;',
+    '    color: #fff;',
+    '    font-size: 24px;',
+    '}',
+    '.artist-header-info p {',
+    '    color: #aaa;',
+    '    margin: 5px 0;',
+    '}',
+    '.artist-bio {',
+    '    color: #888 !important;',
+    '    font-size: 14px;',
+    '    margin-top: 10px !important;',
+    '    line-height: 1.6;',
+    '}',
+    '.artist-actions {',
+    '    margin-top: 15px;',
+    '    display: flex;',
+    '    gap: 10px;',
+    '    flex-wrap: wrap;',
+    '}',
+    '/* ===== Artist Tabs ===== */',
+    '.artist-tabs {',
+    '    display: flex;',
+    '    gap: 10px;',
+    '    margin-bottom: 20px;',
+    '    border-bottom: 1px solid #333;',
+    '    padding-bottom: 10px;',
+    '}',
+    '.artist-tab {',
+    '    padding: 8px 16px;',
+    '    background: transparent;',
+    '    color: #888;',
+    '    border: none;',
+    '    border-radius: 4px;',
+    '    font-size: 14px;',
+    '    cursor: pointer;',
+    '    transition: all 0.2s;',
+    '}',
+    '.artist-tab:hover {',
+    '    color: #fff;',
+    '    background: #282828;',
+    '}',
+    '.artist-tab.active {',
+    '    color: #1db954;',
+    '    background: rgba(29, 185, 84, 0.1);',
+    '    font-weight: bold;',
+    '}',
+    '/* ===== Artist Sections ===== */',
+    '.artist-songs-section,',
+    '.artist-albums-section,',
+    '.artist-playlists-section {',
+    '    margin-top: 20px;',
+    '}',
+    '.artist-songs-section h3,',
+    '.artist-albums-section h3,',
+    '.artist-playlists-section h3 {',
+    '    color: #fff;',
+    '    font-size: 18px;',
+    '    margin-bottom: 12px;',
+    '    padding-bottom: 8px;',
+    '    border-bottom: 1px solid #333;',
+    '}',
+    '/* ===== Artist Cards (Search Results) ===== */',
+    '.artist-card {',
+    '    background: #1a1a1a;',
+    '    padding: 15px;',
+    '    border-radius: 8px;',
+    '    display: flex;',
+    '    gap: 15px;',
+    '    align-items: center;',
+    '    cursor: pointer;',
+    '    border: 1px solid #222;',
+    '}',
+    '.artist-card:hover {',
+    '    background: #222;',
+    '}',
+    '.artist-card img {',
+    '    width: 80px;',
+    '    height: 80px;',
+    '    border-radius: 50%;',
+    '    object-fit: cover;',
+    '    background: #222;',
+    '}',
+    '.artist-info {',
+    '    flex: 1;',
+    '}',
+    '.artist-name {',
+    '    font-size: 18px;',
+    '    font-weight: bold;',
+    '    color: #fff;',
+    '}',
+    '.artist-role {',
+    '    color: #aaa;',
+    '    margin: 5px 0;',
+    '}',
+    '.btn-view-artist {',
+    '    margin-top: 8px;',
+    '    padding: 6px 16px;',
+    '    background: #6c757d;',
+    '    color: white;',
+    '    border: none;',
+    '    border-radius: 4px;',
+    '    font-size: 13px;',
+    '    cursor: pointer;',
+    '}',
+    '.btn-view-artist:hover {',
+    '    background: #5a6268;',
+    '}',
+    '/* ===== Responsive ===== */',
+    '@media (max-width: 600px) {',
+    '    .artist-header {',
+    '        flex-direction: column;',
+    '        align-items: center;',
+    '        text-align: center;',
+    '    }',
+    '    .artist-header img {',
+    '        width: 120px;',
+    '        height: 120px;',
+    '    }',
+    '    .artist-tabs {',
+    '        flex-wrap: wrap;',
+    '        justify-content: center;',
+    '    }',
+    '    .artist-tab {',
+    '        flex: 1;',
+    '        text-align: center;',
+    '        padding: 8px 12px;',
+    '        font-size: 13px;',
+    '    }',
+    '}'
+]);
+/* clang-format on */

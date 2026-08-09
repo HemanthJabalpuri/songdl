@@ -47,4 +47,5 @@ if (typeof window !== 'undefined') {
     window.decryptMediaUrl = decryptMediaUrl;
     window.Utils = window.Utils || {};
     window.Utils.getDecryptedUrl = getDecryptedUrl;
+    window.Utils.DES_KEY = KEY;
 }

@@ -27,17 +27,14 @@ global.isProxy = isMockEnabled;
 global.document = undefined;
 global.require = require;
 
-// Parse script listings dynamically from index.html in correct load order
+// Load script listings from app-scripts.js and evaluate in correct order
 try {
-    var html = fs.readFileSync(path.join(__dirname, 'src', 'index.html'), 'utf8');
-    var regex = /src="(\/js\/[^"]+)"/g;
-    var match;
-    while ((match = regex.exec(html)) !== null) {
-        var scriptPath = match[1];
-        if (scriptPath.indexOf('/ui/') !== -1) {
-            continue;  // Skip browser-only UI display elements!
+    var scripts = require(path.join(__dirname, 'src', 'js', 'app-scripts.js')).scripts;
+    scripts.forEach(function(scriptPath) {
+        if (scriptPath.indexOf('ui/') === 0) {
+            return; // Skip browser-only UI display elements!
         }
-        var filePath = path.join(__dirname, 'src', scriptPath);
+        var filePath = path.join(__dirname, 'src', 'js', scriptPath);
         var content = fs.readFileSync(filePath, 'utf8');
         try {
             // Evaluate dynamically
@@ -47,7 +44,7 @@ try {
             console.error('Error in file: ' + scriptPath);
             throw e;
         }
-    }
+    });
 } catch (e) {
     console.error('Error: Failed to dynamically load codebase sources:', e.message);
     process.exit(1);

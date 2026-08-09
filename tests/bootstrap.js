@@ -53,15 +53,12 @@ global.test = function(description, fn) {
 
 // 3. Dynamically evaluate non-UI split scripts individually
 try {
-    var html = fs.readFileSync(path.join(__dirname, '..', 'src', 'index.html'), 'utf8');
-    var regex = /src="(\/js\/[^"]+)"/g;
-    var match;
-    while ((match = regex.exec(html)) !== null) {
-        var scriptPath = match[1];
-        if (scriptPath.indexOf('/ui/') !== -1) {
-            continue;  // Skip browser-only UI display elements!
+    var scripts = require(path.join(__dirname, '..', 'src', 'js', 'app-scripts.js')).scripts;
+    scripts.forEach(function(scriptPath) {
+        if (scriptPath.indexOf('ui/') === 0) {
+            return; // Skip browser-only UI display elements!
         }
-        var filePath = path.join(__dirname, '..', 'src', scriptPath);
+        var filePath = path.join(__dirname, '..', 'src', 'js', scriptPath);
         var content = fs.readFileSync(filePath, 'utf8');
         try {
             var FunctionConstructor = Function;
@@ -70,7 +67,7 @@ try {
             console.error('Syntax validation error inside file: ' + scriptPath);
             throw err;
         }
-    }
+    });
 } catch (e) {
     console.error('Failed to load bootstrap codebase:', e.message);
     process.exit(1);

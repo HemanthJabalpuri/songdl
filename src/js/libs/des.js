@@ -86,15 +86,24 @@ const S8 = new Int32Array([
     0x10041040, 0x41000,    0x41000,    0x1040,     0x1040,     0x40040,    0x10000000, 0x10041000
 ]);
 
-// DES decryption - ECB mode only
-function desDecrypt(message, keys) {
+// Unified DES Block Processor - ECB Mode
+function desBlock(message, keys, encrypt) {
     var s1 = S1, s2 = S2, s3 = S3, s4 = S4;
     var s5 = S5, s6 = S6, s7 = S7, s8 = S8;
+
+    // PKCS7 padding (encryption only)
+    if (encrypt) {
+        var padLen = 8 - (message.length % 8);
+        for (var p = 0; p < padLen; p++) {
+            message += String.fromCharCode(padLen);
+        }
+    }
 
     var len = message.length;
     var result = '';
     var left, right, temp;
 
+    // Loop through each 64-bit block
     for (var m = 0; m < len; m += 8) {
         left = (message.charCodeAt(m) << 24) | (message.charCodeAt(m + 1) << 16) | (message.charCodeAt(m + 2) << 8) |
             message.charCodeAt(m + 3);
@@ -125,8 +134,13 @@ function desDecrypt(message, keys) {
         left = ((left << 1) | (left >>> 31));
         right = ((right << 1) | (right >>> 31));
 
-        // 16 rounds (decryption - keys in reverse)
-        for (var i = 30; i >= 0; i -= 2) {
+        // Set round parameters dynamically
+        var start = encrypt ? 0 : 30;
+        var end = encrypt ? 32 : -2;
+        var step = encrypt ? 2 : -2;
+
+        // 16 Feistel rounds
+        for (var i = start; i !== end; i += step) {
             var right1 = right ^ keys[i];
             var rrot = (right >>> 4) | (right << 28);
             var right2 = rrot ^ keys[i + 1];
@@ -174,7 +188,17 @@ function desDecrypt(message, keys) {
     return result;
 }
 
-// Expose to browser
+// Public compatibility wrappers
+function desDecrypt(message, keys) {
+    return desBlock(message, keys, false);
+}
+
+function desEncrypt(message, keys) {
+    return desBlock(message, keys, true);
+}
+
+// Expose to browser/Node namespace global
 if (typeof window !== 'undefined') {
     window.desDecrypt = desDecrypt;
+    window.desEncrypt = desEncrypt;
 }

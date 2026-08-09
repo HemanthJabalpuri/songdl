@@ -136,22 +136,23 @@ function renderPlaylist(playlist) {
         image = window.Utils.getDefaultImage('playlist');
     }
     var playlistCountInfo = playlist.list_count || playlist.song_count || 0;
-    var html = '\n        <div class="playlist-header">\n' +
-        '            <img src="' + image + '" alt="' + escapeHtml(playlist.title) + '" />\n' +
-        '            <div class="playlist-header-info">\n' +
-        '                <h2>' + escapeHtml(playlist.title) + '</h2>\n' +
-        '                <p>' + escapeHtml(playlist.subtitle || '') + '</p>\n' +
-        '                <p>' + playlistCountInfo + ' songs • ' + escapeHtml(playlist.language || 'Unknown') +
-        '</p>\n' +
-        (playlist.description ?
-             '                <p class="playlist-description">' + escapeHtml(playlist.description) + '</p>\n' :
-             '') +
-        '                <div class="playlist-actions">\n' +
-        '                    <button class="btn-back" id="btn-back-search">← Back</button>\n' +
-        '                </div>\n' +
-        '            </div>\n' +
-        '        </div>\n' +
-        '        <div class="song-list playlist-songs-list">\n    ';
+    /* clang-format off */
+    var html = window.Utils.compileHTML([
+        '<div class="playlist-header">',
+        '    <img src="' + image + '" alt="' + escapeHtml(playlist.title) + '" />',
+        '    <div class="playlist-header-info">',
+        '        <h2>' + escapeHtml(playlist.title) + '</h2>',
+        '        <p>' + escapeHtml(playlist.subtitle || '') + '</p>',
+        '        <p>' + playlistCountInfo + ' songs • ' + escapeHtml(playlist.language || 'Unknown') + '</p>',
+        playlist.description ? '        <p class="playlist-description">' + escapeHtml(playlist.description) + '</p>' : '',
+        '        <div class="playlist-actions">',
+        '            <button class="btn-back" id="btn-back-search">← Back</button>',
+        '        </div>',
+        '    </div>',
+        '</div>',
+        '<div class="song-list playlist-songs-list">'
+    ]);
+    /* clang-format on */
 
     var playlistContext = {
         type: 'playlist',
@@ -261,3 +262,110 @@ window.viewPlaylist = viewPlaylist;
 window.loadMorePlaylist = loadMorePlaylist;
 window.renderPlaylist = renderPlaylist;
 window.showPlaylistLoadMoreButton = showPlaylistLoadMoreButton;
+
+/* clang-format off */
+// Register playlist card and detail page styling rules
+window.Utils.registerStyle([
+    '/* Playlist Cards */',
+    '.playlist-card {',
+    '    background: #1a1a1a;',
+    '    padding: 15px;',
+    '    border-radius: 8px;',
+    '    display: flex;',
+    '    gap: 15px;',
+    '    align-items: center;',
+    '    cursor: pointer;',
+    '    border: 1px solid #222;',
+    '}',
+    '.playlist-card:hover {',
+    '    background: #222;',
+    '}',
+    '.playlist-card img {',
+    '    width: 100px;',
+    '    height: 100px;',
+    '    border-radius: 4px;',
+    '    object-fit: cover;',
+    '    background: #222;',
+    '}',
+    '.playlist-info {',
+    '    flex: 1;',
+    '}',
+    '.playlist-title {',
+    '    font-size: 18px;',
+    '    font-weight: bold;',
+    '    color: #fff;',
+    '}',
+    '.playlist-artist {',
+    '    color: #aaa;',
+    '    margin: 5px 0;',
+    '}',
+    '.playlist-details {',
+    '    color: #666;',
+    '    font-size: 14px;',
+    '}',
+    '.btn-view-playlist {',
+    '    margin-top: 8px;',
+    '    padding: 6px 16px;',
+    '    background: #6c757d;',
+    '    color: white;',
+    '    border: none;',
+    '    border-radius: 4px;',
+    '    font-size: 13px;',
+    '    cursor: pointer;',
+    '}',
+    '.btn-view-playlist:hover {',
+    '    background: #5a6268;',
+    '}',
+    '/* Playlist Header */',
+    '.playlist-header {',
+    '    background: #1a1a1a;',
+    '    padding: 20px;',
+    '    border-radius: 8px;',
+    '    display: flex;',
+    '    gap: 20px;',
+    '    margin-bottom: 20px;',
+    '    border: 1px solid #222;',
+    '}',
+    '.playlist-header img {',
+    '    width: 200px;',
+    '    height: 200px;',
+    '    border-radius: 4px;',
+    '    object-fit: cover;',
+    '    background: #222;',
+    '}',
+    '.playlist-header-info {',
+    '    flex: 1;',
+    '}',
+    '.playlist-header-info h2 {',
+    '    margin-bottom: 5px;',
+    '    color: #fff;',
+    '}',
+    '.playlist-header-info p {',
+    '    color: #aaa;',
+    '    margin: 5px 0;',
+    '}',
+    '.playlist-description {',
+    '    color: #888 !important;',
+    '    font-style: italic;',
+    '    margin-top: 10px !important;',
+    '}',
+    '.playlist-actions {',
+    '    margin-top: 15px;',
+    '    display: flex;',
+    '    gap: 10px;',
+    '    flex-wrap: wrap;',
+    '}',
+    '/* Responsive */',
+    '@media (max-width: 600px) {',
+    '    .playlist-header {',
+    '        flex-direction: column;',
+    '        align-items: center;',
+    '        text-align: center;',
+    '    }',
+    '    .playlist-header img {',
+    '        width: 150px;',
+    '        height: 150px;',
+    '    }',
+    '}'
+]);
+/* clang-format on */

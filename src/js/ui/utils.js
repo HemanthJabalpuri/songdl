@@ -6,6 +6,7 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+window.escapeHtml = escapeHtml;
 
 function formatDuration(seconds) {
     if (isNaN(seconds) || seconds === null || seconds === undefined || seconds <= 0) return 'N/A';
@@ -14,6 +15,7 @@ function formatDuration(seconds) {
     var remainingSecs = secs % 60;
     return mins + ':' + (remainingSecs < 10 ? '0' + remainingSecs : remainingSecs);
 }
+window.formatDuration = formatDuration;
 
 // Get a standard SVG vector placeholder matching the component type
 function getDefaultImage(type) {
@@ -57,17 +59,21 @@ function buildCard(options) {
         subtitleClass = type === 'album' ? 'album-artist' : 'playlist-artist';
     }
 
-    return '\n        <div class="' + type + '-card" data-token="' + token + '">\n' +
-        '            <img src="' + image + '" alt="' + escapeHtml(title) + '" />\n' +
-        '            <div class="' + type + '-info">\n' +
-        '                <div class="' + titleClass + '">' + escapeHtml(title) + '</div>\n' +
-        '                <div class="' + subtitleClass + '">' + escapeHtml(subtitle) + '</div>\n' +
-        (details ? '                <div class="' + type + '-details">' + details + '</div>\n' : '') +
-        '                <button class="btn-view-' + type + '" data-token="' + token + '">\n' +
-        '                    ' + buttonText + '\n' +
-        '                </button>\n' +
-        '            </div>\n' +
-        '        </div>\n    ';
+    /* clang-format off */
+    return window.Utils.compileHTML([
+        '<div class="' + type + '-card" data-token="' + token + '">',
+        '    <img src="' + image + '" alt="' + escapeHtml(title) + '" />',
+        '    <div class="' + type + '-info">',
+        '        <div class="' + titleClass + '">' + escapeHtml(title) + '</div>',
+        '        <div class="' + subtitleClass + '">' + escapeHtml(subtitle) + '</div>',
+        details ? '        <div class="' + type + '-details">' + details + '</div>' : '',
+        '        <button class="btn-view-' + type + '" data-token="' + token + '">',
+        '            ' + buttonText,
+        '        </button>',
+        '    </div>',
+        '</div>'
+    ]);
+    /* clang-format on */
 }
 
 // Create HTML representations for album cards
