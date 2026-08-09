@@ -1,5 +1,12 @@
 // src/js/ui/player.js
 
+// Global player variables and queue manager
+var currentPlayerElement = null;
+var currentSongCard = null;
+window.currentAudio = null;
+window.playerQueue = [];
+window.currentQueueIndex = -1;
+
 // Play a song and initialize the audio element
 function playSong(songData) {
     if (!songData) {
@@ -60,6 +67,38 @@ function playSong(songData) {
             if (titleEl) displayTitle = titleEl.textContent || displayTitle;
         }
 
+        // ============ BUILD QUEUE CONTEXT ============
+        if (songCard) {
+            var container = songCard.closest('.song-list, .results');
+            var cards = container ? container.querySelectorAll('.song-card') : [songCard];
+
+            var newQueue = [];
+            var activeIndex = -1;
+
+            cards.forEach(function(card) {
+                if (card._songData) {
+                    newQueue.push(card._songData);
+                    if (card._songData.token === token) {
+                        activeIndex = newQueue.length - 1;
+                    }
+                }
+            });
+
+            if (newQueue.length > 0 && activeIndex !== -1) {
+                window.playerQueue = newQueue;
+                window.currentQueueIndex = activeIndex;
+                console.log('[Queue] Loaded queue of ' + newQueue.length + ' tracks. Playing index ' + activeIndex);
+            }
+        }
+
+        // Visual highlighting of the playing card
+        document.querySelectorAll('.song-card.playing').forEach(function(card) {
+            card.classList.remove('playing');
+        });
+        if (songCard) {
+            songCard.classList.add('playing');
+        }
+
         if (window.currentAudio) {
             window.currentAudio.pause();
             window.currentAudio = null;
@@ -103,6 +142,11 @@ function playSong(songData) {
         var audio = playerElement.querySelector('audio');
         window.currentAudio = audio;
 
+        // Bindended event for sequential playing
+        audio.addEventListener('ended', function() {
+            playNextInQueue();
+        });
+
         var closeBtn = playerElement.querySelector('#player-close-btn');
         if (closeBtn) {
             closeBtn.addEventListener('click', function() {
@@ -129,6 +173,20 @@ function playSong(songData) {
     }
 }
 
+// Play next song in the queue
+function playNextInQueue() {
+    if (!window.playerQueue || window.playerQueue.length === 0) return;
+    var nextIndex = window.currentQueueIndex + 1;
+    if (nextIndex < window.playerQueue.length) {
+        window.currentQueueIndex = nextIndex;
+        console.log('[Queue] Playing next track index ' + nextIndex + ': ' + window.playerQueue[nextIndex].title);
+        playSong(window.playerQueue[nextIndex]);
+    } else {
+        console.log('[Queue] End of queue reached');
+        closePlayer();
+    }
+}
+
 // Close the active audio player and release elements
 function closePlayer() {
     console.log('[Player] closePlayer called');
@@ -150,7 +208,13 @@ function closePlayer() {
         currentPlayerElement = null;
         currentSongCard = null;
     }
+
+    // Clear active playing highlights
+    document.querySelectorAll('.song-card.playing').forEach(function(card) {
+        card.classList.remove('playing');
+    });
 }
 
 window.playSong = playSong;
 window.closePlayer = closePlayer;
+window.playNextInQueue = playNextInQueue;

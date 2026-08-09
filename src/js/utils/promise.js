@@ -3,6 +3,11 @@
 // Expose Utils namespace
 window.Utils = window.Utils || {};
 
+// setImmediate fallback for Node v0.8.x and browser environments
+var localSetImmediate = typeof setImmediate === 'function' ? setImmediate : function(fn) {
+    setTimeout(fn, 0);
+};
+
 function FallbackPromise(executor) {
     var self = this;
     self.state = 'pending';
@@ -64,7 +69,7 @@ FallbackPromise.prototype.then = function(onFulfilled, onRejected) {
         if (self.state === 'pending') {
             self.callbacks.push({onFulfilled: handle, onRejected: handle});
         } else {
-            setImmediate(function() {
+            localSetImmediate(function() {
                 handle(self.value);
             });
         }

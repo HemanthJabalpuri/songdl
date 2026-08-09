@@ -794,3 +794,8 @@
         height: 150px;
     }
 }
+
+#ui-overlay .song-card.playing {
+    border: 1px solid #1db954;
+    background: rgba(29, 185, 84, 0.05);
+}
