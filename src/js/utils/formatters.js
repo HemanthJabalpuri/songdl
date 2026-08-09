@@ -19,8 +19,7 @@ window.Utils.formatters.extractToken = function(url) {
 
 // ============ HIGH RES ARTIST IMAGE ============
 window.Utils.formatters.getHighResArtistImage = function(url) {
-    if (!url) return '';
-    return url.replace(/_50x50\.jpg$/, '_150x150.jpg');
+    return window.Utils.getHighResImageUrl(url, true);
 };
 
 window.Utils.formatters.formatLyrics = function(rawLyrics) {

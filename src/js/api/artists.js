@@ -4,13 +4,13 @@
 window.API = window.API || {};
 
 // Search for artists - returns raw API response
-window.API.searchArtists = async function(query, limit, page) {
-    return await window.API.callAPI('search.getArtistResults', {q: query, p: page || 1, n: limit || 20});
+window.API.searchArtists = function(query, limit, page) {
+    return window.API.callAPI('search.getArtistResults', {q: query, p: page || 1, n: limit || 20});
 };
 
 // Get artist details by token - returns raw API response
-window.API.getArtist = async function(token, category) {
-    return await window.API.callAPI('webapi.get', {
+window.API.getArtist = function(token, category) {
+    return window.API.callAPI('webapi.get', {
         token: token,
         type: 'artist',
         p: 1,
@@ -23,8 +23,8 @@ window.API.getArtist = async function(token, category) {
 };
 
 // Get more songs by artist - returns raw API response
-window.API.getArtistMoreSongs = async function(artistId, page, category) {
-    return await window.API.callAPI('artist.getArtistMoreSong', {
+window.API.getArtistMoreSongs = function(artistId, page, category) {
+    return window.API.callAPI('artist.getArtistMoreSong', {
         artistId: artistId,
         page: page || 1,
         category: category || 'popular',
@@ -33,8 +33,8 @@ window.API.getArtistMoreSongs = async function(artistId, page, category) {
 };
 
 // Get more albums by artist - returns raw API response
-window.API.getArtistMoreAlbums = async function(artistId, page, category) {
-    return await window.API.callAPI('artist.getArtistMoreAlbum', {
+window.API.getArtistMoreAlbums = function(artistId, page, category) {
+    return window.API.callAPI('artist.getArtistMoreAlbum', {
         artistId: artistId,
         page: page || 1,
         category: category || 'popular',

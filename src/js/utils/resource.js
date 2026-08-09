@@ -34,7 +34,7 @@ function handleGMResponse(response, resolve, reject) {
 // ============ FETCH METHODS ============
 
 function fetchViaDirect(url, responseType) {
-    return fetch(url, {headers: getHeaders()}).then(function(response) {
+    return (window.Utils.fetch || fetch)(url, {headers: getHeaders()}).then(function(response) {
         return handleResponse(response, responseType, url);
     });
 }
@@ -83,9 +83,10 @@ window.Utils.fetchResource = function(url, responseType) {
 
 // ============ FETCH ALBUM ART ============
 
-function getHighResUrl(url) {
-    return url.replace(/\d+x\d+\.jpg$/, '500x500.jpg');
-}
+window.Utils.getHighResImageUrl = function(url, isArtist) {
+    if (!url) return '';
+    return isArtist ? url.replace(/_50x50\.jpg$/, '_150x150.jpg') : url.replace(/\d+x\d+\.jpg$/, '500x500.jpg');
+};
 
 function processAlbumArt(buffer) {
     var artBytes = new Uint8Array(buffer);
@@ -93,8 +94,9 @@ function processAlbumArt(buffer) {
     return {data: artBytes, format: 'jpeg'};
 }
 
-function fetchAlbumArtWithFallback(url) {
-    var highResUrl = getHighResUrl(url);
+window.Utils.fetchAlbumArt = function(url) {
+    if (!url) return Promise.resolve(null);
+    var highResUrl = window.Utils.getHighResImageUrl(url, false);
     console.log('[Utils] Album art:', highResUrl);
 
     return window.Utils.fetchResource(highResUrl, 'arraybuffer').then(processAlbumArt).catch(function() {
@@ -104,9 +106,4 @@ function fetchAlbumArtWithFallback(url) {
             return null;
         });
     });
-}
-
-window.Utils.fetchAlbumArt = function(url) {
-    if (!url) return Promise.resolve(null);
-    return fetchAlbumArtWithFallback(url);
 };

@@ -16,7 +16,14 @@ function decryptMediaUrl(encrypted) {
         throw new Error('DES decryption library not available');
     }
 
-    const plain = desDecrypt(atob(encrypted), KEY);
+    var binaryString;
+    if (typeof atob === 'function') {
+        binaryString = atob(encrypted);
+    } else {
+        binaryString = new Buffer(encrypted, 'base64').toString('binary');
+    }
+
+    const plain = desDecrypt(binaryString, KEY);
     return plain.slice(0, -plain.charCodeAt(plain.length - 1));
 }
 

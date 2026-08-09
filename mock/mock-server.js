@@ -1,102 +1,148 @@
 // mock/mock-server.js
 // Mock server for supported music platform API - Static JSON with Pagination
 
-const fs = require('fs');
-const path = require('path');
+var fs = require('fs');
+var path = require('path');
+var querystring = require('querystring');
 
-const DATA_DIR = path.join(__dirname, 'data');
-const SEARCH_SONGS_DIR = path.join(DATA_DIR, 'search', 'songs');
-const SEARCH_ALBUMS_DIR = path.join(DATA_DIR, 'search', 'albums');
-const SEARCH_PLAYLISTS_DIR = path.join(DATA_DIR, 'search', 'playlists');
-const DETAILS_SONGS_DIR = path.join(DATA_DIR, 'details', 'songs');
-const DETAILS_ALBUMS_DIR = path.join(DATA_DIR, 'details', 'albums');
-const DETAILS_LYRICS_DIR = path.join(DATA_DIR, 'details', 'lyrics');
-const DETAILS_PLAYLISTS_DIR = path.join(DATA_DIR, 'details', 'playlists');
-const SEARCH_ARTISTS_DIR = path.join(DATA_DIR, 'search', 'artists');
-const DETAILS_ARTISTS_DIR = path.join(DATA_DIR, 'details', 'artists');
+var DATA_DIR = path.join(__dirname, 'data');
+var SEARCH_SONGS_DIR = path.join(DATA_DIR, 'search', 'songs');
+var SEARCH_ALBUMS_DIR = path.join(DATA_DIR, 'search', 'albums');
+var SEARCH_PLAYLISTS_DIR = path.join(DATA_DIR, 'search', 'playlists');
+var DETAILS_SONGS_DIR = path.join(DATA_DIR, 'details', 'songs');
+var DETAILS_ALBUMS_DIR = path.join(DATA_DIR, 'details', 'albums');
+var DETAILS_LYRICS_DIR = path.join(DATA_DIR, 'details', 'lyrics');
+var DETAILS_PLAYLISTS_DIR = path.join(DATA_DIR, 'details', 'playlists');
+var SEARCH_ARTISTS_DIR = path.join(DATA_DIR, 'search', 'artists');
+var DETAILS_ARTISTS_DIR = path.join(DATA_DIR, 'details', 'artists');
 
 // ============ CACHE (loaded once at startup) ============
-let searchSongFiles = [];
-let searchAlbumFiles = [];
-let searchPlaylistFiles = [];
-let songTokens = [];
-let albumTokens = [];
-let lyricsTokens = [];
-let playlistTokens = [];
-let searchArtistFiles = [];
-let artistTokens = [];
+var searchSongFiles = [];
+var searchAlbumFiles = [];
+var searchPlaylistFiles = [];
+var songTokens = [];
+var albumTokens = [];
+var lyricsTokens = [];
+var playlistTokens = [];
+var searchArtistFiles = [];
+var artistTokens = [];
 
 function loadCache() {
     try {
-        searchSongFiles = fs.readdirSync(SEARCH_SONGS_DIR)
-            .filter(f => f.endsWith('.json') && f !== 'default.json')
-            .map(f => f.replace('.json', ''));
+        var files = fs.readdirSync(SEARCH_SONGS_DIR);
+        searchSongFiles = [];
+        for (var i = 0; i < files.length; i++) {
+            var f = files[i];
+            if (f.indexOf('.json') !== -1 && f !== 'default.json') {
+                searchSongFiles.push(f.replace('.json', ''));
+            }
+        }
     } catch (e) {
         searchSongFiles = [];
     }
-    
+
     try {
-        searchAlbumFiles = fs.readdirSync(SEARCH_ALBUMS_DIR)
-            .filter(f => f.endsWith('.json') && f !== 'default.json')
-            .map(f => f.replace('.json', ''));
+        var files = fs.readdirSync(SEARCH_ALBUMS_DIR);
+        searchAlbumFiles = [];
+        for (var i = 0; i < files.length; i++) {
+            var f = files[i];
+            if (f.indexOf('.json') !== -1 && f !== 'default.json') {
+                searchAlbumFiles.push(f.replace('.json', ''));
+            }
+        }
     } catch (e) {
         searchAlbumFiles = [];
     }
-    
+
     try {
-        searchPlaylistFiles = fs.readdirSync(SEARCH_PLAYLISTS_DIR)
-            .filter(f => f.endsWith('.json') && f !== 'default.json')
-            .map(f => f.replace('.json', ''));
+        var files = fs.readdirSync(SEARCH_PLAYLISTS_DIR);
+        searchPlaylistFiles = [];
+        for (var i = 0; i < files.length; i++) {
+            var f = files[i];
+            if (f.indexOf('.json') !== -1 && f !== 'default.json') {
+                searchPlaylistFiles.push(f.replace('.json', ''));
+            }
+        }
     } catch (e) {
         searchPlaylistFiles = [];
     }
-    
+
     try {
-        songTokens = fs.readdirSync(DETAILS_SONGS_DIR)
-            .filter(f => f.endsWith('.json'))
-            .map(f => f.replace('.json', ''));
+        var files = fs.readdirSync(DETAILS_SONGS_DIR);
+        songTokens = [];
+        for (var i = 0; i < files.length; i++) {
+            var f = files[i];
+            if (f.indexOf('.json') !== -1) {
+                songTokens.push(f.replace('.json', ''));
+            }
+        }
     } catch (e) {
         songTokens = [];
     }
-    
+
     try {
-        albumTokens = fs.readdirSync(DETAILS_ALBUMS_DIR)
-            .filter(f => f.endsWith('.json'))
-            .map(f => f.replace('.json', ''));
+        var files = fs.readdirSync(DETAILS_ALBUMS_DIR);
+        albumTokens = [];
+        for (var i = 0; i < files.length; i++) {
+            var f = files[i];
+            if (f.indexOf('.json') !== -1) {
+                albumTokens.push(f.replace('.json', ''));
+            }
+        }
     } catch (e) {
         albumTokens = [];
     }
-    
+
     try {
-        playlistTokens = fs.readdirSync(DETAILS_PLAYLISTS_DIR)
-            .filter(f => f.endsWith('.json'))
-            .map(f => f.replace('.json', ''));
+        var files = fs.readdirSync(DETAILS_PLAYLISTS_DIR);
+        playlistTokens = [];
+        for (var i = 0; i < files.length; i++) {
+            var f = files[i];
+            if (f.indexOf('.json') !== -1) {
+                playlistTokens.push(f.replace('.json', ''));
+            }
+        }
     } catch (e) {
         playlistTokens = [];
     }
-    
+
     try {
-        lyricsTokens = fs.readdirSync(DETAILS_LYRICS_DIR)
-            .filter(f => f.endsWith('.json'))
-            .map(f => f.replace('.json', ''));
+        var files = fs.readdirSync(DETAILS_LYRICS_DIR);
+        lyricsTokens = [];
+        for (var i = 0; i < files.length; i++) {
+            var f = files[i];
+            if (f.indexOf('.json') !== -1) {
+                lyricsTokens.push(f.replace('.json', ''));
+            }
+        }
     } catch (e) {
         lyricsTokens = [];
     }
 
     // Load artist search files
     try {
-        searchArtistFiles = fs.readdirSync(SEARCH_ARTISTS_DIR)
-            .filter(f => f.endsWith('.json') && f !== 'default.json')
-            .map(f => f.replace('.json', ''));
+        var files = fs.readdirSync(SEARCH_ARTISTS_DIR);
+        searchArtistFiles = [];
+        for (var i = 0; i < files.length; i++) {
+            var f = files[i];
+            if (f.indexOf('.json') !== -1 && f !== 'default.json') {
+                searchArtistFiles.push(f.replace('.json', ''));
+            }
+        }
     } catch (e) {
         searchArtistFiles = [];
     }
 
     // Load artist tokens
     try {
-        artistTokens = fs.readdirSync(DETAILS_ARTISTS_DIR)
-            .filter(f => f.endsWith('.json'))
-            .map(f => f.replace('.json', ''));
+        var files = fs.readdirSync(DETAILS_ARTISTS_DIR);
+        artistTokens = [];
+        for (var i = 0; i < files.length; i++) {
+            var f = files[i];
+            if (f.indexOf('.json') !== -1) {
+                artistTokens.push(f.replace('.json', ''));
+            }
+        }
     } catch (e) {
         artistTokens = [];
     }
@@ -115,7 +161,7 @@ function loadCache() {
 
 function loadJSON(filePath) {
     try {
-        const content = fs.readFileSync(filePath, 'utf8');
+        var content = fs.readFileSync(filePath, 'utf8');
         return JSON.parse(content);
     } catch (e) {
         return null;
@@ -124,9 +170,9 @@ function loadJSON(filePath) {
 
 function getSearchResponse(query, type) {
     query = query.toLowerCase().trim();
-    
-    let files;
-    let searchDir;
+
+    var files;
+    var searchDir;
     if (type === 'song') {
         files = searchSongFiles;
         searchDir = SEARCH_SONGS_DIR;
@@ -143,33 +189,34 @@ function getSearchResponse(query, type) {
         files = [];
         searchDir = null;
     }
-    
-    let matchedFile = null;
-    for (const file of files) {
-        if (query.includes(file.toLowerCase())) {
+
+    var matchedFile = null;
+    for (var i = 0; i < files.length; i++) {
+        var file = files[i];
+        if (query.indexOf(file.toLowerCase()) !== -1) {
             matchedFile = file;
             break;
         }
     }
-    
+
     if (!matchedFile || !searchDir) {
-        const defaultPath = path.join(searchDir || '.', 'default.json');
-        const data = loadJSON(defaultPath);
-        return data || { total: 0, start: 0, results: [] };
+        var defaultPath = path.join(searchDir || '.', 'default.json');
+        var data = loadJSON(defaultPath);
+        return data || {total: 0, start: 0, results: []};
     }
-    
-    const filePath = path.join(searchDir, matchedFile + '.json');
-    const data = loadJSON(filePath);
-    return data || { total: 0, start: 0, results: [] };
+
+    var filePath = path.join(searchDir, matchedFile + '.json');
+    var data = loadJSON(filePath);
+    return data || {total: 0, start: 0, results: []};
 }
 
 function getDetailsResponse(token, type, page, limit, category) {
-    let dir;
-    let tokens;
-    let filePath;
-    let data;
+    var dir;
+    var tokens;
+    var filePath;
+    var data;
 
-   if (type === 'song') {
+    if (type === 'song') {
         dir = DETAILS_SONGS_DIR;
         tokens = songTokens;
     } else if (type === 'album') {
@@ -187,10 +234,10 @@ function getDetailsResponse(token, type, page, limit, category) {
     } else {
         return null;
     }
-    
-    if (!tokens.includes(token)) {
+
+    if (tokens.indexOf(token) === -1) {
         if (type === 'artist') {
-            console.log("skip");
+            console.log('skip');
         } else {
             return null;
         }
@@ -214,12 +261,12 @@ function getDetailsResponse(token, type, page, limit, category) {
     filePath = path.join(dir, token + '.json');
     data = loadJSON(filePath);
     if (!data) return null;
-    
+
     // For playlist, apply pagination
     if (type === 'playlist') {
         return paginatePlaylist(data, page, limit);
     }
-    
+
     return data;
 }
 
@@ -227,20 +274,22 @@ function getDetailsResponse(token, type, page, limit, category) {
 function paginatePlaylist(data, page, limit) {
     page = parseInt(page) || 1;
     limit = parseInt(limit) || 50;
-    
+
     var totalSongs = parseInt(data.list_count) || (data.list ? data.list.length : 0);
     var start = (page - 1) * limit;
     var end = Math.min(start + limit, totalSongs);
-    
+
     if (start >= totalSongs) {
-        return {
-            ...data,
-            list: []
-        };
+        var copy = {};
+        Object.keys(data).forEach(function(k) {
+            copy[k] = data[k];
+        });
+        copy.list = [];
+        return copy;
     }
-    
+
     var paginatedList = data.list ? data.list.slice(start, end) : [];
-    
+
     return {
         id: data.id,
         title: data.title,
@@ -263,26 +312,18 @@ function paginatePlaylist(data, page, limit) {
 function paginateSearchResults(data, page, limit) {
     page = parseInt(page) || 1;
     limit = parseInt(limit) || 20;
-    
+
     var total = parseInt(data.total) || (data.results ? data.results.length : 0);
     var start = (page - 1) * limit;
     var end = Math.min(start + limit, total);
-    
+
     if (start >= total) {
-        return {
-            total: total,
-            start: start + 1,
-            results: []
-        };
+        return {total: total, start: start + 1, results: []};
     }
-    
+
     var paginatedResults = data.results ? data.results.slice(start, end) : [];
-    
-    return {
-        total: total,
-        start: start + 1,
-        results: paginatedResults
-    };
+
+    return {total: total, start: start + 1, results: paginatedResults};
 }
 
 // ============ Load cache at startup ============
@@ -290,26 +331,27 @@ loadCache();
 
 // ============ Handler ============
 function handleRequest(req, res) {
-    const target = req.headers["x-proxy-url"];
+    var target = req.headers['x-proxy-url'];
     if (!target) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Missing X-Proxy-URL header' }));
+        res.writeHead(400, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify({error: 'Missing X-Proxy-URL header'}));
         return;
     }
 
-    const urlParts = target.split('?');
-    const params = new URLSearchParams(urlParts[1] || '');
-    const call = params.get('__call');
-    const token = params.get('token');
-    const query = params.get('q');
-    const type = params.get('type');
-    const page = params.get('p') || 1;
-    const limit = params.get('n') || 20;
+    var urlParts = target.split('?');
+    var params = querystring.parse(urlParts[1] || '');
+    var call = params.__call;
+    var token = params.token;
+    var query = params.q;
+    var type = params.type;
+    var page = params.p || 1;
+    var limit = params.n || 20;
 
-    let responseData = null;
+    var responseData = null;
 
-    if (call === 'search.getResults' || call === 'search.getAlbumResults' || call === 'search.getPlaylistResults' || call === 'search.getArtistResults') {
-        let searchType;
+    if (call === 'search.getResults' || call === 'search.getAlbumResults' || call === 'search.getPlaylistResults' ||
+        call === 'search.getArtistResults') {
+        var searchType;
         if (call === 'search.getResults') {
             searchType = 'song';
         } else if (call === 'search.getAlbumResults') {
@@ -323,37 +365,33 @@ function handleRequest(req, res) {
         var rawData = getSearchResponse(query, searchType);
         responseData = paginateSearchResults(rawData, page, limit);
     } else if (call === 'webapi.get') {
-        var category = params.get('category') || '';
+        var category = params.category || '';
         responseData = getDetailsResponse(token, type, page, limit, category);
     } else if (call === 'artist.getArtistMoreSong' || call === 'artist.getArtistMoreAlbum') {
-        var artistId = params.get('artistId');
-        var artist_page = parseInt(params.get('page')) || 1;
-        var category = params.get('category') || 'popular';
-    
+        var artistId = params.artistId;
+        var artist_page = parseInt(params.page) || 1;
+        var category = params.category || 'popular';
+
         var filePath = path.join(DETAILS_ARTISTS_DIR, artistId + '_' + category + '_songs_' + artist_page + '.json');
         var fileData = loadJSON(filePath);
         if (fileData) {
             responseData = fileData;
         } else {
-            responseData = {
-                topSongs: {
-                    songs: [],
-                    total: 0,
-                    last_page: true
-                }
-            };
+            responseData = {topSongs: {songs: [], total: 0, last_page: true}};
         }
     }
 
     if (responseData) {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.writeHead(200, {'Content-Type': 'application/json'});
         res.end(JSON.stringify(responseData));
         console.log('[Mock] Returning mock data for:', call, query || token);
     } else {
-        res.writeHead(404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Mock data not found' }));
+        res.writeHead(404, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify({error: 'Mock data not found'}));
         console.log('[Mock] No mock data found for:', call, query || token);
     }
 }
 
-module.exports = { handleRequest };
+module.exports = {
+    handleRequest : handleRequest
+};

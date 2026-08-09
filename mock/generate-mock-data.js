@@ -4,6 +4,8 @@
 const fs = require('fs');
 const path = require('path');
 
+
+
 // ============ PATHS ============
 const DATA_DIR = path.join(__dirname, 'data');
 const SEARCH_SONGS_DIR = path.join(DATA_DIR, 'search', 'songs');
@@ -66,7 +68,7 @@ function generateLyrics(songTitle) {
     var lines = randomInt(4, 8);
     var lyrics = '';
     var lineCount = 0;
-    
+
     for (var i = 0; i < lines; i++) {
         if (i > 0) lyrics += '<br>';
         if (i === 4 && lines > 4) {
@@ -75,7 +77,7 @@ function generateLyrics(songTitle) {
         lyrics += 'This is placeholder lyrics for ' + songTitle + ' line ' + (i + 1) + '.';
         lineCount++;
     }
-    
+
     return lyrics;
 }
 
@@ -85,12 +87,13 @@ function generateArtist(index, prefix) {
     var name = 'Artist ' + (index + 1);
     var genres = ['pop', 'rock', 'classical', 'jazz', 'folk', 'electronic', 'hip-hop', 'r&b', 'metal', 'indie'];
     var genre = randomItem(genres);
-    
+
     return {
         id: generateToken(prefix),
         name: name,
         image: 'http://127.0.0.1:3000/mock/images/mock_image-150x150.jpg',
-        bio: name + ' is a talented ' + genre + ' artist. They have released several hit songs and albums over the years.',
+        bio: name + ' is a talented ' + genre +
+            ' artist. They have released several hit songs and albums over the years.',
         perma_url: 'https://www.mymusic.com/artist/artist-' + (index + 1) + '/' + token,
         token: token
     };
@@ -120,24 +123,38 @@ function generateSong(albumId, albumToken, albumTitle, globalIndex, prefix, arti
     var titlePrefix = prefix.charAt(0).toUpperCase() + prefix.slice(1);
     var songTitle = titlePrefix + ' Song ' + (globalIndex + 1);
     var lyricsText = hasLyrics === 'true' ? generateLyrics(songTitle) : null;
-    
+
     // Get artists from pool
-    var artists = artistIds.map(function(artistId) {
-        return artistsPool.find(function(a) { return a.id === artistId; }) || null;
-    }).filter(function(a) { return a !== null; });
-    
+    var artists = [];
+    artistIds.forEach(function(artistId) {
+        var foundArtist = null;
+        for (var k = 0; k < artistsPool.length; k++) {
+            if (artistsPool[k].id === artistId) {
+                foundArtist = artistsPool[k];
+                break;
+            }
+        }
+        if (foundArtist) {
+            artists.push(foundArtist);
+        }
+    });
+
     if (artists.length === 0) {
         // Fallback: use a random artist
         var fallback = randomItem(artistsPool);
         artists = [fallback];
     }
-    
+
     var primaryArtists = artists;
-    
+
     var song = {
         id: id,
         title: songTitle,
-        subtitle: primaryArtists.map(function(a) { return a.name; }).join(', '),
+        subtitle: primaryArtists
+                      .map(function(a) {
+                          return a.name;
+                      })
+                      .join(', '),
         header_desc: '',
         type: 'song',
         perma_url: 'https://www.mymusic.com/song/' + prefix + '-song-' + (globalIndex + 1) + '/' + token,
@@ -150,7 +167,11 @@ function generateSong(albumId, albumToken, albumTitle, globalIndex, prefix, arti
         list_type: '',
         list: '',
         more_info: {
-            music: primaryArtists.map(function(a) { return a.name; }).join(', '),
+            music: primaryArtists
+                       .map(function(a) {
+                           return a.name;
+                       })
+                       .join(', '),
             album_id: albumId,
             album: albumTitle,
             label: 'Mock Records',
@@ -164,12 +185,7 @@ function generateSong(albumId, albumToken, albumTitle, globalIndex, prefix, arti
             encrypted_drm_media_url: '',
             album_url: 'https://www.mymusic.com/album/' + prefix + '-album-' + (globalIndex + 1) + '/' + albumToken,
             duration: duration,
-            rights: {
-                code: '0',
-                cacheable: 'true',
-                delete_cached_object: 'false',
-                reason: ''
-            },
+            rights: {code: '0', cacheable: 'true', delete_cached_object: 'false', reason: ''},
             cache_state: '',
             has_lyrics: hasLyrics,
             lyrics_snippet: hasLyrics === 'true' ? 'Lyrics for ' + songTitle : '',
@@ -211,12 +227,14 @@ function generateSong(albumId, albumToken, albumTitle, globalIndex, prefix, arti
         button_tooltip_info: [],
         pro_hva_campaigns: []
     };
-    
+
     return {
         song: song,
         lyrics: lyricsText,
         token: token,
-        artistIds: primaryArtists.map(function(a) { return a.id; })
+        artistIds: primaryArtists.map(function(a) {
+            return a.id;
+        })
     };
 }
 
@@ -228,7 +246,7 @@ function generateAlbums(count, prefix) {
     var albumSearchResults = [];
     var albumSongCounts = [];
     var albumTokens = [];
-    
+
     for (var i = 0; i < count; i++) {
         var songCount = randomInt(1, 10);
         var id = generateRandomId();
@@ -236,22 +254,25 @@ function generateAlbums(count, prefix) {
         var titlePrefix = prefix.charAt(0).toUpperCase() + prefix.slice(1);
         var albumTitle = titlePrefix + ' Album ' + (i + 1);
         var artists = pickRandomArtists(randomInt(1, 3));
-        var artistName = artists.map(function(a) { return a.name; }).join(', ');
+        var artistName = artists
+                             .map(function(a) {
+                                 return a.name;
+                             })
+                             .join(', ');
         var songs = [];
-        
+
         for (var j = 0; j < songCount; j++) {
-            var result = generateSong(id, token, albumTitle, globalSongIndex, prefix, artists.map(function(a) { return a.id; }));
+            var result = generateSong(id, token, albumTitle, globalSongIndex, prefix, artists.map(function(a) {
+                return a.id;
+            }));
             songs.push(result.song);
             allSongs.push(result.song);
             if (result.lyrics) {
-                allLyrics.push({
-                    token: result.token,
-                    lyrics: result.lyrics
-                });
+                allLyrics.push({token: result.token, lyrics: result.lyrics});
             }
             globalSongIndex++;
         }
-        
+
         var album = {
             id: id,
             title: albumTitle,
@@ -299,11 +320,11 @@ function generateAlbums(count, prefix) {
             button_tooltip_info: [],
             pro_hva_campaigns: []
         };
-        
+
         albums.push(album);
         albumSongCounts.push(songCount);
         albumTokens.push(token);
-        
+
         albumSearchResults.push({
             id: id,
             title: albumTitle,
@@ -352,7 +373,7 @@ function generateAlbums(count, prefix) {
             pro_hva_campaigns: []
         });
     }
-    
+
     return {
         albums: albums,
         allSongs: allSongs,
@@ -369,7 +390,7 @@ function generatePlaylists(count, prefix, songPool) {
     var playlistSearchResults = [];
     var playlistSongCounts = [];
     var playlistTokens = [];
-    
+
     for (var i = 0; i < count; i++) {
         var songCount = randomInt(5, Math.min(80, songPool.length));
         var id = generateRandomId();
@@ -377,16 +398,16 @@ function generatePlaylists(count, prefix, songPool) {
         var titlePrefix = prefix.charAt(0).toUpperCase() + prefix.slice(1);
         var playlistTitle = titlePrefix + ' Playlist ' + (i + 1);
         var artistName = randomItem(artistsPool).name;
-        
+
         var shuffledSongs = shuffleArray(songPool.slice());
         var selectedSongs = shuffledSongs.slice(0, songCount);
-        
+
         var contents = '';
         for (var j = 0; j < selectedSongs.length; j++) {
             if (j > 0) contents += ',';
             contents += selectedSongs[j].id;
         }
-        
+
         var totalDuration = 0;
         for (var j = 0; j < selectedSongs.length; j++) {
             totalDuration += parseInt(selectedSongs[j].more_info.duration) || 180;
@@ -394,7 +415,7 @@ function generatePlaylists(count, prefix, songPool) {
         var hours = Math.floor(totalDuration / 3600);
         var minutes = Math.floor((totalDuration % 3600) / 60);
         var durationStr = (hours > 0 ? hours + 'h ' : '') + minutes + 'm';
-        
+
         var playlist = {
             id: id,
             title: playlistTitle,
@@ -433,30 +454,24 @@ function generatePlaylists(count, prefix, songPool) {
                 initials: 'M' + prefix.charAt(0).toUpperCase(),
                 custom_username: 'mock_user_' + prefix + '_' + randomInt(1000, 9999),
                 video_count: '0',
-                artists: [
-                    {
-                        id: randomItem(artistsPool).id,
-                        name: artistName,
-                        role: 'music',
-                        image: '',
-                        type: 'artist',
-                        perma_url: 'https://www.mymusic.com/artist/artist-' + (i + 1) + '/' + generateToken(prefix)
-                    }
-                ],
-                subtitle_desc: [
-                    durationStr,
-                    songCount + ' Songs',
-                    (randomInt(1000, 100000)).toLocaleString() + ' Fans'
-                ]
+                artists: [{
+                    id: randomItem(artistsPool).id,
+                    name: artistName,
+                    role: 'music',
+                    image: '',
+                    type: 'artist',
+                    perma_url: 'https://www.mymusic.com/artist/artist-' + (i + 1) + '/' + generateToken(prefix)
+                }],
+                subtitle_desc: [durationStr, songCount + ' Songs', (randomInt(1000, 100000)).toLocaleString() + ' Fans']
             },
             button_tooltip_info: [],
             pro_hva_campaigns: []
         };
-        
+
         playlists.push(playlist);
         playlistSongCounts.push(songCount);
         playlistTokens.push(token);
-        
+
         playlistSearchResults.push({
             id: id,
             title: playlistTitle,
@@ -483,7 +498,7 @@ function generatePlaylists(count, prefix, songPool) {
             numsongs: null
         });
     }
-    
+
     return {
         playlists: playlists,
         playlistSearchResults: playlistSearchResults,
@@ -496,7 +511,7 @@ function generatePlaylists(count, prefix, songPool) {
 function generateArtistDetails(artists, songs, albums, playlists) {
     var allDetails = [];
     var artistSearchResults = [];
-    
+
     artists.forEach(function(artist) {
         // Find songs by this artist
         var artistSongs = songs.filter(function(song) {
@@ -504,21 +519,21 @@ function generateArtistDetails(artists, songs, albums, playlists) {
                 return a.id === artist.id;
             });
         });
-        
+
         // Find albums by this artist
         var artistAlbums = albums.filter(function(album) {
             return album.more_info.artistMap.primary_artists.some(function(a) {
                 return a.id === artist.id;
             });
         });
-        
+
         // Find playlists by this artist
         var artistPlaylists = playlists.filter(function(playlist) {
             return playlist.more_info.artists && playlist.more_info.artists.some(function(a) {
                 return a.id === artist.id;
             });
         });
-        
+
         // ============ POPULAR (sort by play_count) ============
         var popularSongs = artistSongs.slice().sort(function(a, b) {
             return parseInt(b.play_count || 0) - parseInt(a.play_count || 0);
@@ -526,7 +541,7 @@ function generateArtistDetails(artists, songs, albums, playlists) {
         var popularAlbums = artistAlbums.slice().sort(function(a, b) {
             return parseInt(b.year || 0) - parseInt(a.year || 0);
         });
-        
+
         // ============ LATEST (sort by year) ============
         var latestSongs = artistSongs.slice().sort(function(a, b) {
             return parseInt(b.year || 0) - parseInt(a.year || 0);
@@ -534,7 +549,7 @@ function generateArtistDetails(artists, songs, albums, playlists) {
         var latestAlbums = artistAlbums.slice().sort(function(a, b) {
             return parseInt(b.year || 0) - parseInt(a.year || 0);
         });
-        
+
         var baseDetail = {
             artistId: artist.id,
             name: artist.name,
@@ -548,34 +563,40 @@ function generateArtistDetails(artists, songs, albums, playlists) {
             perma_url: artist.perma_url,
             dedicated_artist_playlist: artistPlaylists.slice(0, 5),
             featured_artist_playlist: [],
-            singles: artistAlbums.filter(function(album) {
-                return parseInt(album.list_count) === 1;
-            }).slice(0, 5),
+            singles: artistAlbums
+                         .filter(function(album) {
+                             return parseInt(album.list_count) === 1;
+                         })
+                         .slice(0, 5),
             latest_release: artistAlbums.slice(0, 5),
             bio: artist.bio,
             fan_count: String(randomInt(10000, 1000000)),
             is_followed: false
         };
-        
+
         // Popular detail
-        var popularDetail = Object.assign({}, baseDetail, {
-            topSongs: popularSongs.slice(0, 10),
-            topAlbums: popularAlbums.slice(0, 10)
-        });
-        
+        var popularDetail = {};
+        for (var key in baseDetail) {
+            if (baseDetail.hasOwnProperty(key)) {
+                popularDetail[key] = baseDetail[key];
+            }
+        }
+        popularDetail.topSongs = popularSongs.slice(0, 10);
+        popularDetail.topAlbums = popularAlbums.slice(0, 10);
+
         // Latest detail
-        var latestDetail = Object.assign({}, baseDetail, {
-            topSongs: latestSongs.slice(0, 10),
-            topAlbums: latestAlbums.slice(0, 10)
-        });
-        
+        var latestDetail = {};
+        for (var key in baseDetail) {
+            if (baseDetail.hasOwnProperty(key)) {
+                latestDetail[key] = baseDetail[key];
+            }
+        }
+        latestDetail.topSongs = latestSongs.slice(0, 10);
+        latestDetail.topAlbums = latestAlbums.slice(0, 10);
+
         // Store both with category in the object
-        allDetails.push({
-            token: artist.perma_url.split('/').pop(),
-            popular: popularDetail,
-            latest: latestDetail
-        });
-        
+        allDetails.push({token: artist.perma_url.split('/').pop(), popular: popularDetail, latest: latestDetail});
+
         // Search result (same for both)
         artistSearchResults.push({
             id: artist.id,
@@ -591,11 +612,8 @@ function generateArtistDetails(artists, songs, albums, playlists) {
             is_followed: false
         });
     });
-    
-    return {
-        details: allDetails,
-        searchResults: artistSearchResults
-    };
+
+    return {details: allDetails, searchResults: artistSearchResults};
 }
 
 // ============ HELPER: SHUFFLE ARRAY ============
@@ -618,36 +636,36 @@ function generatePaginatedArtistFiles(artist, allSongs, allAlbums, prefix) {
             return a.id === artist.id;
         });
     });
-    
+
     // Get all albums by this artist
     var artistAlbums = allAlbums.filter(function(album) {
         return album.more_info.artistMap.primary_artists.some(function(a) {
             return a.id === artist.id;
         });
     });
-    
+
     var token = artist.id;
     var limit = 10;
-    
+
     // ============ SONGS ============
     // Popular: sort by play_count (highest first)
     var popularSongs = artistSongs.slice().sort(function(a, b) {
         return parseInt(b.play_count || 0) - parseInt(a.play_count || 0);
     });
-    
+
     // Latest: sort by year (newest first)
     var latestSongs = artistSongs.slice().sort(function(a, b) {
         return parseInt(b.year || 0) - parseInt(a.year || 0);
     });
-    
+
     // Albums: sort by year (newest first)
     var sortedAlbums = artistAlbums.slice().sort(function(a, b) {
         return parseInt(b.year || 0) - parseInt(a.year || 0);
     });
-    
+
     // ============ SAVE PAGINATED FILES ============
     var filesCreated = 0;
-    
+
     // Songs - Popular (page 2+)
     var totalSongs = popularSongs.length;
     for (var page = 2; page <= Math.ceil(totalSongs / limit); page++) {
@@ -655,21 +673,15 @@ function generatePaginatedArtistFiles(artist, allSongs, allAlbums, prefix) {
         var end = Math.min(start + limit, totalSongs);
         var pageSongs = popularSongs.slice(start, end);
         var last_page = end >= totalSongs;
-        
-        var data = {
-            topSongs: {
-                songs: pageSongs,
-                total: totalSongs,
-                last_page: last_page
-            }
-        };
-        
+
+        var data = {topSongs: {songs: pageSongs, total: totalSongs, last_page: last_page}};
+
         var filename = token + '_popular_songs_' + page + '.json';
         var filePath = path.join(DETAILS_ARTISTS_DIR, filename);
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
         filesCreated++;
     }
-    
+
     // Songs - Latest (page 2+)
     var totalLatestSongs = latestSongs.length;
     for (var page = 2; page <= Math.ceil(totalLatestSongs / limit); page++) {
@@ -677,21 +689,15 @@ function generatePaginatedArtistFiles(artist, allSongs, allAlbums, prefix) {
         var end = Math.min(start + limit, totalLatestSongs);
         var pageSongs = latestSongs.slice(start, end);
         var last_page = end >= totalLatestSongs;
-        
-        var data = {
-            topSongs: {
-                songs: pageSongs,
-                total: totalLatestSongs,
-                last_page: last_page
-            }
-        };
-        
+
+        var data = {topSongs: {songs: pageSongs, total: totalLatestSongs, last_page: last_page}};
+
         var filename = token + '_latest_songs_' + page + '.json';
         var filePath = path.join(DETAILS_ARTISTS_DIR, filename);
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
         filesCreated++;
     }
-    
+
     // Albums (page 2+) - same for popular and latest
     var totalAlbums = sortedAlbums.length;
     for (var page = 2; page <= Math.ceil(totalAlbums / limit); page++) {
@@ -699,28 +705,22 @@ function generatePaginatedArtistFiles(artist, allSongs, allAlbums, prefix) {
         var end = Math.min(start + limit, totalAlbums);
         var pageAlbums = sortedAlbums.slice(start, end);
         var last_page = end >= totalAlbums;
-        
-        var data = {
-            topAlbums: {
-                albums: pageAlbums,
-                total: totalAlbums,
-                last_page: last_page
-            }
-        };
-        
+
+        var data = {topAlbums: {albums: pageAlbums, total: totalAlbums, last_page: last_page}};
+
         // Popular albums
         var filename = token + '_popular_albums_' + page + '.json';
         var filePath = path.join(DETAILS_ARTISTS_DIR, filename);
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
         filesCreated++;
-        
+
         // Latest albums (same data, different name)
         var filenameLatest = token + '_latest_albums_' + page + '.json';
         var filePathLatest = path.join(DETAILS_ARTISTS_DIR, filenameLatest);
         fs.writeFileSync(filePathLatest, JSON.stringify(data, null, 2));
         filesCreated++;
     }
-    
+
     return filesCreated;
 }
 
@@ -728,25 +728,21 @@ function generatePaginatedArtistFiles(artist, allSongs, allAlbums, prefix) {
 function deleteFiles(prefix) {
     console.log('🗑️  Deleting files with prefix:', prefix);
     console.log('');
-    
+
     var deleted = 0;
     var patterns = [
-        { dir: SEARCH_SONGS_DIR, pattern: prefix + '.json' },
-        { dir: SEARCH_ALBUMS_DIR, pattern: prefix + '.json' },
-        { dir: SEARCH_PLAYLISTS_DIR, pattern: prefix + '.json' },
-        { dir: SEARCH_ARTISTS_DIR, pattern: prefix + '.json' },
-        { dir: DETAILS_SONGS_DIR, pattern: prefix + '_' },
-        { dir: DETAILS_ALBUMS_DIR, pattern: prefix + '_' },
-        { dir: DETAILS_PLAYLISTS_DIR, pattern: prefix + '_' },
-        { dir: DETAILS_LYRICS_DIR, pattern: prefix + '_' },
-        { dir: DETAILS_ARTISTS_DIR, pattern: prefix + '_' }
+        {dir: SEARCH_SONGS_DIR, pattern: prefix + '.json'}, {dir: SEARCH_ALBUMS_DIR, pattern: prefix + '.json'},
+        {dir: SEARCH_PLAYLISTS_DIR, pattern: prefix + '.json'}, {dir: SEARCH_ARTISTS_DIR, pattern: prefix + '.json'},
+        {dir: DETAILS_SONGS_DIR, pattern: prefix + '_'}, {dir: DETAILS_ALBUMS_DIR, pattern: prefix + '_'},
+        {dir: DETAILS_PLAYLISTS_DIR, pattern: prefix + '_'}, {dir: DETAILS_LYRICS_DIR, pattern: prefix + '_'},
+        {dir: DETAILS_ARTISTS_DIR, pattern: prefix + '_'}
     ];
-    
+
     patterns.forEach(function(item) {
         if (!fs.existsSync(item.dir)) return;
         var files = fs.readdirSync(item.dir);
         files.forEach(function(file) {
-            if (file.includes(item.pattern)) {
+            if (file.indexOf(item.pattern) !== -1) {
                 var filePath = path.join(item.dir, file);
                 fs.unlinkSync(filePath);
                 console.log('  - ' + filePath);
@@ -754,7 +750,7 @@ function deleteFiles(prefix) {
             }
         });
     });
-    
+
     console.log('');
     console.log('✅ Deleted ' + deleted + ' files');
 }
@@ -766,46 +762,42 @@ function generateAll(prefix) {
     console.log('========================================');
     console.log('  Prefix:', prefix);
     console.log('');
-    
+
     globalSongIndex = 0;
     globalArtistIndex = 0;
     var totalFiles = 0;
-    
+
     // ============ GENERATE ARTISTS ============
     var artistCount = randomInt(10, 20);
     console.log('🎤 Generating Artists...');
     console.log('  - ' + artistCount + ' artists');
-    
+
     artistsPool = generateArtists(artistCount, prefix);
-    
+
     // Save artist details (will be updated after albums/songs/playlists)
     // We'll generate final details after all data is created
     var artistDetailsTemp = [];
     var artistSearchResultsTemp = [];
-    
+
     // ============ ALBUMS ============
     var albumCount = randomInt(20, 40);
     console.log('💿 Generating Albums...');
     console.log('  - ' + albumCount + ' albums');
-    
+
     var albumData = generateAlbums(albumCount, prefix);
     var allSongs = albumData.allSongs;
     var albums = albumData.albums;
     var allLyrics = albumData.allLyrics;
     var albumSearchResults = albumData.albumSearchResults;
     var albumTokens = albumData.albumTokens;
-    
-    var albumSearch = {
-        total: albumCount,
-        start: 1,
-        results: albumSearchResults
-    };
+
+    var albumSearch = {total: albumCount, start: 1, results: albumSearchResults};
     var albumSearchPath = path.join(SEARCH_ALBUMS_DIR, prefix + '.json');
     ensureDir(SEARCH_ALBUMS_DIR);
     fs.writeFileSync(albumSearchPath, JSON.stringify(albumSearch, null, 2));
     console.log('  ✅ search/albums/' + prefix + '.json');
     totalFiles++;
-    
+
     ensureDir(DETAILS_ALBUMS_DIR);
     for (var i = 0; i < albums.length; i++) {
         var album = albums[i];
@@ -816,11 +808,11 @@ function generateAll(prefix) {
     }
     console.log('  ✅ details/albums/' + prefix + '_*.json (' + albums.length + ' files)');
     console.log('');
-    
+
     // ============ SONGS ============
     console.log('🎵 Generating Songs...');
     console.log('  - ' + allSongs.length + ' songs');
-    
+
     // Build song search results
     var songSearchResults = allSongs.map(function(song) {
         return {
@@ -843,67 +835,55 @@ function generateAll(prefix) {
             pro_hva_campaigns: []
         };
     });
-    
-    var songSearch = {
-        total: allSongs.length,
-        start: 1,
-        results: songSearchResults
-    };
+
+    var songSearch = {total: allSongs.length, start: 1, results: songSearchResults};
     var songSearchPath = path.join(SEARCH_SONGS_DIR, prefix + '.json');
     ensureDir(SEARCH_SONGS_DIR);
     fs.writeFileSync(songSearchPath, JSON.stringify(songSearch, null, 2));
     console.log('  ✅ search/songs/' + prefix + '.json');
     totalFiles++;
-    
+
     ensureDir(DETAILS_SONGS_DIR);
     for (var i = 0; i < allSongs.length; i++) {
         var song = allSongs[i];
         var token = song.perma_url.split('/').pop();
         var filename = token + '.json';
         var songPath = path.join(DETAILS_SONGS_DIR, filename);
-        fs.writeFileSync(songPath, JSON.stringify({ songs: [song] }, null, 2));
+        fs.writeFileSync(songPath, JSON.stringify({songs: [song]}, null, 2));
         totalFiles++;
     }
     console.log('  ✅ details/songs/' + prefix + '_*.json (' + allSongs.length + ' files)');
-    
+
     // ============ LYRICS ============
     console.log('  - ' + allLyrics.length + ' lyrics files');
     ensureDir(DETAILS_LYRICS_DIR);
     for (var i = 0; i < allLyrics.length; i++) {
         var lyricItem = allLyrics[i];
         var lyricsPath = path.join(DETAILS_LYRICS_DIR, lyricItem.token + '.json');
-        var lyricsData = {
-            lyrics: {
-                lyrics: lyricItem.lyrics
-            }
-        };
+        var lyricsData = {lyrics: {lyrics: lyricItem.lyrics}};
         fs.writeFileSync(lyricsPath, JSON.stringify(lyricsData, null, 2));
         totalFiles++;
     }
     console.log('  ✅ details/lyrics/' + prefix + '_*.json (' + allLyrics.length + ' files)');
     console.log('');
-    
+
     // ============ PLAYLISTS ============
     var playlistCount = randomInt(20, 40);
     console.log('📋 Generating Playlists...');
     console.log('  - ' + playlistCount + ' playlists');
-    
+
     var playlistData = generatePlaylists(playlistCount, prefix, allSongs);
     var playlists = playlistData.playlists;
     var playlistSearchResults = playlistData.playlistSearchResults;
     var playlistTokens = playlistData.playlistTokens;
-    
-    var playlistSearch = {
-        total: playlistCount,
-        start: 1,
-        results: playlistSearchResults
-    };
+
+    var playlistSearch = {total: playlistCount, start: 1, results: playlistSearchResults};
     var playlistSearchPath = path.join(SEARCH_PLAYLISTS_DIR, prefix + '.json');
     ensureDir(SEARCH_PLAYLISTS_DIR);
     fs.writeFileSync(playlistSearchPath, JSON.stringify(playlistSearch, null, 2));
     console.log('  ✅ search/playlists/' + prefix + '.json');
     totalFiles++;
-    
+
     ensureDir(DETAILS_PLAYLISTS_DIR);
     for (var i = 0; i < playlists.length; i++) {
         var playlist = playlists[i];
@@ -914,36 +894,32 @@ function generateAll(prefix) {
     }
     console.log('  ✅ details/playlists/' + prefix + '_*.json (' + playlists.length + ' files)');
     console.log('');
-    
+
     // ============ GENERATE ARTIST DETAILS (after all data) ============
     console.log('🎤 Generating Artist Details...');
     var artistData = generateArtistDetails(artistsPool, allSongs, albums, playlists);
     var artistDetails = artistData.details;
     var artistSearchResults = artistData.searchResults;
-    
+
     // Save artist search results
-    var artistSearch = {
-        total: artistSearchResults.length,
-        start: 1,
-        results: artistSearchResults
-    };
+    var artistSearch = {total: artistSearchResults.length, start: 1, results: artistSearchResults};
     var artistSearchPath = path.join(SEARCH_ARTISTS_DIR, prefix + '.json');
     ensureDir(SEARCH_ARTISTS_DIR);
     fs.writeFileSync(artistSearchPath, JSON.stringify(artistSearch, null, 2));
     console.log('  ✅ search/artists/' + prefix + '.json');
     totalFiles++;
-    
+
     // Save individual artist details (popular and latest)
     ensureDir(DETAILS_ARTISTS_DIR);
     for (var i = 0; i < artistData.details.length; i++) {
         var artistEntry = artistData.details[i];
         var token = artistEntry.token;
-    
+
         // Save popular
         var popularPath = path.join(DETAILS_ARTISTS_DIR, token + '_popular.json');
         fs.writeFileSync(popularPath, JSON.stringify(artistEntry.popular, null, 2));
         totalFiles++;
-    
+
         // Save latest
         var latestPath = path.join(DETAILS_ARTISTS_DIR, token + '_latest.json');
         fs.writeFileSync(latestPath, JSON.stringify(artistEntry.latest, null, 2));
@@ -963,7 +939,7 @@ function generateAll(prefix) {
 
     console.log('  ✅ details/artists/' + prefix + '_*.json (' + artistDetails.length + ' files)');
     console.log('');
-    
+
     // ============ SUMMARY ============
     console.log('========================================');
     console.log('✅ Done!');
@@ -978,13 +954,13 @@ function generateAll(prefix) {
 
 function ensureDir(dir) {
     if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
+        fs.mkdirSync(dir, {recursive: true});
     }
 }
 
 function main() {
     var args = process.argv.slice(2);
-    
+
     if (args[0] === '--delete') {
         var prefix = args[1];
         if (!prefix) {
@@ -994,14 +970,14 @@ function main() {
         deleteFiles(prefix);
         return;
     }
-    
+
     var prefix = args[0];
     if (!prefix) {
         console.log('Usage: node mock/generate-mock-data.js <prefix>');
         console.log('       node mock/generate-mock-data.js --delete <prefix>');
         process.exit(1);
     }
-    
+
     generateAll(prefix);
 }
 

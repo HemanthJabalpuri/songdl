@@ -1,9 +1,19 @@
 require('./bootstrap.js');
-const test = require('node:test');
-const assert = require('node:assert');
+var test;
+try {
+    test = require('node:test');
+} catch (e) {
+    test = global.test;
+}
+var assert;
+try {
+    assert = require('node:assert');
+} catch (e) {
+    assert = require('assert');
+}
 
-test('Utils.parseUrl matches platform URLs', () => {
-    const urls = [
+test('Utils.parseUrl matches platform URLs', function() {
+    var urls = [
         {
             url: 'https://www.mymusic.com/song/jingle-bells/mock_song_001',
             expected: {type: 'song', token: 'mock_song_001'}
@@ -22,9 +32,11 @@ test('Utils.parseUrl matches platform URLs', () => {
         }
     ];
 
-    urls.forEach(({url, expected}) => {
-        const parsed = window.Utils.parseUrl(url);
-        assert.ok(parsed, `Failed to parse: ${url}`);
+    urls.forEach(function(item) {
+        var url = item.url;
+        var expected = item.expected;
+        var parsed = window.Utils.parseUrl(url);
+        assert.ok(parsed, 'Failed to parse: ' + url);
         assert.strictEqual(parsed.type, expected.type);
         assert.strictEqual(parsed.token, expected.token);
     });

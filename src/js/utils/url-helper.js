@@ -7,21 +7,21 @@ window.Utils.parseUrl = function(url) {
     if (!url) return {type: null, token: null};
 
     // Check if it's a valid URL
-    if (!url.includes(window.API.constants.API_HOST)) {
+    if (url.indexOf(window.API.constants.API_HOST) === -1) {
         return {type: null, token: null};
     }
 
     // Determine type from URL
     var type = null;
-    if (url.includes('/song/')) {
+    if (url.indexOf('/song/') !== -1) {
         type = 'song';
-    } else if (url.includes('/album/')) {
+    } else if (url.indexOf('/album/') !== -1) {
         type = 'album';
-    } else if (url.includes('/lyrics/')) {
+    } else if (url.indexOf('/lyrics/') !== -1) {
         type = 'lyrics';
-    } else if (url.includes('/featured/')) {
+    } else if (url.indexOf('/featured/') !== -1) {
         type = 'playlist';
-    } else if (url.includes('/artist/')) {
+    } else if (url.indexOf('/artist/') !== -1) {
         type = 'artist';
     } else {
         return {type: null, token: null};

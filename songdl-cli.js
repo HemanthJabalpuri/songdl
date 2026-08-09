@@ -1,12 +1,131 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+var fs = require('fs');
+var path = require('path');
+
+// ============================================================
+// ES5 POLYFILLS FOR NODE v0.11.8 COMPATIBILITY
+// ============================================================
+
+// Promise ES5 Polyfill (with recursive thenable flattening)
+function PromisePolyfill(executor) {
+    var self = this;
+    self.state = 'pending';
+    self.value = undefined;
+    self.callbacks = [];
+
+    function resolve(val) {
+        if (self.state !== 'pending') return;
+        if (val && typeof val.then === 'function') {
+            val.then(resolve, reject);
+            return;
+        }
+        self.state = 'fulfilled';
+        self.value = val;
+        self.callbacks.forEach(function(cb) {
+            cb.onFulfilled(val);
+        });
+    }
+
+    function reject(reason) {
+        if (self.state !== 'pending') return;
+        self.state = 'rejected';
+        self.value = reason;
+        self.callbacks.forEach(function(cb) {
+            cb.onRejected(reason);
+        });
+    }
+
+    try {
+        executor(resolve, reject);
+    } catch (e) {
+        reject(e);
+    }
+}
+
+PromisePolyfill.prototype.then = function(onFulfilled, onRejected) {
+    var self = this;
+    return new PromisePolyfill(function(resolve, reject) {
+        function handle(value) {
+            try {
+                if (self.state === 'fulfilled') {
+                    if (typeof onFulfilled === 'function') {
+                        resolve(onFulfilled(value));
+                    } else {
+                        resolve(value);
+                    }
+                } else if (self.state === 'rejected') {
+                    if (typeof onRejected === 'function') {
+                        resolve(onRejected(value));
+                    } else {
+                        reject(value);
+                    }
+                }
+            } catch (e) {
+                reject(e);
+            }
+        }
+
+        if (self.state === 'pending') {
+            self.callbacks.push({onFulfilled: handle, onRejected: handle});
+        } else {
+            setImmediate(function() {
+                handle(self.value);
+            });
+        }
+    });
+};
+
+PromisePolyfill.prototype.catch = function(onRejected) {
+    return this.then(null, onRejected);
+};
+
+PromisePolyfill.resolve = function(val) {
+    return new PromisePolyfill(function(resolve) {
+        resolve(val);
+    });
+};
+
+PromisePolyfill.reject = function(reason) {
+    return new PromisePolyfill(function(resolve, reject) {
+        reject(reason);
+    });
+};
+
+PromisePolyfill.all = function(promises) {
+    return new PromisePolyfill(function(resolve, reject) {
+        var results = [];
+        var completed = 0;
+        if (promises.length === 0) return resolve(results);
+        promises.forEach(function(p, i) {
+            PromisePolyfill.resolve(p).then(function(val) {
+                results[i] = val;
+                completed++;
+                if (completed === promises.length) resolve(results);
+            }, reject);
+        });
+    });
+};
+
+global.Promise = global.Promise || PromisePolyfill;
+
+global.window = global;
+window.Cache = {
+    store: {},
+    get: function(key) {
+        return this.store[key];
+    },
+    set: function(key, val) {
+        this.store[key] = val;
+    }
+};
+
+
 
 // Parse command line arguments at startup
-const args = process.argv.slice(2);
-const mockIndex = args.indexOf('--mock');
-const isMockEnabled = mockIndex !== -1;
+var args = process.argv.slice(2);
+var mockIndex = args.indexOf('--mock');
+var isMockEnabled = mockIndex !== -1;
 if (isMockEnabled) {
     args.splice(mockIndex, 1);
 }
@@ -14,28 +133,36 @@ if (isMockEnabled) {
 // Configure global mock objects for Node environments
 global.isProxy = isMockEnabled;
 global.document = undefined;
+global.window = global;
+global.require = require;
 
 // Prepend Node.js safety wrapper
-let combinedCode = `
-    if (typeof window === 'undefined') {
-        global.window = global;
-    }
-`;
+var combinedCode = '\n' +
+    '    if (typeof window === \'undefined\') {\n' +
+    '        global.window = global;\n' +
+    '    }\n';
 
 // Parse script listings dynamically from index.html in correct load order
 try {
-    const html = fs.readFileSync(path.join(__dirname, 'src', 'index.html'), 'utf8');
-    const regex = /src="(\/js\/[^"]+)"/g;
-    let match;
+    var html = fs.readFileSync(path.join(__dirname, 'src', 'index.html'), 'utf8');
+    var regex = /src="(\/js\/[^"]+)"/g;
+    var match;
     while ((match = regex.exec(html)) !== null) {
-        const filePath = path.join(__dirname, 'src', match[1]);
-        const content = fs.readFileSync(filePath, 'utf8');
-        combinedCode += '\n// FILE: ' + match[1] + '\n' + content + '\n';
+        var scriptPath = match[1];
+        if (scriptPath.indexOf('/ui/') !== -1) {
+            continue;  // Skip browser-only UI display elements!
+        }
+        var filePath = path.join(__dirname, 'src', scriptPath);
+        var content = fs.readFileSync(filePath, 'utf8');
+        try {
+            // Evaluate dynamically
+            var FunctionConstructor = Function;
+            new FunctionConstructor(content)();
+        } catch (e) {
+            console.error('Error in file: ' + scriptPath);
+            throw e;
+        }
     }
-
-    // Evaluate combined source code globally
-    const FunctionConstructor = Function;
-    new FunctionConstructor(combinedCode)();
 } catch (e) {
     console.error('Error: Failed to dynamically load codebase sources:', e.message);
     process.exit(1);
@@ -43,62 +170,86 @@ try {
 
 // Override browser download dumper to write decrypted M4A files to local downloads folder
 window.Utils.downloadFile = function(data, filename) {
-    const downloadDir = path.join(__dirname, 'downloads');
+    var downloadDir = path.join(__dirname, 'downloads');
     if (!fs.existsSync(downloadDir)) {
         fs.mkdirSync(downloadDir);
     }
-    const outputPath = path.join(downloadDir, filename);
-    fs.writeFileSync(outputPath, Buffer.from(data));
-    console.log(`\n💾 Saved: downloads/${filename} (${(data.length / 1024 / 1024).toFixed(2)} MB)`);
+    var outputPath = path.join(downloadDir, filename);
+    // Node 0.11 Buffer conversion
+    var buf;
+    if (typeof Buffer.from === 'function') {
+        buf = Buffer.from(data);
+    } else {
+        buf = new Buffer(data.length);
+        for (var i = 0; i < data.length; i++) {
+            buf[i] = data[i];
+        }
+    }
+    fs.writeFileSync(outputPath, buf);
+    console.log('\n💾 Saved: downloads/' + filename + ' (' + (data.byteLength / 1024 / 1024).toFixed(2) + ' MB)');
 };
 
 // Set up in-memory mock server routing if --mock flag is present
 if (isMockEnabled) {
-    const mockServer = require('./mock/mock-server.js');
-    const originalFetch = global.fetch;
+    var mockServer = require('./mock/mock-server.js');
+    var originalFetch = global.fetch;
 
-    global.fetch = async function(url, options) {
+    global.fetch = function(url, options) {
         var urlStr = url.toString();
 
         // 1. Intercept asset CDN file calls:
-        if (urlStr.includes('/mock/audio/') || urlStr.includes('/mock/images/')) {
-            const relPath =
+        if (urlStr.indexOf('/mock/audio/') !== -1 || urlStr.indexOf('/mock/images/') !== -1) {
+            var relPath =
                 urlStr.split('/mock/')[1].replace('images/', 'assets/images/').replace('audio/', 'assets/audio/');
-            const fullPath = path.join(__dirname, 'mock', relPath);
+            var fullPath = path.join(__dirname, 'mock', relPath);
             if (fs.existsSync(fullPath)) {
-                const buffer = fs.readFileSync(fullPath);
-                return {
+                var buffer = fs.readFileSync(fullPath);
+                return Promise.resolve({
                     ok: true,
                     status: 200,
-                    arrayBuffer: async () =>
-                        buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength),
-                    json: async () => JSON.parse(buffer.toString())
-                };
+                    arrayBuffer: function() {
+                        var ab = new ArrayBuffer(buffer.length);
+                        var view = new Uint8Array(ab);
+                        for (var i = 0; i < buffer.length; i++) {
+                            view[i] = buffer[i];
+                        }
+                        return Promise.resolve(ab);
+                    },
+                    json: function() {
+                        return Promise.resolve(JSON.parse(buffer.toString('utf8')));
+                    }
+                });
             }
         }
 
         // 2. Intercept proxy requests (/proxy):
-        if (urlStr.includes('/proxy')) {
-            return new Promise((resolve, reject) => {
-                const mockRes = {
+        if (urlStr.indexOf('/proxy') !== -1) {
+            return new Promise(function(resolve, reject) {
+                var mockRes = {
                     writeHead: function(status, headers) {
                         this.status = status;
                         this.headers = headers;
                     },
                     end: function(data) {
-                        resolve({ok: true, status: this.status || 200, json: async () => JSON.parse(data)});
+                        resolve({
+                            ok: true,
+                            status: this.status || 200,
+                            json: function() {
+                                return Promise.resolve(JSON.parse(data));
+                            }
+                        });
                     }
                 };
 
                 // Lowercase mock headers to align with Node's native HTTP parser
-                const lowerHeaders = {};
+                var lowerHeaders = {};
                 if (options.headers) {
-                    Object.keys(options.headers).forEach(key => {
+                    Object.keys(options.headers).forEach(function(key) {
                         lowerHeaders[key.toLowerCase()] = options.headers[key];
                     });
                 }
 
-                const mockReq = {url: '/proxy', method: 'POST', headers: lowerHeaders};
+                var mockReq = {url: '/proxy', method: 'POST', headers: lowerHeaders};
 
                 mockServer.handleRequest(mockReq, mockRes);
             });
@@ -109,7 +260,21 @@ if (isMockEnabled) {
     };
 }
 
-const command = args[0];
+var readline = require('readline');
+
+// Dynamic confirmation prompt helper
+function askConfirmation(message) {
+    return new Promise(function(resolve) {
+        var rl = readline.createInterface({input: process.stdin, output: process.stdout});
+        rl.question(message, function(answer) {
+            rl.close();
+            var trimmed = answer.toLowerCase().trim();
+            resolve(trimmed === 'y' || trimmed === 'yes');
+        });
+    });
+}
+
+var command = args[0];
 
 if (!command || command === '--help' || command === '-h') {
     console.log('Usage:');
@@ -121,8 +286,8 @@ if (!command || command === '--help' || command === '-h') {
 }
 
 if (command === 'search') {
-    const type = args[1] || 'songs';
-    const query = args[2];
+    var type = args[1] || 'songs';
+    var query = args[2];
     if (!query) {
         console.error('Error: Please provide a search query.');
         process.exit(1);
@@ -131,8 +296,8 @@ if (command === 'search') {
     // Set search type context
     global.currentSearchType = type;
 
-    console.log(`Searching for "${query}" of type "${type}"...`);
-    let service;
+    console.log('Searching for "' + query + '" of type "' + type + '"...');
+    var service;
     if (type === 'songs') {
         service = Services.Song;
     } else if (type === 'albums') {
@@ -144,47 +309,50 @@ if (command === 'search') {
     }
 
     if (!service) {
-        console.error(`Error: Unknown search type "${type}". Use songs|albums|playlists|artists.`);
+        console.error('Error: Unknown search type "' + type + '". Use songs|albums|playlists|artists.');
         process.exit(1);
     }
 
     service.search(query, 5, 1)
-        .then(data => {
+        .then(function(data) {
             console.log('\nResults:');
             if (data.results && data.results.length > 0) {
-                data.results.forEach((item, i) => {
-                    console.log(`[${i + 1}] ${item.title || item.name || 'Unknown'}`);
+                data.results.forEach(function(item, i) {
+                    console.log('[' + (i + 1) + '] ' + (item.title || item.name || 'Unknown'));
 
                     if (type === 'songs') {
-                        if (item.subtitle) console.log(`    Artist/Subtitle: ${item.subtitle}`);
-                        if (item.more_info?.album) console.log(`    Album: ${item.more_info.album}`);
-                        console.log(`    Language: ${item.language || 'N/A'} | Year: ${item.year || 'N/A'} | Plays: ${
-                            parseInt(item.play_count || 0).toLocaleString()}`);
-                    } else if (type === 'albums') {
-                        if (item.subtitle) console.log(`    Artist: ${item.subtitle}`);
-                        console.log(`    Tracks: ${item.more_info?.song_count || 0} | Year: ${
-                            item.year || 'N/A'} | Language: ${item.language || 'N/A'}`);
-                    } else if (type === 'playlists') {
-                        if (item.subtitle) console.log(`    Detail/Subtitle: ${item.subtitle}`);
+                        if (item.subtitle) console.log('    Artist/Subtitle: ' + item.subtitle);
+                        if (item.more_info && item.more_info.album) console.log('    Album: ' + item.more_info.album);
                         console.log(
-                            `    Tracks: ${item.more_info?.song_count || 0} | Language: ${item.language || 'N/A'}`);
+                            '    Language: ' + (item.language || 'N/A') + ' | Year: ' + (item.year || 'N/A') +
+                            ' | Plays: ' + parseInt(item.play_count || 0).toLocaleString());
+                    } else if (type === 'albums') {
+                        if (item.subtitle) console.log('    Artist: ' + item.subtitle);
+                        console.log(
+                            '    Tracks: ' + (item.more_info ? item.more_info.song_count || 0 : 0) +
+                            ' | Year: ' + (item.year || 'N/A') + ' | Language: ' + (item.language || 'N/A'));
+                    } else if (type === 'playlists') {
+                        if (item.subtitle) console.log('    Detail/Subtitle: ' + item.subtitle);
+                        console.log(
+                            '    Tracks: ' + (item.more_info ? item.more_info.song_count || 0 : 0) +
+                            ' | Language: ' + (item.language || 'N/A'));
                     } else if (type === 'artists') {
-                        if (item.role) console.log(`    Role: ${item.role}`);
+                        if (item.role) console.log('    Role: ' + item.role);
                     }
 
-                    console.log(`    Token: ${item.token}`);
+                    console.log('    Token: ' + item.token);
                 });
             } else {
                 console.log('No results found.');
             }
         })
-        .catch(err => {
+        .catch(function(err) {
             console.error('Error: Search failed:', err);
         });
 
 } else if (command === 'download') {
-    const inputArg1 = args[1];  // Could be type (song/album/playlist) OR url OR token
-    const inputArg2 = args[2];  // Could be token OR -y flag
+    var inputArg1 = args[1];  // type OR url OR token
+    var inputArg2 = args[2];  // token
 
     if (!inputArg1) {
         console.error('Error: Please provide a token, platform URL, or type parameter.');
@@ -192,28 +360,28 @@ if (command === 'search') {
     }
 
     // Check for auto-approve flag anywhere in arguments list
-    const hasYesFlag =
-        args.includes('-y') || args.includes('--yes') || process.argv.includes('-y') || process.argv.includes('--yes');
+    var hasYesFlag = args.indexOf('-y') !== -1 || args.indexOf('--yes') !== -1 || process.argv.indexOf('-y') !== -1 ||
+        process.argv.indexOf('--yes') !== -1;
 
-    const supportedTypes = ['song', 'album', 'playlist'];
-    let type = 'song';
-    let token = '';
+    var supportedTypes = ['song', 'album', 'playlist'];
+    var type = 'song';
+    var token = '';
 
-    if (supportedTypes.includes(inputArg1)) {
+    if (supportedTypes.indexOf(inputArg1) !== -1) {
         type = inputArg1;
         token = inputArg2;
-        if (!token || token.startsWith('-')) {
+        if (!token || token.indexOf('-') === 0) {
             console.error('Error: Please provide a token after the type.');
             process.exit(1);
         }
     } else {
         token = inputArg1;
-        if (token.startsWith('http://') || token.startsWith('https://')) {
-            const parsed = window.Utils.parseUrl(token);
+        if (token.indexOf('http://') === 0 || token.indexOf('https://') === 0) {
+            var parsed = window.Utils.parseUrl(token);
             if (parsed) {
                 type = parsed.type;
                 token = parsed.token;
-                console.log(`[CLI] Resolved URL: type=${type}, token=${token}`);
+                console.log('[CLI] Resolved URL: type=' + type + ', token=' + token);
             } else {
                 console.warn('[CLI] Warning: URL could not be parsed. Defaulting to type=song.');
             }
@@ -221,83 +389,113 @@ if (command === 'search') {
     }
 
     // Interactive downloads runner
-    async function startDownload() {
+    var startDownload = function() {
         if (type === 'song') {
-            console.log(`Fetching track details for token: ${token}...`);
-            const song = await Services.Song.getDecrypted(token);
-            console.log(`Starting download: ${song.title} - ${song.artist}`);
-            await Services.Download.songFromData(song);
+            console.log('Fetching track details for token: ' + token + '...');
+            return Services.Song.getDecrypted(token).then(function(song) {
+                console.log('Starting download: ' + song.title + ' - ' + song.artist);
+                return Services.Download.songFromData(song);
+            });
         } else if (type === 'album') {
-            console.log(`Fetching album details for token: ${token}...`);
-            const album = await Services.Album.getDetails(token);
-            const count = album.songs.length;
-            console.log(`Album: "${album.title}" contains ${count} tracks.`);
+            console.log('Fetching album details for token: ' + token + '...');
+            var currentAlbum;
+            return Services.Album.getDetails(token)
+                .then(function(album) {
+                    currentAlbum = album;
+                    var count = album.songs.length;
+                    console.log('Album: "' + album.title + '" contains ' + count + ' tracks.');
 
-            if (count > 3 && !hasYesFlag) {
-                const proceed = await askConfirmation(`Proceed with downloading ${count} songs? (y/N): `);
-                if (!proceed) {
-                    console.log('Cancelled.');
-                    process.exit(0);
-                }
-            }
-
-            for (let i = 0; i < count; i++) {
-                const song = album.songs[i];
-                console.log(`\n[${i + 1}/${count}] Fetching: ${song.title}`);
-                try {
-                    const decryptedSong = await Services.Song.getDecrypted(song.token);
-                    await Services.Download.songFromData(decryptedSong);
-                } catch (e) {
-                    console.error(`❌ Failed to download track "${song.title}":`, e.message);
-                }
-            }
+                    if (count > 3 && !hasYesFlag) {
+                        return askConfirmation('Proceed with downloading ' + count + ' songs? (y/N): ')
+                            .then(function(proceed) {
+                                if (!proceed) {
+                                    console.log('Cancelled.');
+                                    process.exit(0);
+                                }
+                            });
+                    }
+                })
+                .then(function() {
+                    var count = currentAlbum.songs.length;
+                    var downloadNext = function(index) {
+                        if (index >= count) return Promise.resolve();
+                        var song = currentAlbum.songs[index];
+                        console.log('\n[' + (index + 1) + '/' + count + '] Fetching: ' + song.title);
+                        return Services.Song.getDecrypted(song.token)
+                            .then(function(decryptedSong) {
+                                return Services.Download.songFromData(decryptedSong);
+                            })
+                            .catch(function(e) {
+                                console.error('❌ Failed to download track "' + song.title + '":', e.message);
+                            })
+                            .then(function() {
+                                return downloadNext(index + 1);
+                            });
+                    };
+                    return downloadNext(0);
+                });
         } else if (type === 'playlist') {
-            console.log(`Fetching playlist details for token: ${token}...`);
-            const playlist = await Services.Playlist.getDetails(token, 1, 50);
-            const count = playlist.songs.length;
-            console.log(`Playlist: "${playlist.title}" contains ${count} tracks.`);
+            console.log('Fetching playlist details for token: ' + token + '...');
+            var currentPlaylist;
+            return Services.Playlist.getDetails(token, 1, 50)
+                .then(function(playlist) {
+                    currentPlaylist = playlist;
+                    var count = playlist.songs.length;
+                    console.log('Playlist: "' + playlist.title + '" contains ' + count + ' tracks.');
 
-            if (count > 3 && !hasYesFlag) {
-                const proceed = await askConfirmation(`Proceed with downloading ${count} songs? (y/N): `);
-                if (!proceed) {
-                    console.log('Cancelled.');
-                    process.exit(0);
-                }
-            }
-
-            for (let i = 0; i < count; i++) {
-                const song = playlist.songs[i];
-                console.log(`\n[${i + 1}/${count}] Fetching: ${song.title}`);
-                try {
-                    const decryptedSong = await Services.Song.getDecrypted(song.token);
-                    await Services.Download.songFromData(decryptedSong);
-                } catch (e) {
-                    console.error(`❌ Failed to download track "${song.title}":`, e.message);
-                }
-            }
+                    if (count > 3 && !hasYesFlag) {
+                        return askConfirmation('Proceed with downloading ' + count + ' songs? (y/N): ')
+                            .then(function(proceed) {
+                                if (!proceed) {
+                                    console.log('Cancelled.');
+                                    process.exit(0);
+                                }
+                            });
+                    }
+                })
+                .then(function() {
+                    var count = currentPlaylist.songs.length;
+                    var downloadNext = function(index) {
+                        if (index >= count) return Promise.resolve();
+                        var song = currentPlaylist.songs[index];
+                        console.log('\n[' + (index + 1) + '/' + count + '] Fetching: ' + song.title);
+                        return Services.Song.getDecrypted(song.token)
+                            .then(function(decryptedSong) {
+                                return Services.Download.songFromData(decryptedSong);
+                            })
+                            .catch(function(e) {
+                                console.error('❌ Failed to download track "' + song.title + '":', e.message);
+                            })
+                            .then(function() {
+                                return downloadNext(index + 1);
+                            });
+                    };
+                    return downloadNext(0);
+                });
         } else {
-            console.error(`Error: Dynamic downloads not supported for type "${type}".`);
+            console.error('Error: Dynamic downloads not supported for type "' + type + '".');
             process.exit(1);
         }
-    }
+    };
 
-    startDownload().catch(err => {
+    startDownload().catch(function(err) {
         console.error('Error: Download task failed:', err);
     });
+
 } else if (command === 'details') {
-    const inputArg1 = args[1];  // type OR url OR token
-    const inputArg2 = args[2];  // token
+    var inputArg1 = args[1];  // type OR url OR token
+    var inputArg2 = args[2];  // token
 
     if (!inputArg1) {
         console.error('Error: Please provide a token, platform URL, or type parameter.');
         process.exit(1);
     }
 
-    const supportedTypes = ['song', 'album', 'playlist', 'artist'];
-    let type = '';
-    let token = '';
+    var supportedTypes = ['song', 'album', 'playlist', 'artist'];
+    var type = '';
+    var token = '';
 
-    if (supportedTypes.includes(inputArg1)) {
+    if (supportedTypes.indexOf(inputArg1) !== -1) {
         type = inputArg1;
         token = inputArg2;
         if (!token) {
@@ -306,12 +504,12 @@ if (command === 'search') {
         }
     } else {
         token = inputArg1;
-        if (token.startsWith('http://') || token.startsWith('https://')) {
-            const parsed = window.Utils.parseUrl(token);
+        if (token.indexOf('http://') === 0 || token.indexOf('https://') === 0) {
+            var parsed = window.Utils.parseUrl(token);
             if (parsed) {
                 type = parsed.type;
                 token = parsed.token;
-                console.log(`[CLI] Resolved URL: type=${type}, token=${token}`);
+                console.log('[CLI] Resolved URL: type=' + type + ', token=' + token);
             } else {
                 console.warn('[CLI] Warning: URL could not be parsed. Defaulting to type=song.');
                 type = 'song';
@@ -321,66 +519,72 @@ if (command === 'search') {
         }
     }
 
-    async function showDetails() {
+    var showDetails = function() {
         if (type === 'song') {
-            console.log(`Fetching track details for token: ${token}...`);
-            const song = await Services.Song.getDecrypted(token);
-            console.log(`\n🎵 Song: ${song.title}`);
-            console.log(`    Artist: ${song.artist}`);
-            console.log(`    Album: ${song.album || 'N/A'}`);
-            console.log(`    Year: ${song.year || 'N/A'} | Language: ${song.language || 'N/A'}`);
-            console.log(`    Lyrics: ${song.has_lyrics ? 'Yes' : 'No'}`);
-            console.log(`    Token: ${song.token}`);
+            console.log('Fetching track details for token: ' + token + '...');
+            return Services.Song.getDecrypted(token).then(function(song) {
+                console.log('\n🎵 Song: ' + song.title);
+                console.log('    Artist: ' + song.artist);
+                console.log('    Album: ' + (song.album || 'N/A'));
+                console.log('    Year: ' + (song.year || 'N/A') + ' | Language: ' + (song.language || 'N/A'));
+                console.log('    Lyrics: ' + (song.has_lyrics ? 'Yes' : 'No'));
+                console.log('    Token: ' + song.token);
+            });
         } else if (type === 'album') {
-            console.log(`Fetching album details for token: ${token}...`);
-            const album = await Services.Album.getDetails(token);
-            console.log(`\n📀 Album: ${album.title}`);
-            console.log(`    Artist/Subtitle: ${album.subtitle || 'N/A'}`);
-            console.log(`    Language: ${album.language || 'N/A'} | Year: ${album.year || 'N/A'} | Tracks: ${
-                album.songs.length}`);
-            console.log('\nTracklist:');
-            album.songs.forEach((song, i) => {
-                console.log(`  [${i + 1}] ${song.title}`);
-                console.log(`      Token: ${song.token}`);
+            console.log('Fetching album details for token: ' + token + '...');
+            return Services.Album.getDetails(token).then(function(album) {
+                console.log('\n📀 Album: ' + album.title);
+                console.log('    Artist/Subtitle: ' + (album.subtitle || 'N/A'));
+                console.log(
+                    '    Language: ' + (album.language || 'N/A') + ' | Year: ' + (album.year || 'N/A') +
+                    ' | Tracks: ' + album.songs.length);
+                console.log('\nTracklist:');
+                album.songs.forEach(function(song, i) {
+                    console.log('  [' + (i + 1) + '] ' + song.title);
+                    console.log('      Token: ' + song.token);
+                });
             });
         } else if (type === 'playlist') {
-            console.log(`Fetching playlist details for token: ${token}...`);
-            const playlist = await Services.Playlist.getDetails(token, 1, 50);
-            console.log(`\n🎶 Playlist: ${playlist.title}`);
-            console.log(`    Description: ${playlist.description || 'N/A'}`);
-            console.log(`    Language: ${playlist.language || 'N/A'} | Tracks Available: ${playlist.songs.length}`);
-            console.log('\nTracklist:');
-            playlist.songs.forEach((song, i) => {
-                console.log(`  [${i + 1}] ${song.title} (${song.subtitle || 'N/A'})`);
-                console.log(`      Token: ${song.token}`);
+            console.log('Fetching playlist details for token: ' + token + '...');
+            return Services.Playlist.getDetails(token, 1, 50).then(function(playlist) {
+                console.log('\n🎶 Playlist: ' + playlist.title);
+                console.log('    Description: ' + (playlist.description || 'N/A'));
+                console.log(
+                    '    Language: ' + (playlist.language || 'N/A') + ' | Tracks Available: ' + playlist.songs.length);
+                console.log('\nTracklist:');
+                playlist.songs.forEach(function(song, i) {
+                    console.log('  [' + (i + 1) + '] ' + song.title + ' (' + (song.subtitle || 'N/A') + ')');
+                    console.log('      Token: ' + song.token);
+                });
             });
         } else if (type === 'artist') {
-            console.log(`Fetching artist details for token: ${token}...`);
-            const artist = await Services.Artist.getDetails(token);
-            console.log(`\n🎤 Artist: ${artist.name} ${artist.isVerified ? '✅' : ''}`);
-            console.log(`    Biography: ${artist.bio || 'N/A'}`);
-            console.log('\nPopular Songs:');
-            artist.songs.slice(0, 10).forEach((song, i) => {
-                console.log(`  [${i + 1}] ${song.title}`);
-                console.log(`      Token: ${song.token}`);
-            });
-            if (artist.albums && artist.albums.length > 0) {
-                console.log('\nAlbums:');
-                artist.albums.slice(0, 5).forEach((album, i) => {
-                    console.log(`  [${i + 1}] ${album.title} (${album.year || 'N/A'})`);
-                    console.log(`      Token: ${album.token}`);
+            console.log('Fetching artist details for token: ' + token + '...');
+            return Services.Artist.getDetails(token).then(function(artist) {
+                console.log('\n🎤 Artist: ' + artist.name + ' ' + (artist.isVerified ? '✅' : ''));
+                console.log('    Biography: ' + (artist.bio || 'N/A'));
+                console.log('\nPopular Songs:');
+                artist.songs.slice(0, 10).forEach(function(song, i) {
+                    console.log('  [' + (i + 1) + '] ' + song.title);
+                    console.log('      Token: ' + song.token);
                 });
-            }
+                if (artist.albums && artist.albums.length > 0) {
+                    console.log('\nAlbums:');
+                    artist.albums.slice(0, 5).forEach(function(album, i) {
+                        console.log('  [' + (i + 1) + '] ' + album.title + ' (' + (album.year || 'N/A') + ')');
+                        console.log('      Token: ' + album.token);
+                    });
+                }
+            });
         } else {
-            console.error(`Error: Details view not supported for type "${type}".`);
+            console.error('Error: Details view not supported for type "' + type + '".');
             process.exit(1);
         }
-    }
+    };
 
-    showDetails().catch(err => {
+    showDetails().catch(function(err) {
         console.error('Error: Details lookup failed:', err);
     });
 } else {
-    console.error(`Error: Unknown command "${command}". Use search or download.`);
+    console.error('Error: Unknown command "' + command + '". Use search or download.');
     process.exit(1);
 }

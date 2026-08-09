@@ -5,11 +5,9 @@ window.API.constants = window.API.constants || {};
 
 // API endpoints
 const HOST = 'https://www.mymusic.com';
-Object.assign(window.API.constants, {
-    API_HOST: HOST,
-    API_BASE: `${HOST}/api.php`,
-    REFERER: `${HOST}/`,
-});
+window.API.constants.API_HOST = HOST;
+window.API.constants.API_BASE = HOST + '/api.php';
+window.API.constants.REFERER = HOST + '/';
 
 // Default headers for all requests
 window.API.constants.DEFAULT_HEADERS = {

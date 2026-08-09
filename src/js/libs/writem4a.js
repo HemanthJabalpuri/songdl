@@ -3,34 +3,72 @@
 // Restricts recursive parsing to metadata-only atoms to avoid GC allocating and shifts index tables in-place using
 // direct byte signatures.
 
-const latin1Decoder = new TextDecoder('latin1');
-const utf8Decoder = new TextDecoder('utf-8');
-const utf8Encoder = new TextEncoder();
+var latin1Decoder = typeof TextDecoder !== 'undefined' ? new TextDecoder('latin1') : null;
+var utf8Decoder = typeof TextDecoder !== 'undefined' ? new TextDecoder('utf-8') : null;
+var utf8Encoder = typeof TextEncoder !== 'undefined' ? new TextEncoder() : null;
 
 // Converts a segment of Uint8Array to string.
-function bytesToString(bytes, offset, endOffset, encoding = 'latin1') {
-    const slice = bytes.subarray(offset, endOffset);
-    return encoding === 'utf8' ? utf8Decoder.decode(slice) : latin1Decoder.decode(slice);
+function bytesToString(bytes, offset, endOffset, encoding) {
+    if (encoding === undefined) encoding = 'latin1';
+    var slice = bytes.subarray(offset, endOffset);
+    if (encoding === 'utf8') {
+        if (utf8Decoder) return utf8Decoder.decode(slice);
+        // Fallback for old Node.js
+        var buf;
+        if (typeof Buffer.from === 'function') {
+            buf = Buffer.from(slice);
+        } else {
+            buf = new Buffer(slice.length);
+            for (var i = 0; i < slice.length; i++) {
+                buf[i] = slice[i];
+            }
+        }
+        return buf.toString('utf8');
+    } else {
+        if (latin1Decoder) return latin1Decoder.decode(slice);
+        var buf;
+        if (typeof Buffer.from === 'function') {
+            buf = Buffer.from(slice);
+        } else {
+            buf = new Buffer(slice.length);
+            for (var i = 0; i < slice.length; i++) {
+                buf[i] = slice[i];
+            }
+        }
+        return buf.toString('binary');
+    }
 }
 
 // Converts a string to Uint8Array.
-function stringToBytes(str, encoding = 'utf8') {
+function stringToBytes(str, encoding) {
+    if (encoding === undefined) encoding = 'utf8';
     if (encoding === 'latin1') {
-        const bytes = new Uint8Array(str.length);
-        for (let i = 0; i < str.length; i++) {
+        var bytes = new Uint8Array(str.length);
+        for (var i = 0; i < str.length; i++) {
             bytes[i] = str.charCodeAt(i) & 0xff;
         }
         return bytes;
     }
-    return utf8Encoder.encode(str);
+    if (utf8Encoder) return utf8Encoder.encode(str);
+    // Fallback for old Node.js
+    var buf = new Buffer(str, 'utf8');
+    var arr = new Uint8Array(buf.length);
+    for (var i = 0; i < buf.length; i++) {
+        arr[i] = buf[i];
+    }
+    return arr;
 }
 
 // Concatenates multiple Uint8Array arrays into one.
 function concatUint8Arrays(arrays) {
-    const totalLength = arrays.reduce((sum, arr) => sum + arr.length, 0);
-    const result = new Uint8Array(totalLength);
-    let offset = 0;
-    for (const arr of arrays) {
+    var totalLength = 0;
+    for (var i = 0; i < arrays.length; i++) {
+        totalLength += arrays[i].length;
+    }
+    var result = new Uint8Array(totalLength);
+    var offset = 0;
+    for (var i = 0; i < arrays.length; i++) {
+        var arr = arrays[i];
         result.set(arr, offset);
         offset += arr.length;
     }
@@ -39,8 +77,8 @@ function concatUint8Arrays(arrays) {
 
 // Reads variable-length Big-Endian integer from DataView.
 function readUIntBE(view, offset, byteLength) {
-    let value = 0;
-    for (let i = 0; i < byteLength; i++) {
+    var value = 0;
+    for (var i = 0; i < byteLength; i++) {
         value = (value << 8) | view.getUint8(offset + i);
     }
     return value;
@@ -48,15 +86,61 @@ function readUIntBE(view, offset, byteLength) {
 
 // Writes variable-length Big-Endian integer into DataView.
 function writeUIntBE(view, value, offset, byteLength) {
-    let temp = value;
-    for (let i = byteLength - 1; i >= 0; i--) {
+    var temp = value;
+    for (var i = byteLength - 1; i >= 0; i--) {
         view.setUint8(offset + i, temp & 0xff);
         temp = temp >> 8;
     }
 }
 
+// 64-bit Big-Endian DataView helpers supporting legacy runtimes natively
+function readUInt64(view, offset) {
+    if (typeof view.getBigUint64 === 'function') {
+        return Number(view.getBigUint64(offset, false));
+    }
+    var high = view.getUint32(offset, false);
+    var low = view.getUint32(offset + 4, false);
+    return high * 0x100000000 + low;
+}
+
+function writeUInt64(view, value, offset) {
+    if (typeof view.setBigUint64 === 'function') {
+        view.setBigUint64(offset, BigInt(value), false);
+        return;
+    }
+    var high = Math.floor(value / 0x100000000);
+    var low = value % 0x100000000;
+    view.setUint32(offset, high, false);
+    view.setUint32(offset + 4, low, false);
+}
+
+// Array Search Helpers (bypass ES6 prototype method dependency)
+function findChild(parent, type) {
+    if (!parent || !parent.children) return null;
+    for (var k = 0; k < parent.children.length; k++) {
+        if (parent.children[k].type === type) return parent.children[k];
+    }
+    return null;
+}
+
+function findAtomInList(atoms, type) {
+    if (!atoms) return null;
+    for (var k = 0; k < atoms.length; k++) {
+        if (atoms[k].type === type) return atoms[k];
+    }
+    return null;
+}
+
+function findIndexInList(list, type) {
+    if (!list) return -1;
+    for (var k = 0; k < list.length; k++) {
+        if (list[k].type === type) return k;
+    }
+    return -1;
+}
+
 // Maps M4A 4-byte atom types to human-readable tag keys.
-const TAG_MAPPING = {
+var TAG_MAPPING = {
     '\xa9alb': 'album',
     '\xa9art': 'artist',
     '\xa9ART': 'artist',
@@ -79,8 +163,11 @@ const TAG_MAPPING = {
 };
 
 // Derived inverse mapping to resolve tag keys to M4A atom types.
-const TAG_TO_ATOM = {};
-for (const [atom, key] of Object.entries(TAG_MAPPING)) {
+var TAG_TO_ATOM = {};
+var mapKeys = Object.keys(TAG_MAPPING);
+for (var i = 0; i < mapKeys.length; i++) {
+    var atom = mapKeys[i];
+    var key = TAG_MAPPING[atom];
     if (!TAG_TO_ATOM[key] || (atom === '\xa9ART' && TAG_TO_ATOM[key] === '\xa9art')) {
         TAG_TO_ATOM[key] = atom;
     }
@@ -89,27 +176,27 @@ for (const [atom, key] of Object.entries(TAG_MAPPING)) {
 // Reads size and type boundaries of an atom header.
 function readAtomHeader(bytes, offset) {
     if (offset + 8 > bytes.length) return null;
-    const view = new DataView(bytes.buffer, bytes.byteOffset + offset, 8);
-    const size = view.getUint32(0, false);
-    const type = bytesToString(bytes, offset + 4, offset + 8, 'latin1');
-    let headerSize = 8;
-    let actualSize = size;
+    var view = new DataView(bytes.buffer, bytes.byteOffset + offset, 8);
+    var size = view.getUint32(0, false);
+    var type = bytesToString(bytes, offset + 4, offset + 8, 'latin1');
+    var headerSize = 8;
+    var actualSize = size;
 
     if (size === 1) {
         if (offset + 16 > bytes.length) return null;
-        const viewLong = new DataView(bytes.buffer, bytes.byteOffset + offset + 8, 8);
-        actualSize = Number(viewLong.getBigUint64(0, false));
+        var viewLong = new DataView(bytes.buffer, bytes.byteOffset + offset + 8, 8);
+        actualSize = readUInt64(viewLong, 0);
         headerSize = 16;
     }
-    return {type, size: actualSize, headerSize};
+    return {type: type, size: actualSize, headerSize: headerSize};
 }
 
 // Scans top-level atoms in the buffer sequentially.
 function scanTopLevelAtoms(bytes) {
-    const atoms = [];
-    let pos = 0;
+    var atoms = [];
+    var pos = 0;
     while (pos < bytes.length) {
-        const header = readAtomHeader(bytes, pos);
+        var header = readAtomHeader(bytes, pos);
         if (!header || header.size <= 0 || pos + header.size > bytes.length) break;
         atoms.push({
             type: header.type,
@@ -124,10 +211,11 @@ function scanTopLevelAtoms(bytes) {
 }
 
 // Finds or creates a child atom in a parent container tree.
-function getOrCreateChild(parent, type, headerBytes, metaPrefix = null) {
-    let child = parent.children.find(c => c.type === type);
+function getOrCreateChild(parent, type, headerBytes, metaPrefix) {
+    if (metaPrefix === undefined) metaPrefix = null;
+    var child = findChild(parent, type);
     if (!child) {
-        child = {type, headerSize: headerBytes.length, headerBytes, children: []};
+        child = {type: type, headerSize: headerBytes.length, headerBytes: headerBytes, children: []};
         if (metaPrefix) child.metaPrefix = metaPrefix;
         parent.children.push(child);
     }
@@ -137,40 +225,40 @@ function getOrCreateChild(parent, type, headerBytes, metaPrefix = null) {
 // Recursively parses the binary buffer into a structured atom tree. Optimized: Only iterates within metadata containers
 // (moov, udta, meta, ilst) to bypass allocating track timelines on javascript heap.
 function parseAtomTree(bytes, offset, endOffset) {
-    const header = readAtomHeader(bytes, offset);
+    var header = readAtomHeader(bytes, offset);
     if (!header) {
         throw new Error('Out of bounds reading atom header.');
     }
-    const payloadOffset = offset + header.headerSize;
-    const payloadSize = header.size - header.headerSize;
+    var payloadOffset = offset + header.headerSize;
+    var payloadSize = header.size - header.headerSize;
 
     // Optimized containerTypes list: skips tracking nested trak, mdia, etc., but parses metadata fields
-    const containerTypes = [
+    var containerTypes = [
         'moov',    'udta',    'meta',    'ilst',    '\xa9nam', '\xa9art', '\xa9ART', 'aART',
         '\xa9alb', '\xa9day', '\xa9gen', 'trkn',    '\xa9wrt', '\xa9too', 'cprt',    'covr',
         '\xa9grp', 'keyw',    '\xa9lyr', '\xa9cmt', 'tmpo',    'cpil',    'disk'
     ];
 
-    const atom = {
+    var atom = {
         type: header.type,
         headerSize: header.headerSize,
         headerBytes: bytes.subarray(offset, payloadOffset),
         children: []
     };
 
-    const isContainer = containerTypes.includes(header.type);
+    var isContainer = containerTypes.indexOf(header.type) !== -1;
     if (isContainer && payloadSize > 0) {
-        let childOffset = payloadOffset;
+        var childOffset = payloadOffset;
         if (header.type === 'meta') {
             atom.metaPrefix = bytes.subarray(payloadOffset, payloadOffset + 4);
             childOffset += 4;
         }
-        const childrenEnd = offset + header.size;
+        var childrenEnd = offset + header.size;
         while (childOffset < childrenEnd) {
             if (childOffset + 8 > childrenEnd) break;
-            const childHeader = readAtomHeader(bytes, childOffset);
+            var childHeader = readAtomHeader(bytes, childOffset);
             if (!childHeader || childHeader.size === 0) break;
-            const child = parseAtomTree(bytes, childOffset, childrenEnd);
+            var child = parseAtomTree(bytes, childOffset, childrenEnd);
             atom.children.push(child);
             childOffset += childHeader.size;
         }
@@ -183,20 +271,20 @@ function parseAtomTree(bytes, offset, endOffset) {
 // Scans a trak byte buffer in-place to find and shift offsets in stco or co64 index tables.
 function shiftStcoInBytes(bytes, delta) {
     if (delta === 0) return;
-    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    var view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 
     // Find 'stco' in bytes (4-byte signature: [115, 116, 99, 111])
-    let pos = 0;
+    var pos = 0;
     while (pos + 8 <= bytes.length) {
         // checking [s, t, c, o]
         if (bytes[pos] === 115 && bytes[pos + 1] === 116 && bytes[pos + 2] === 99 && bytes[pos + 3] === 111) {
-            const size = view.getUint32(pos - 4, false);
+            var size = view.getUint32(pos - 4, false);
             if (pos - 4 + size <= bytes.length) {
-                const count = view.getUint32(pos + 8, false);
-                for (let i = 0; i < count; i++) {
-                    const idx = pos + 12 + i * 4;
+                var count = view.getUint32(pos + 8, false);
+                for (var i = 0; i < count; i++) {
+                    var idx = pos + 12 + i * 4;
                     if (idx + 4 <= bytes.length) {
-                        const val = view.getUint32(idx, false);
+                        var val = view.getUint32(idx, false);
                         view.setUint32(idx, val + delta, false);
                     }
                 }
@@ -205,14 +293,14 @@ function shiftStcoInBytes(bytes, delta) {
         }
         // Find 'co64' in bytes (4-byte signature: [99, 111, 54, 52])
         if (bytes[pos] === 99 && bytes[pos + 1] === 111 && bytes[pos + 2] === 54 && bytes[pos + 3] === 52) {
-            const size = view.getUint32(pos - 4, false);
+            var size = view.getUint32(pos - 4, false);
             if (pos - 4 + size <= bytes.length) {
-                const count = view.getUint32(pos + 8, false);
-                for (let i = 0; i < count; i++) {
-                    const idx = pos + 12 + i * 8;
+                var count = view.getUint32(pos + 8, false);
+                for (var i = 0; i < count; i++) {
+                    var idx = pos + 12 + i * 8;
                     if (idx + 8 <= bytes.length) {
-                        const val = view.getBigUint64(idx, false);
-                        view.setBigUint64(idx, val + BigInt(delta), false);
+                        var val = readUInt64(view, idx);
+                        writeUInt64(view, val + delta, idx);
                     }
                 }
             }
@@ -225,21 +313,29 @@ function shiftStcoInBytes(bytes, delta) {
 // Recursively serializes the atom tree back into a binary buffer, adjusting chunk offset indexing tables (`stco` /
 // `co64`) by the shift delta. Optimized: Runs in-place offset adjustments directly on the trak byte arrays and avoids
 // string encoding allocations.
-function serializeAtomTree(atom, delta = 0) {
+function serializeAtomTree(atom, delta) {
+    if (delta === undefined) delta = 0;
     // If track atom payload is encountered, apply offset shifts to stco/co64 directly
     if (delta !== 0 && atom.type === 'trak') {
         shiftStcoInBytes(atom.payload, delta);
     }
 
     if (atom.children && atom.children.length > 0) {
-        const serializedChildren = atom.children.map(child => serializeAtomTree(child, delta));
-        let payloadLength = serializedChildren.reduce((sum, b) => sum + b.length, 0);
+        var serializedChildren = [];
+        for (var i = 0; i < atom.children.length; i++) {
+            serializedChildren.push(serializeAtomTree(atom.children[i], delta));
+        }
+
+        var payloadLength = 0;
+        for (var i = 0; i < serializedChildren.length; i++) {
+            payloadLength += serializedChildren[i].length;
+        }
         if (atom.type === 'meta') {
             payloadLength += 4;
         }
 
-        const header = new Uint8Array(atom.headerSize);
-        const view = new DataView(header.buffer, header.byteOffset, header.byteLength);
+        var header = new Uint8Array(atom.headerSize);
+        var view = new DataView(header.buffer, header.byteOffset, header.byteLength);
         view.setUint32(0, payloadLength + atom.headerSize, false);
 
         // Optimized: Set type string characters directly (allocation-free)
@@ -248,15 +344,15 @@ function serializeAtomTree(atom, delta = 0) {
         header[6] = atom.type.charCodeAt(2);
         header[7] = atom.type.charCodeAt(3);
 
-        const parts = [header];
+        var parts = [header];
         if (atom.type === 'meta') {
             parts.push(atom.metaPrefix);
         }
-        parts.push(...serializedChildren);
+        parts = parts.concat(serializedChildren);
         return concatUint8Arrays(parts);
     } else {
-        const header = new Uint8Array(atom.headerSize);
-        const view = new DataView(header.buffer, header.byteOffset, header.byteLength);
+        var header = new Uint8Array(atom.headerSize);
+        var view = new DataView(header.buffer, header.byteOffset, header.byteLength);
         view.setUint32(0, atom.payload.length + atom.headerSize, false);
 
         // Set type characters directly
@@ -271,26 +367,27 @@ function serializeAtomTree(atom, delta = 0) {
 
 // Decodes metadata fields from parsed tags located inside the `ilst` atom parent.
 function extractTags(ilstAtom) {
-    const tags = {};
+    var tags = {};
     if (!ilstAtom || !ilstAtom.children) return tags;
 
-    for (const tagAtom of ilstAtom.children) {
-        const key = TAG_MAPPING[tagAtom.type];
+    for (var i = 0; i < ilstAtom.children.length; i++) {
+        var tagAtom = ilstAtom.children[i];
+        var key = TAG_MAPPING[tagAtom.type];
         if (!key) continue;
 
-        const dataAtom = tagAtom.children.find(c => c.type === 'data');
+        var dataAtom = findChild(tagAtom, 'data');
         if (!dataAtom || !dataAtom.payload) continue;
 
-        const payload = dataAtom.payload;
+        var payload = dataAtom.payload;
         if (payload.length < 8) continue;
 
-        const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
-        const typeClass = readUIntBE(view, 1, 3);
-        const valueBuf = payload.subarray(8);
+        var view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+        var typeClass = readUIntBE(view, 1, 3);
+        var valueBuf = payload.subarray(8);
 
         if (key === 'track' || key === 'disc') {
             if (valueBuf.length >= 6) {
-                const valView = new DataView(valueBuf.buffer, valueBuf.byteOffset, valueBuf.byteLength);
+                var valView = new DataView(valueBuf.buffer, valueBuf.byteOffset, valueBuf.byteLength);
                 tags[key] = valView.getUint16(2, false);
                 tags[key + '_count'] = valView.getUint16(4, false);
             }
@@ -303,7 +400,7 @@ function extractTags(ilstAtom) {
                 data: valueBuf
             };
         } else if (typeClass === 21) {
-            const valView = new DataView(valueBuf.buffer, valueBuf.byteOffset, valueBuf.byteLength);
+            var valView = new DataView(valueBuf.buffer, valueBuf.byteOffset, valueBuf.byteLength);
             tags[key] = readUIntBE(valView, 0, valueBuf.length);
         } else {
             tags[key] = bytesToString(valueBuf, 0, valueBuf.length, 'utf8');
@@ -313,16 +410,17 @@ function extractTags(ilstAtom) {
 }
 
 // Creates a valid M4A metadata tag atom containing a sub-atom 'data'.
-function createTagAtom(type, value, isPicture = false) {
-    let valueBuf;
-    let typeClass;  // 1 = text, 13 = JPEG cover, 14 = PNG cover, 21 = uint
+function createTagAtom(type, value, isPicture) {
+    if (isPicture === undefined) isPicture = false;
+    var valueBuf;
+    var typeClass;  // 1 = text, 13 = JPEG cover, 14 = PNG cover, 21 = uint
 
     if (isPicture) {
         valueBuf = value.data;
         typeClass = value.format === 'png' ? 14 : 13;
     } else if (typeof value === 'number') {
         valueBuf = new Uint8Array(4);
-        const valView = new DataView(valueBuf.buffer, valueBuf.byteOffset, valueBuf.byteLength);
+        var valView = new DataView(valueBuf.buffer, valueBuf.byteOffset, valueBuf.byteLength);
         valView.setUint32(0, value, false);
         typeClass = 21;
     } else {
@@ -330,8 +428,8 @@ function createTagAtom(type, value, isPicture = false) {
         typeClass = 1;
     }
 
-    const dataAtomHeader = new Uint8Array(16);
-    const headerView = new DataView(dataAtomHeader.buffer, dataAtomHeader.byteOffset, dataAtomHeader.byteLength);
+    var dataAtomHeader = new Uint8Array(16);
+    var headerView = new DataView(dataAtomHeader.buffer, dataAtomHeader.byteOffset, dataAtomHeader.byteLength);
     headerView.setUint32(0, 16 + valueBuf.length, false);
 
     // Set 'data' characters directly (allocation-free)
@@ -341,20 +439,20 @@ function createTagAtom(type, value, isPicture = false) {
     dataAtomHeader[7] = 97;                    // 'a'
     writeUIntBE(headerView, typeClass, 9, 3);  // 3-byte class flags
 
-    const dataAtom = {
+    var dataAtom = {
         type: 'data',
         headerSize: 8,
         headerBytes: dataAtomHeader.subarray(0, 8),
         payload: concatUint8Arrays([dataAtomHeader.subarray(8, 16), valueBuf])
     };
 
-    const tagAtomHeader = new Uint8Array(8);
+    var tagAtomHeader = new Uint8Array(8);
     tagAtomHeader[4] = type.charCodeAt(0);
     tagAtomHeader[5] = type.charCodeAt(1);
     tagAtomHeader[6] = type.charCodeAt(2);
     tagAtomHeader[7] = type.charCodeAt(3);
 
-    return {type, headerSize: 8, headerBytes: tagAtomHeader, children: [dataAtom]};
+    return {type: type, headerSize: 8, headerBytes: tagAtomHeader, children: [dataAtom]};
 }
 
 // Scans the binary buffer in-place to verify that the file meets essential M4A structure expectations (ftyp signature,
@@ -366,9 +464,13 @@ function verifyM4AStructure(bytes) {
     if (bytesToString(bytes, 4, 8, 'latin1') !== 'ftyp') return false;
 
     // 2. Scan top-level atoms for mdat and moov
-    const atoms = scanTopLevelAtoms(bytes);
-    const hasMdat = atoms.some(a => a.type === 'mdat');
-    const hasMoov = atoms.some(a => a.type === 'moov');
+    var atoms = scanTopLevelAtoms(bytes);
+    var hasMdat = false;
+    var hasMoov = false;
+    for (var i = 0; i < atoms.length; i++) {
+        if (atoms[i].type === 'mdat') hasMdat = true;
+        if (atoms[i].type === 'moov') hasMoov = true;
+    }
 
     return hasMdat && hasMoov;
 }
@@ -376,8 +478,9 @@ function verifyM4AStructure(bytes) {
 // Helper to recursively find an atom of a specific type in the tree structure.
 function findAtom(atom, type) {
     if (atom.type === type) return atom;
-    for (const child of atom.children || []) {
-        const found = findAtom(child, type);
+    var children = atom.children || [];
+    for (var i = 0; i < children.length; i++) {
+        var found = findAtom(children[i], type);
         if (found) return found;
     }
     return null;
@@ -390,18 +493,18 @@ function parseM4ABytes(bytes) {
             'Unsupported or invalid file structure. Only M4A (.m4a) files with valid audio and metadata containers are supported.');
     }
 
-    const atoms = scanTopLevelAtoms(bytes);
-    const moovDescriptor = atoms.find(a => a.type === 'moov');
+    var atoms = scanTopLevelAtoms(bytes);
+    var moovDescriptor = findAtomInList(atoms, 'moov');
     if (!moovDescriptor) return {};
 
-    const moovAtom = parseAtomTree(bytes, moovDescriptor.offset, moovDescriptor.offset + moovDescriptor.size);
+    var moovAtom = parseAtomTree(bytes, moovDescriptor.offset, moovDescriptor.offset + moovDescriptor.size);
 
-    let tagsResult = {};
-    const udta = moovAtom.children.find(c => c.type === 'udta');
+    var tagsResult = {};
+    var udta = findChild(moovAtom, 'udta');
     if (udta) {
-        const meta = udta.children.find(c => c.type === 'meta');
+        var meta = findChild(udta, 'meta');
         if (meta) {
-            const ilst = meta.children.find(c => c.type === 'ilst');
+            var ilst = findChild(meta, 'ilst');
             if (ilst) {
                 tagsResult = extractTags(ilst);
             }
@@ -409,20 +512,20 @@ function parseM4ABytes(bytes) {
     }
 
     // Extract play duration from mvhd if it exists
-    const mvhd = findAtom(moovAtom, 'mvhd');
+    var mvhd = findAtom(moovAtom, 'mvhd');
     if (mvhd && mvhd.payload) {
-        const payload = mvhd.payload;
-        const version = payload[0];
-        let timescale = 0;
-        let duration = 0;
+        var payload = mvhd.payload;
+        var version = payload[0];
+        var timescale = 0;
+        var duration = 0;
         if (version === 0 && payload.length >= 20) {
-            const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+            var view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
             timescale = view.getUint32(12, false);
             duration = view.getUint32(16, false);
         } else if (version === 1 && payload.length >= 32) {
-            const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+            var view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
             timescale = view.getUint32(20, false);
-            duration = Number(view.getBigUint64(24, false));
+            duration = readUInt64(view, 24);
         }
         if (timescale > 0) {
             tagsResult.duration = duration / timescale;
@@ -434,36 +537,40 @@ function parseM4ABytes(bytes) {
 
 // Core modifying algorithm operating on a Uint8Array and outputting a new Uint8Array. Supporting zero-copy returns via
 // options.returnParts.
-function writeM4ABytes(bytes, newTags, options = {}) {
+function writeM4ABytes(bytes, newTags, options) {
+    if (options === undefined) options = {};
     if (!verifyM4AStructure(bytes)) {
         throw new Error(
             'Unsupported or invalid file structure. Only M4A (.m4a) files with valid audio and metadata containers are supported.');
     }
 
-    const atomsList = scanTopLevelAtoms(bytes);
-    const moovIndex = atomsList.findIndex(a => a.type === 'moov');
+    var atomsList = scanTopLevelAtoms(bytes);
+    var moovIndex = findIndexInList(atomsList, 'moov');
     if (moovIndex === -1) {
         throw new Error('Invalid or corrupted M4A file structure.');
     }
 
     // Parse moov
-    const moovDescriptor = atomsList[moovIndex];
-    const moovAtom = parseAtomTree(bytes, moovDescriptor.offset, moovDescriptor.offset + moovDescriptor.size);
+    var moovDescriptor = atomsList[moovIndex];
+    var moovAtom = parseAtomTree(bytes, moovDescriptor.offset, moovDescriptor.offset + moovDescriptor.size);
 
     // 2. Traverses/constructs the udta -> meta -> ilst path recursively
-    const udta = getOrCreateChild(moovAtom, 'udta', stringToBytes('\x00\x00\x00\x08udta', 'latin1'));
-    const meta = getOrCreateChild(udta, 'meta', stringToBytes('\x00\x00\x00\x0cmeta', 'latin1'), new Uint8Array(4));
-    const ilst = getOrCreateChild(meta, 'ilst', stringToBytes('\x00\x00\x00\x08ilst', 'latin1'));
+    var udta = getOrCreateChild(moovAtom, 'udta', stringToBytes('\x00\x00\x00\x08udta', 'latin1'));
+    var meta = getOrCreateChild(udta, 'meta', stringToBytes('\x00\x00\x00\x0cmeta', 'latin1'), new Uint8Array(4));
+    var ilst = getOrCreateChild(meta, 'ilst', stringToBytes('\x00\x00\x00\x08ilst', 'latin1'));
 
     // 3. Rebuilds/appends the metadata tag atoms list
-    for (const [key, val] of Object.entries(newTags)) {
-        const atomType = TAG_TO_ATOM[key];
+    var newKeys = Object.keys(newTags);
+    for (var i = 0; i < newKeys.length; i++) {
+        var key = newKeys[i];
+        var val = newTags[key];
+        var atomType = TAG_TO_ATOM[key];
         if (!atomType) continue;
 
-        const isPicture = key === 'picture';
-        const newTagAtom = createTagAtom(atomType, val, isPicture);
+        var isPicture = key === 'picture';
+        var newTagAtom = createTagAtom(atomType, val, isPicture);
 
-        const oldIndex = ilst.children.findIndex(c => c.type === atomType);
+        var oldIndex = findIndexInList(ilst.children, atomType);
         if (oldIndex !== -1) {
             ilst.children[oldIndex] = newTagAtom;
         } else {
@@ -472,32 +579,34 @@ function writeM4ABytes(bytes, newTags, options = {}) {
     }
 
     // 4. Calculate change in moov size
-    const tempMoovBytes = serializeAtomTree(moovAtom, 0);
-    const newMoovSize = tempMoovBytes.length;
+    var tempMoovBytes = serializeAtomTree(moovAtom, 0);
+    var newMoovSize = tempMoovBytes.length;
 
     // 5. Calculate precise new mdat offset to retrieve correct shift amount
-    let currentNewOffset = 0;
-    let oldMdatOffset = 0;
-    let newMdatOffset = 0;
-    let hasMdat = false;
+    var currentNewOffset = 0;
+    var oldMdatOffset = 0;
+    var newMdatOffset = 0;
+    var hasMdat = false;
 
-    for (const atom of atomsList) {
+    for (var i = 0; i < atomsList.length; i++) {
+        var atom = atomsList[i];
         if (atom.type === 'mdat') {
             oldMdatOffset = atom.offset;
             newMdatOffset = currentNewOffset;
             hasMdat = true;
         }
-        const atomSize = (atom.type === 'moov') ? newMoovSize : atom.size;
+        var atomSize = (atom.type === 'moov') ? newMoovSize : atom.size;
         currentNewOffset += atomSize;
     }
 
     // 6. Shift chunk offsets by the exact delta offset
-    const shiftAmount = hasMdat ? (newMdatOffset - oldMdatOffset) : 0;
-    const finalMoovBytes = serializeAtomTree(moovAtom, shiftAmount);
+    var shiftAmount = hasMdat ? (newMdatOffset - oldMdatOffset) : 0;
+    var finalMoovBytes = serializeAtomTree(moovAtom, shiftAmount);
 
     // 7. Concatenate all atoms back preserving original order
-    const outputParts = [];
-    for (const atom of atomsList) {
+    var outputParts = [];
+    for (var i = 0; i < atomsList.length; i++) {
+        var atom = atomsList[i];
         if (atom.type === 'moov') {
             outputParts.push(finalMoovBytes);
         } else {

@@ -88,14 +88,14 @@ const S8 = new Int32Array([
 
 // DES decryption - ECB mode only
 function desDecrypt(message, keys) {
-    const s1 = S1, s2 = S2, s3 = S3, s4 = S4;
-    const s5 = S5, s6 = S6, s7 = S7, s8 = S8;
+    var s1 = S1, s2 = S2, s3 = S3, s4 = S4;
+    var s5 = S5, s6 = S6, s7 = S7, s8 = S8;
 
-    const len = message.length;
-    let result = '';
-    let left, right, temp;
+    var len = message.length;
+    var result = '';
+    var left, right, temp;
 
-    for (let m = 0; m < len; m += 8) {
+    for (var m = 0; m < len; m += 8) {
         left = (message.charCodeAt(m) << 24) | (message.charCodeAt(m + 1) << 16) | (message.charCodeAt(m + 2) << 8) |
             message.charCodeAt(m + 3);
         right = (message.charCodeAt(m + 4) << 24) | (message.charCodeAt(m + 5) << 16) |
@@ -126,10 +126,10 @@ function desDecrypt(message, keys) {
         right = ((right << 1) | (right >>> 31));
 
         // 16 rounds (decryption - keys in reverse)
-        for (let i = 30; i >= 0; i -= 2) {
-            const right1 = right ^ keys[i];
-            const rrot = (right >>> 4) | (right << 28);
-            const right2 = rrot ^ keys[i + 1];
+        for (var i = 30; i >= 0; i -= 2) {
+            var right1 = right ^ keys[i];
+            var rrot = (right >>> 4) | (right << 28);
+            var right2 = rrot ^ keys[i + 1];
 
             temp = left;
             left = right;

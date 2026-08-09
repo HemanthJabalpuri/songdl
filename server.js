@@ -257,7 +257,7 @@ http.createServer(function(req, res) {
 
         // ============ MOCK ASSETS ============
         // Serve mock assets from mock/assets/ folder
-        if (pathname.startsWith('/mock/')) {
+        if (pathname.indexOf('/mock/') === 0) {
             // Set CORS headers for mock assets
             res.setHeader('Access-Control-Allow-Origin', '*');
             res.setHeader('Access-Control-Allow-Methods', 'GET');
