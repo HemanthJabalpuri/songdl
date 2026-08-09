@@ -4,15 +4,7 @@ var fs = require('fs');
 var path = require('path');
 
 global.window = global;
-window.Cache = {
-    store: {},
-    get: function(key) {
-        return this.store[key];
-    },
-    set: function(key, val) {
-        this.store[key] = val;
-    }
-};
+
 
 // Parse command line arguments at startup
 var args = process.argv.slice(2);
@@ -29,12 +21,12 @@ global.require = require;
 
 // Load script listings from app-scripts.js and evaluate in correct order
 try {
-    var scripts = require(path.join(__dirname, 'src', 'js', 'app-scripts.js')).scripts;
+    var scripts = require(path.join(__dirname, 'src', 'app-scripts.js')).scripts;
     scripts.forEach(function(scriptPath) {
         if (scriptPath.indexOf('ui/') === 0) {
             return; // Skip browser-only UI display elements!
         }
-        var filePath = path.join(__dirname, 'src', 'js', scriptPath);
+        var filePath = path.join(__dirname, 'src', scriptPath);
         var content = fs.readFileSync(filePath, 'utf8');
         try {
             // Evaluate dynamically

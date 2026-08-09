@@ -20,7 +20,7 @@ function readFile(filePath) {
 }
 
 function getScriptFilesFromHTML() {
-    var appScripts = require(path.join(ROOT_DIR, 'js', 'app-scripts.js')).scripts;
+    var appScripts = require(path.join(ROOT_DIR, 'app-scripts.js')).scripts;
     return appScripts;
 }
 
@@ -39,7 +39,7 @@ function build() {
     var files = getScriptFilesFromHTML();
     console.log('📋 Found ' + files.length + ' scripts in app-scripts.js:');
     for (var i = 0; i < files.length; i++) {
-        console.log('   ' + (i + 1) + '. /js/' + files[i]);
+        console.log('   ' + (i + 1) + '. /' + files[i]);
     }
     console.log('');
 
@@ -65,7 +65,7 @@ function build() {
 
     for (var i = 0; i < files.length; i++) {
         var file = files[i];
-        var content = readFile(path.join(ROOT_DIR, 'js', file));
+        var content = readFile(path.join(ROOT_DIR, file));
 
         // Remove userscript headers
         content = content.replace(/\/\/ ==UserScript==[\s\S]*?\/\/ ==\/UserScript==\n/, '');

@@ -31,12 +31,12 @@ test('desEncrypt and desDecrypt round-trip parity', function() {
     var key = window.Utils.DES_KEY;
     var plaintext = 'Hello World!';
     
-    var ciphertext = window.desEncrypt(plaintext, key);
+    var ciphertext = window.Utils.desEncrypt(plaintext, key);
     assert.strictEqual(typeof ciphertext, 'string', 'Ciphertext must be a string');
     assert.ok(ciphertext.length > 0, 'Ciphertext must be non-empty');
     assert.notStrictEqual(ciphertext, plaintext, 'Ciphertext must be different from plaintext');
     
-    var decrypted = window.desDecrypt(ciphertext, key);
+    var decrypted = window.Utils.desDecrypt(ciphertext, key);
     // Strip PKCS7 padding just like decryptMediaUrl does
     var cleanDecrypted = decrypted.slice(0, -decrypted.charCodeAt(decrypted.length - 1));
     assert.strictEqual(cleanDecrypted, plaintext, 'Decrypted text must match plaintext');

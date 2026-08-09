@@ -109,12 +109,12 @@
     </div>
 
     <!-- Script list registry and dynamic loader -->
-    <script src="/js/app-scripts.js"></script>
+    <script src="/app-scripts.js"></script>
     <script>
         (function() {
             if (window.APP_SCRIPTS) {
                 window.APP_SCRIPTS.forEach(function(src) {
-                    document.write('<script src="/js/' + src + '"><\/script>');
+                    document.write('<script src="/' + src + '"><\/script>');
                 });
             }
         })();

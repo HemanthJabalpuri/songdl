@@ -9,24 +9,7 @@ global.document = undefined;
 global.window = global;
 global.require = require;
 
-window.Cache = {
-    store: {},
-    get: function(key) {
-        return this.store[key];
-    },
-    set: function(key, val) {
-        this.store[key] = val;
-    }
-};
 
-window.Utils = window.Utils || {};
-window.Utils.formatDuration = function(seconds) {
-    if (isNaN(seconds) || seconds === null || seconds === undefined || seconds <= 0) return 'N/A';
-    var secs = parseInt(seconds);
-    var mins = Math.floor(secs / 60);
-    var remainingSecs = secs % 60;
-    return mins + ':' + (remainingSecs < 10 ? '0' + remainingSecs : remainingSecs);
-};
 
 // 2. Test runner polyfill supporting Promises for Node v0.11.8
 global.test = function(description, fn) {
@@ -53,12 +36,12 @@ global.test = function(description, fn) {
 
 // 3. Dynamically evaluate non-UI split scripts individually
 try {
-    var scripts = require(path.join(__dirname, '..', 'src', 'js', 'app-scripts.js')).scripts;
+    var scripts = require(path.join(__dirname, '..', 'src', 'app-scripts.js')).scripts;
     scripts.forEach(function(scriptPath) {
         if (scriptPath.indexOf('ui/') === 0) {
             return; // Skip browser-only UI display elements!
         }
-        var filePath = path.join(__dirname, '..', 'src', 'js', scriptPath);
+        var filePath = path.join(__dirname, '..', 'src', scriptPath);
         var content = fs.readFileSync(filePath, 'utf8');
         try {
             var FunctionConstructor = Function;
@@ -68,6 +51,43 @@ try {
             throw err;
         }
     });
+
+    // 4. Intercept calls to mock URLs and delegate them to mock-server
+    var originalFetch = window.Utils.fetch;
+    window.Utils.fetch = function(url, options) {
+        options = options || {};
+        var urlStr = url.toString();
+
+        if (urlStr.indexOf('/proxy') !== -1 || urlStr.indexOf('/mock/') !== -1) {
+            return new window.Utils.Promise(function(resolve) {
+                var mockRes = {
+                    writeHead: function(status) { this.status = status; },
+                    setHeader: function() {},
+                    end: function(body) {
+                        var buf = typeof body === 'string' ? new Buffer(body) : body;
+                        resolve({
+                            ok: (this.status || 200) >= 200 && (this.status || 200) < 300,
+                            status: this.status || 200,
+                            json: function() { return window.Utils.Promise.resolve(JSON.parse(buf.toString('utf8'))); },
+                            arrayBuffer: function() {
+                                var ab = new ArrayBuffer(buf.length);
+                                var view = new Uint8Array(ab);
+                                for (var i = 0; i < buf.length; i++) { view[i] = buf[i]; }
+                                return window.Utils.Promise.resolve(ab);
+                            }
+                        });
+                    }
+                };
+                require('../mock/mock-server.js').handleRequest({
+                    url: urlStr,
+                    method: options.method || 'GET',
+                    headers: { 'x-proxy-url': urlStr }
+                }, mockRes);
+            });
+        }
+        return originalFetch(url, options);
+    };
+
 } catch (e) {
     console.error('Failed to load bootstrap codebase:', e.message);
     process.exit(1);
