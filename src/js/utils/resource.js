@@ -40,7 +40,7 @@ function fetchViaDirect(url, responseType) {
 }
 
 function fetchViaGM(url, responseType) {
-    return new Promise(function(resolve, reject) {
+    return new window.Utils.Promise(function(resolve, reject) {
         GM_xmlhttpRequest({
             method: 'GET',
             url: url,
@@ -95,7 +95,7 @@ function processAlbumArt(buffer) {
 }
 
 window.Utils.fetchAlbumArt = function(url) {
-    if (!url) return Promise.resolve(null);
+    if (!url) return window.Utils.Promise.resolve(null);
     var highResUrl = window.Utils.getHighResImageUrl(url, false);
     console.log('[Utils] Album art:', highResUrl);
 

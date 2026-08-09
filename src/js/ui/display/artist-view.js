@@ -29,30 +29,32 @@ function renderHeader(artist) {
     }
 
     var image = artist.image;
-    if (!image || image.includes('placeholder.com')) {
+    if (!image || image.indexOf('placeholder.com') !== -1) {
         image = window.Utils.getDefaultImage('artist');
     }
 
-    var html = `
-        <div class="artist-header">
-            <img src="${image}" alt="${artist.name}" />
-            <div class="artist-header-info">
-                <h2>${escapeHtml(artist.name)} ${artist.isVerified ? '✅' : ''}</h2>
-                <p>${escapeHtml(artist.subtitle || '')}</p>
-                ${
-        bioText ?
-            `<p class="artist-bio">${escapeHtml(bioText.substring(0, 200))}${bioText.length > 200 ? '...' : ''}</p>` :
-            ''}
-                <div class="artist-actions">
-                    <button class="btn-back" id="btn-back">← Back</button>
-                </div>
-            </div>
-        </div>
-        <div class="artist-tabs">
-            <button class="artist-tab active" data-category="popular">🔥 Popular</button>
-            <button class="artist-tab" data-category="latest">🕐 Latest</button>
-        </div>
-    `;
+    var bioTagHtml = '';
+    if (bioText) {
+        bioTagHtml = '<p class="artist-bio">' + escapeHtml(bioText.substring(0, 200)) +
+            (bioText.length > 200 ? '...' : '') + '</p>\n';
+    }
+
+    var checkedIcon = artist.isVerified ? '✅' : '';
+
+    var html = '\n        <div class="artist-header">\n' +
+        '            <img src="' + image + '" alt="' + artist.name + '" />\n' +
+        '            <div class="artist-header-info">\n' +
+        '                <h2>' + escapeHtml(artist.name) + ' ' + checkedIcon + '</h2>\n' +
+        '                <p>' + escapeHtml(artist.subtitle || '') + '</p>\n' +
+        '                ' + bioTagHtml + '                <div class="artist-actions">\n' +
+        '                    <button class="btn-back" id="btn-back">← Back</button>\n' +
+        '                </div>\n' +
+        '            </div>\n' +
+        '        </div>\n' +
+        '        <div class="artist-tabs">\n' +
+        '            <button class="artist-tab active" data-category="popular">🔥 Popular</button>\n' +
+        '            <button class="artist-tab" data-category="latest">🕐 Latest</button>\n' +
+        '        </div>\n    ';
     return html;
 }
 
@@ -61,67 +63,63 @@ function renderFooter(artist) {
     var html = '';
 
     if (artist.dedicatedPlaylists && artist.dedicatedPlaylists.length > 0) {
-        html += `
-            <div class="artist-playlists-section" id="artist-dedicated-playlists">
-                <h3>Dedicated Playlists</h3>
-                <div class="playlist-list">
-                    ${
+        html += '\n            <div class="artist-playlists-section" id="artist-dedicated-playlists">\n' +
+            '                <h3>Dedicated Playlists</h3>\n' +
+            '                <div class="playlist-list">\n' +
+            '                    ' +
             artist.dedicatedPlaylists
                 .map(function(playlist) {
                     return createPlaylistCard(playlist);
                 })
-                .join('')}
-                </div>
-            </div>
-        `;
+                .join('') +
+            '\n' +
+            '                </div>\n' +
+            '            </div>\n        ';
     }
 
     if (artist.featuredPlaylists && artist.featuredPlaylists.length > 0) {
-        html += `
-            <div class="artist-playlists-section" id="artist-featured-playlists">
-                <h3>Featured In</h3>
-                <div class="playlist-list">
-                    ${
+        html += '\n            <div class="artist-playlists-section" id="artist-featured-playlists">\n' +
+            '                <h3>Featured In</h3>\n' +
+            '                <div class="playlist-list">\n' +
+            '                    ' +
             artist.featuredPlaylists
                 .map(function(playlist) {
                     return createPlaylistCard(playlist);
                 })
-                .join('')}
-                </div>
-            </div>
-        `;
+                .join('') +
+            '\n' +
+            '                </div>\n' +
+            '            </div>\n        ';
     }
 
     if (artist.singles && artist.singles.length > 0) {
-        html += `
-            <div class="artist-albums-section" id="artist-singles">
-                <h3>Singles</h3>
-                <div class="album-list">
-                    ${
+        html += '\n            <div class="artist-albums-section" id="artist-singles">\n' +
+            '                <h3>Singles</h3>\n' +
+            '                <div class="album-list">\n' +
+            '                    ' +
             artist.singles
                 .map(function(single) {
                     return createAlbumCard(single);
                 })
-                .join('')}
-                </div>
-            </div>
-        `;
+                .join('') +
+            '\n' +
+            '                </div>\n' +
+            '            </div>\n        ';
     }
 
     if (artist.latestReleases && artist.latestReleases.length > 0) {
-        html += `
-            <div class="artist-albums-section" id="artist-latest-releases">
-                <h3>Latest Releases</h3>
-                <div class="album-list">
-                    ${
+        html += '\n            <div class="artist-albums-section" id="artist-latest-releases">\n' +
+            '                <h3>Latest Releases</h3>\n' +
+            '                <div class="album-list">\n' +
+            '                    ' +
             artist.latestReleases
                 .map(function(release) {
                     return createAlbumCard(release);
                 })
-                .join('')}
-                </div>
-            </div>
-        `;
+                .join('') +
+            '\n' +
+            '                </div>\n' +
+            '            </div>\n        ';
     }
 
     return html;
@@ -129,11 +127,11 @@ function renderFooter(artist) {
 
 // ============ RENDER DYNAMIC SONGS SECTION ============
 function renderSongsSectionHTML(songs, category, totalSongs) {
-    var html = `
-        <div class="artist-songs-section" id="artist-dynamic-songs" data-category="${category}">
-            <h3>Top Songs (${songs ? songs.length : 0})</h3>
-            <div class="song-list">
-    `;
+    var songHeaderCount = songs ? songs.length : 0;
+    var html = '\n        <div class="artist-songs-section" id="artist-dynamic-songs" data-category="' + category +
+        '">\n' +
+        '            <h3>Top Songs (' + songHeaderCount + ')</h3>\n' +
+        '            <div class="song-list">\n    ';
 
     if (songs && songs.length > 0) {
         var artistContext = {type: 'artist', image: '', language: '', year: '', title: window._artistState.token};
@@ -141,39 +139,35 @@ function renderSongsSectionHTML(songs, category, totalSongs) {
             html += createSongCard(song, index, artistContext);
         });
     } else {
-        html += `<div class="no-results">No songs found</div>`;
+        html += '<div class="no-results">No songs found</div>';
     }
 
-    html += `
-            </div>
-            <div id="artist-songs-load-more"></div>
-        </div>
-    `;
+    html += '\n            </div>\n' +
+        '            <div id="artist-songs-load-more"></div>\n' +
+        '        </div>\n    ';
 
     return html;
 }
 
 // ============ RENDER DYNAMIC ALBUMS SECTION ============
 function renderAlbumsSectionHTML(albums, category, totalAlbums) {
-    var html = `
-        <div class="artist-albums-section" id="artist-dynamic-albums" data-category="${category}">
-            <h3>Top Albums (${albums ? albums.length : 0})</h3>
-            <div class="album-list">
-    `;
+    var albumHeaderCount = albums ? albums.length : 0;
+    var html = '\n        <div class="artist-albums-section" id="artist-dynamic-albums" data-category="' + category +
+        '">\n' +
+        '            <h3>Top Albums (' + albumHeaderCount + ')</h3>\n' +
+        '            <div class="album-list">\n    ';
 
     if (albums && albums.length > 0) {
         albums.forEach(function(album) {
             html += createAlbumCard(album);
         });
     } else {
-        html += `<div class="no-results">No albums found</div>`;
+        html += '<div class="no-results">No albums found</div>';
     }
 
-    html += `
-            </div>
-            <div id="artist-albums-load-more"></div>
-        </div>
-    `;
+    html += '\n            </div>\n' +
+        '            <div id="artist-albums-load-more"></div>\n' +
+        '        </div>\n    ';
 
     return html;
 }
@@ -217,8 +211,8 @@ function renderArtist(artist) {
 }
 
 // ============ VIEW ARTIST ============
-async function viewArtist(token, category) {
-    console.log('[DEBUG] viewArtist called with:', {token, category});
+function viewArtist(token, category) {
+    console.log('[DEBUG] viewArtist called with:', {token: token, category: category});
 
     // If category is undefined, try to get it from the navigation stack
     if (!category) {
@@ -265,24 +259,26 @@ async function viewArtist(token, category) {
         var artist = window.Cache.get(cacheKey);
         window._artistState.artistId = artist.artistId || artist.id;
         renderArtist(artist);
-        return;
+        return window.Utils.Promise.resolve();
     } else {
         console.log('[DEBUG] Cache MISS for key:', cacheKey);
     }
 
-    try {
-        var artist = await window.Services.Artist.getDetails(token, category);
-        window.Cache.set(cacheKey, artist);
-        window._artistState.artistId = artist.artistId || artist.id;
-        renderArtist(artist);
-    } catch (error) {
-        console.error('[View Artist Error] Failed to load or render details:', error);
-        DOM.results.innerHTML = `<div class="error">❌ Error loading artist: ${error.message}</div>`;
-    }
+    return window.Services.Artist.getDetails(token, category)
+        .then(function(artist) {
+            window.Cache.set(cacheKey, artist);
+            window._artistState.artistId = artist.artistId || artist.id;
+            renderArtist(artist);
+        })
+        .catch(function(error) {
+            console.error('[View Artist Error] Failed to load or render details:', error);
+            DOM.results.innerHTML =
+                '<div class="error">❌ Error loading artist: ' + escapeHtml(error.message) + '</div>';
+        });
 }
 
 // ============ SWITCH ARTIST CATEGORY ============
-async function switchArtistCategory(category) {
+function switchArtistCategory(category) {
     console.log('[Artist] Switching category:', category);
 
     // 1. Update state
@@ -313,7 +309,7 @@ async function switchArtistCategory(category) {
     if (artistData) {
         console.log('[Display] Using cached artist data for category:', category);
         updateDynamicParts(artistData.songs, artistData.albums, category);
-        return;
+        return window.Utils.Promise.resolve();
     }
 
     // 5. Fetch from API
@@ -322,21 +318,21 @@ async function switchArtistCategory(category) {
     if (songsContainer) songsContainer.innerHTML = '<div class="loading">🎤 Loading songs...</div>';
     if (albumsContainer) albumsContainer.innerHTML = '<div class="loading">🎤 Loading albums...</div>';
 
-    try {
-        var artist = await window.Services.Artist.getDetails(token, category);
-        window.Cache.set(fullCacheKey, artist);
-
-        updateDynamicParts(artist.songs, artist.albums, category);
-
-        window._artistState.totalSongs = artist.totalSongs || 0;
-        window._artistState.totalAlbums = artist.totalAlbums || 0;
-
-    } catch (error) {
-        if (songsContainer)
-            songsContainer.innerHTML = `<div class="error">❌ Error loading songs: ${error.message}</div>`;
-        if (albumsContainer)
-            albumsContainer.innerHTML = `<div class="error">❌ Error loading albums: ${error.message}</div>`;
-    }
+    return window.Services.Artist.getDetails(token, category)
+        .then(function(artist) {
+            window.Cache.set(fullCacheKey, artist);
+            updateDynamicParts(artist.songs, artist.albums, category);
+            window._artistState.totalSongs = artist.totalSongs || 0;
+            window._artistState.totalAlbums = artist.totalAlbums || 0;
+        })
+        .catch(function(error) {
+            if (songsContainer)
+                songsContainer.innerHTML =
+                    '<div class="error">❌ Error loading songs: ' + escapeHtml(error.message) + '</div>';
+            if (albumsContainer)
+                albumsContainer.innerHTML =
+                    '<div class="error">❌ Error loading albums: ' + escapeHtml(error.message) + '</div>';
+        });
 }
 
 // ============ UPDATE DYNAMIC PARTS ============
@@ -369,8 +365,6 @@ function updateDynamicParts(songs, albums, category) {
             card._songData = allSongs[index];
         }
     });
-
-
 
     // 5. Show load more buttons
     showArtistSongsLoadMore();
@@ -405,11 +399,9 @@ function showArtistSongsLoadMore() {
         return;
     }
 
-    container.innerHTML = `
-        <button class="btn-load-more" id="artist-songs-load-more-btn">
-            Load ${window._artistState.limit} More Songs
-        </button>
-    `;
+    container.innerHTML = '\n        <button class="btn-load-more" id="artist-songs-load-more-btn">\n' +
+        '            Load ' + window._artistState.limit + ' More Songs\n' +
+        '        </button>\n    ';
 
     var btn = document.getElementById('artist-songs-load-more-btn');
     if (btn) {
@@ -420,8 +412,8 @@ function showArtistSongsLoadMore() {
 }
 
 // ============ LOAD MORE ARTIST SONGS ============
-async function loadMoreArtistSongs() {
-    if (window._artistState.isLoadingSongs) return;
+function loadMoreArtistSongs() {
+    if (window._artistState.isLoadingSongs) return window.Utils.Promise.resolve();
     window._artistState.isLoadingSongs = true;
 
     var btn = document.getElementById('artist-songs-load-more-btn');
@@ -456,47 +448,47 @@ async function loadMoreArtistSongs() {
             btn.textContent = 'Load ' + window._artistState.limit + ' More Songs';
             btn.disabled = false;
         }
-        return;
+        return window.Utils.Promise.resolve();
     }
 
-    try {
-        var result = await window.Services.Artist.getMoreSongs(artistId, nextPage, category);
-        var songs = result.songs || [];
-        var total = result.total || 0;
+    return window.Services.Artist.getMoreSongs(artistId, nextPage, category)
+        .then(function(result) {
+            var songs = result.songs || [];
+            var total = result.total || 0;
 
-        // ============ STORE IN CACHE ============
-        window.Cache.set(cacheKey, {songs: songs, total: total});
+            // ============ STORE IN CACHE ============
+            window.Cache.set(cacheKey, {songs: songs, total: total});
 
-
-
-        // Append songs
-        if (songs.length > 0) {
-            appendArtistSongs(songs, nextPage, total, cacheKey);
-        } else {
+            // Append songs
+            if (songs.length > 0) {
+                appendArtistSongs(songs, nextPage, total, cacheKey);
+            } else {
+                var container = document.getElementById('artist-songs-load-more');
+                if (container) {
+                    container.innerHTML = '<div class="end-of-results">🏁 End of songs</div>';
+                }
+            }
+        })
+        .catch(function(error) {
+            console.error('[Artist] Load more songs error:', error);
             var container = document.getElementById('artist-songs-load-more');
             if (container) {
-                container.innerHTML = '<div class="end-of-results">🏁 End of songs</div>';
+                container.innerHTML = '<button class="btn-load-more" id="artist-songs-load-more-btn">Retry</button>';
+                var newBtn = document.getElementById('artist-songs-load-more-btn');
+                if (newBtn) {
+                    newBtn.addEventListener('click', function() {
+                        loadMoreArtistSongs();
+                    });
+                }
             }
-        }
-    } catch (error) {
-        console.error('[Artist] Load more songs error:', error);
-        var container = document.getElementById('artist-songs-load-more');
-        if (container) {
-            container.innerHTML = '<button class="btn-load-more" id="artist-songs-load-more-btn">Retry</button>';
-            var newBtn = document.getElementById('artist-songs-load-more-btn');
-            if (newBtn) {
-                newBtn.addEventListener('click', function() {
-                    loadMoreArtistSongs();
-                });
+        })
+        .then(function() {
+            window._artistState.isLoadingSongs = false;
+            if (btn) {
+                btn.textContent = 'Load ' + window._artistState.limit + ' More Songs';
+                btn.disabled = false;
             }
-        }
-    } finally {
-        window._artistState.isLoadingSongs = false;
-        if (btn) {
-            btn.textContent = 'Load ' + window._artistState.limit + ' More Songs';
-            btn.disabled = false;
-        }
-    }
+        });
 }
 
 // ============ APPEND ARTIST SONGS ============
@@ -573,11 +565,9 @@ function showArtistAlbumsLoadMore() {
         return;
     }
 
-    container.innerHTML = `
-        <button class="btn-load-more" id="artist-albums-load-more-btn">
-            Load ${window._artistState.limit} More Albums
-        </button>
-    `;
+    container.innerHTML = '\n        <button class="btn-load-more" id="artist-albums-load-more-btn">\n' +
+        '            Load ' + window._artistState.limit + ' More Albums\n' +
+        '        </button>\n    ';
 
     var btn = document.getElementById('artist-albums-load-more-btn');
     if (btn) {
@@ -588,8 +578,8 @@ function showArtistAlbumsLoadMore() {
 }
 
 // ============ LOAD MORE ARTIST ALBUMS ============
-async function loadMoreArtistAlbums() {
-    if (window._artistState.isLoadingAlbums) return;
+function loadMoreArtistAlbums() {
+    if (window._artistState.isLoadingAlbums) return window.Utils.Promise.resolve();
     window._artistState.isLoadingAlbums = true;
 
     var btn = document.getElementById('artist-albums-load-more-btn');
@@ -623,46 +613,46 @@ async function loadMoreArtistAlbums() {
             btn.textContent = 'Load ' + window._artistState.limit + ' More Albums';
             btn.disabled = false;
         }
-        return;
+        return window.Utils.Promise.resolve();
     }
 
-    try {
-        var result = await window.Services.Artist.getMoreAlbums(artistId, nextPage, category);
-        var albums = result.albums || [];
-        var total = result.total || 0;
+    return window.Services.Artist.getMoreAlbums(artistId, nextPage, category)
+        .then(function(result) {
+            var albums = result.albums || [];
+            var total = result.total || 0;
 
-        // ============ STORE IN CACHE ============
-        window.Cache.set(cacheKey, {albums: albums, total: total});
+            // ============ STORE IN CACHE ============
+            window.Cache.set(cacheKey, {albums: albums, total: total});
 
-
-
-        if (albums.length > 0) {
-            appendArtistAlbums(albums, nextPage, total);
-        } else {
+            if (albums.length > 0) {
+                appendArtistAlbums(albums, nextPage, total, cacheKey);
+            } else {
+                var container = document.getElementById('artist-albums-load-more');
+                if (container) {
+                    container.innerHTML = '<div class="end-of-results">🏁 End of albums</div>';
+                }
+            }
+        })
+        .catch(function(error) {
+            console.error('[Artist] Load more albums error:', error);
             var container = document.getElementById('artist-albums-load-more');
             if (container) {
-                container.innerHTML = '<div class="end-of-results">🏁 End of albums</div>';
+                container.innerHTML = '<button class="btn-load-more" id="artist-albums-load-more-btn">Retry</button>';
+                var newBtn = document.getElementById('artist-albums-load-more-btn');
+                if (newBtn) {
+                    newBtn.addEventListener('click', function() {
+                        loadMoreArtistAlbums();
+                    });
+                }
             }
-        }
-    } catch (error) {
-        console.error('[Artist] Load more albums error:', error);
-        var container = document.getElementById('artist-albums-load-more');
-        if (container) {
-            container.innerHTML = '<button class="btn-load-more" id="artist-albums-load-more-btn">Retry</button>';
-            var newBtn = document.getElementById('artist-albums-load-more-btn');
-            if (newBtn) {
-                newBtn.addEventListener('click', function() {
-                    loadMoreArtistAlbums();
-                });
+        })
+        .then(function() {
+            window._artistState.isLoadingAlbums = false;
+            if (btn) {
+                btn.textContent = 'Load ' + window._artistState.limit + ' More Albums';
+                btn.disabled = false;
             }
-        }
-    } finally {
-        window._artistState.isLoadingAlbums = false;
-        if (btn) {
-            btn.textContent = 'Load ' + window._artistState.limit + ' More Albums';
-            btn.disabled = false;
-        }
-    }
+        });
 }
 
 function appendArtistAlbums(albums, page, total, cacheKey) {
@@ -696,7 +686,7 @@ function appendArtistAlbums(albums, page, total, cacheKey) {
 }
 
 // ============ RESTORE ARTIST ============
-async function restoreArtist(data) {
+function restoreArtist(data) {
     console.log('[Restore] Artist:', data);
     var category = data.category || 'popular';
     var token = data.token;
@@ -706,33 +696,33 @@ async function restoreArtist(data) {
     window._isRestoring = true;
 
     // First, load structural view (page 1)
-    await viewArtist(token, category);
+    return viewArtist(token, category)
+        .then(function() {
+            // Append paged songs
+            loadedSongPages.forEach(function(pageKey) {
+                if (window.Cache.has(pageKey)) {
+                    var cachedVal = window.Cache.get(pageKey);
+                    var pageNum = parseInt(pageKey.split(':').pop()) || 2;
+                    var songs = cachedVal.songs || [];
+                    var total = cachedVal.total || 0;
+                    appendArtistSongs(songs, pageNum, total, pageKey);
+                }
+            });
 
-    // Append paged songs
-    for (var i = 0; i < loadedSongPages.length; i++) {
-        var pageKey = loadedSongPages[i];
-        if (window.Cache.has(pageKey)) {
-            var cachedVal = window.Cache.get(pageKey);
-            var pageNum = parseInt(pageKey.split(':').pop()) || 2;
-            var songs = cachedVal.songs || [];
-            var total = cachedVal.total || 0;
-            appendArtistSongs(songs, pageNum, total, pageKey);
-        }
-    }
-
-    // Append paged albums
-    for (var j = 0; j < loadedAlbumPages.length; j++) {
-        var pageKey = loadedAlbumPages[j];
-        if (window.Cache.has(pageKey)) {
-            var cachedVal = window.Cache.get(pageKey);
-            var pageNum = parseInt(pageKey.split(':').pop()) || 2;
-            var albums = cachedVal.albums || [];
-            var total = cachedVal.total || 0;
-            appendArtistAlbums(albums, pageNum, total, pageKey);
-        }
-    }
-
-    window._isRestoring = false;
+            // Append paged albums
+            loadedAlbumPages.forEach(function(pageKey) {
+                if (window.Cache.has(pageKey)) {
+                    var cachedVal = window.Cache.get(pageKey);
+                    var pageNum = parseInt(pageKey.split(':').pop()) || 2;
+                    var albums = cachedVal.albums || [];
+                    var total = cachedVal.total || 0;
+                    appendArtistAlbums(albums, pageNum, total, pageKey);
+                }
+            });
+        })
+        .then(function() {
+            window._isRestoring = false;
+        });
 }
 
 // ============ EXPOSE ============
@@ -740,3 +730,4 @@ window.viewArtist = viewArtist;
 window.loadMoreArtistSongs = loadMoreArtistSongs;
 window.loadMoreArtistAlbums = loadMoreArtistAlbums;
 window.renderArtist = renderArtist;
+window.restoreArtist = restoreArtist;

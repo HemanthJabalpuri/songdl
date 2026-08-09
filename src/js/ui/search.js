@@ -1,5 +1,7 @@
+// src/js/ui/search.js
+
 // Handle searches where the query is a parsed URL target
-async function handleUrlSearch(parsed) {
+function handleUrlSearch(parsed) {
     var resultsDiv = document.getElementById('results');
     var statsDiv = document.getElementById('stats');
     var playerDiv = document.getElementById('player');
@@ -9,15 +11,13 @@ async function handleUrlSearch(parsed) {
     if (statsDiv) statsDiv.innerHTML = '';
     if (playerDiv) playerDiv.innerHTML = '';
 
-    try {
-        if (parsed.type === 'song' || parsed.type === 'lyrics') {
-            if (window.currentSearchType !== 'songs') {
-                switchTab('songs');
-            }
-
-            var songData = await window.API.getSong(parsed.token);
+    var promise;
+    if (parsed.type === 'song' || parsed.type === 'lyrics') {
+        if (window.currentSearchType !== 'songs') {
+            switchTab('songs');
+        }
+        promise = window.API.getSong(parsed.token).then(function(songData) {
             var song = songData.songs ? songData.songs[0] : null;
-
             if (song) {
                 var formattedSong = window.Utils.formatters.formatSong(song);
                 if (statsDiv) statsDiv.innerHTML = 'Found 1 song';
@@ -25,56 +25,55 @@ async function handleUrlSearch(parsed) {
             } else {
                 resultsDiv.innerHTML = '<div class="no-results">😕 Song not found</div>';
             }
-
-        } else if (parsed.type === 'album') {
-            if (window.currentSearchType !== 'albums') {
-                switchTab('albums');
-            }
-
-            var albumData = await window.API.getAlbum(parsed.token);
-
+        });
+    } else if (parsed.type === 'album') {
+        if (window.currentSearchType !== 'albums') {
+            switchTab('albums');
+        }
+        promise = window.API.getAlbum(parsed.token).then(function(albumData) {
             if (albumData && albumData.id) {
                 if (statsDiv) statsDiv.innerHTML = 'Found 1 album';
                 viewAlbum(parsed.token);
             } else {
                 resultsDiv.innerHTML = '<div class="no-results">😕 Album not found</div>';
             }
-
-        } else if (parsed.type === 'playlist') {
-            if (window.currentSearchType !== 'playlists') {
-                switchTab('playlists');
-            }
-
-            var playlistData = await window.API.getPlaylist(parsed.token);
-
+        });
+    } else if (parsed.type === 'playlist') {
+        if (window.currentSearchType !== 'playlists') {
+            switchTab('playlists');
+        }
+        promise = window.API.getPlaylist(parsed.token).then(function(playlistData) {
             if (playlistData && playlistData.id) {
                 if (statsDiv) statsDiv.innerHTML = 'Found 1 playlist';
                 viewPlaylist(parsed.token);
             } else {
                 resultsDiv.innerHTML = '<div class="no-results">😕 Playlist not found</div>';
             }
-
-        } else if (parsed.type === 'artist') {
-            if (window.currentSearchType !== 'artists') {
-                switchTab('artists');
-            }
-
-            var artistData = await window.API.getArtist(parsed.token);
+        });
+    } else if (parsed.type === 'artist') {
+        if (window.currentSearchType !== 'artists') {
+            switchTab('artists');
+        }
+        promise = window.API.getArtist(parsed.token).then(function(artistData) {
             if (artistData && artistData.artistId) {
                 if (statsDiv) statsDiv.innerHTML = 'Found 1 artist';
                 viewArtist(parsed.token);
             } else {
                 resultsDiv.innerHTML = '<div class="no-results">😕 Artist not found</div>';
             }
-        }
-    } catch (error) {
-        console.error('[Search] URL fetch error:', error);
-        resultsDiv.innerHTML = '<div class="error">❌ Failed to load: ' + error.message + '</div>';
+        });
+    } else {
+        promise = window.Utils.Promise.resolve();
     }
+
+    return promise.catch(function(error) {
+        console.error('[Search] URL fetch error:', error);
+        resultsDiv.innerHTML = '<div class="error">❌ Failed to load: ' + escapeHtml(error.message) + '</div>';
+    });
 }
 
 // Handle searches where the query is plain search text
-async function handleTextSearch(query) {
+function handleTextSearch(query) {
     var resultsDiv = document.getElementById('results');
     var statsDiv = document.getElementById('stats');
     var playerDiv = document.getElementById('player');
@@ -124,80 +123,83 @@ async function handleTextSearch(query) {
         } else {
             resultsDiv.innerHTML = '<div class="no-results">😕 No results found. Try a different search term.</div>';
         }
-        return;
+        return window.Utils.Promise.resolve();
     }
 
-    try {
-        var data;
-        if (searchType === 'songs') {
-            data = await window.Services.Song.search(query, limit, page);
-        } else if (searchType === 'albums') {
-            data = await window.Services.Album.search(query, limit, page);
-        } else if (searchType === 'playlists') {
-            data = await window.Services.Playlist.search(query, limit, page);
-        } else if (searchType === 'artists') {
-            data = await window.Services.Artist.search(query, limit, page);
-        } else {
-            data = await window.Services.Song.search(query, limit, page);
-        }
+    var servicePromise;
+    if (searchType === 'songs') {
+        servicePromise = window.Services.Song.search(query, limit, page);
+    } else if (searchType === 'albums') {
+        servicePromise = window.Services.Album.search(query, limit, page);
+    } else if (searchType === 'playlists') {
+        servicePromise = window.Services.Playlist.search(query, limit, page);
+    } else if (searchType === 'artists') {
+        servicePromise = window.Services.Artist.search(query, limit, page);
+    } else {
+        servicePromise = window.Services.Song.search(query, limit, page);
+    }
 
-        // Store in cache
-        window.Cache.set(cacheKey, data);
-        window._searchState.total = data.total || 0;
-        window._searchLoadedPages.push(cacheKey);
+    return servicePromise
+        .then(function(data) {
+            // Store in cache
+            window.Cache.set(cacheKey, data);
+            window._searchState.total = data.total || 0;
+            window._searchLoadedPages.push(cacheKey);
 
-        window.Nav.clear();
-        window.Nav.push({
-            type: 'search',
-            data: {
-                type: searchType,
-                query: query,
-                page: window._searchState.currentPage || 1,
-                loadedPages: window._searchLoadedPages ? window._searchLoadedPages.slice() : []
+            window.Nav.clear();
+            window.Nav.push({
+                type: 'search',
+                data: {
+                    type: searchType,
+                    query: query,
+                    page: window._searchState.currentPage || 1,
+                    loadedPages: window._searchLoadedPages ? window._searchLoadedPages.slice() : []
+                }
+            });
+
+            if (data.results && data.results.length > 0) {
+                if (statsDiv) statsDiv.innerHTML = 'Found ' + data.results.length + ' ' + searchType;
+                displaySearchResults(data.results, searchType);
+                showLoadMoreButton('search');
+            } else {
+                resultsDiv.innerHTML =
+                    '<div class="no-results">😕 No results found. Try a different search term.</div>';
             }
+        })
+        .catch(function(error) {
+            console.error('[Search] Error:', error);
+            resultsDiv.innerHTML = '<div class="error">❌ Error: ' + escapeHtml(error.message) + '</div>';
+            if (statsDiv) statsDiv.innerHTML = '';
         });
-
-        if (data.results && data.results.length > 0) {
-            if (statsDiv) statsDiv.innerHTML = 'Found ' + data.results.length + ' ' + searchType;
-            displaySearchResults(data.results, searchType);
-            showLoadMoreButton('search');
-        } else {
-            resultsDiv.innerHTML = '<div class="no-results">😕 No results found. Try a different search term.</div>';
-        }
-    } catch (error) {
-        console.error('[Search] Error:', error);
-        resultsDiv.innerHTML = '<div class="error">❌ Error: ' + error.message + '</div>';
-        if (statsDiv) statsDiv.innerHTML = '';
-    }
 }
 
 // Coordinate search input queries
-async function search() {
+function search() {
     var searchInput = document.getElementById('searchInput');
     var resultsDiv = document.getElementById('results');
 
     if (!searchInput || !resultsDiv) {
         console.error('[Search] Required DOM elements not found');
-        return;
+        return window.Utils.Promise.resolve();
     }
 
     var query = searchInput.value.trim();
     if (!query) {
         alert('Please enter a search term');
-        return;
+        return window.Utils.Promise.resolve();
     }
 
     var parsed = window.Utils.parseUrl(query);
     if (parsed && parsed.token) {
-        await handleUrlSearch(parsed);
+        return handleUrlSearch(parsed);
     } else {
-        await handleTextSearch(query);
+        return handleTextSearch(query);
     }
 }
 
 // ============ LOAD MORE SEARCH ============
-async function loadMoreSearch() {
-    if (window._searchState.isLoading) return;
+function loadMoreSearch() {
+    if (window._searchState.isLoading) return window.Utils.Promise.resolve();
     window._searchState.isLoading = true;
 
     var btn = document.getElementById('load-more-btn');
@@ -210,86 +212,86 @@ async function loadMoreSearch() {
     var cacheKey = window.Cache.getSearchKey(
         window._searchState.type, window._searchState.query, nextPage, window._searchState.limit);
 
-    try {
-        var data;
-        var type = window._searchState.type;
+    var type = window._searchState.type;
+    var promise;
 
-        // Check cache first
-        if (window.Cache.has(cacheKey)) {
-            console.log('[Search] Using cached page:', nextPage);
-            data = window.Cache.get(cacheKey);
-        } else {
-            if (type === 'songs') {
-                data =
-                    await window.Services.Song.search(window._searchState.query, window._searchState.limit, nextPage);
-            } else if (type === 'albums') {
-                data =
-                    await window.Services.Album.search(window._searchState.query, window._searchState.limit, nextPage);
-            } else if (type === 'playlists') {
-                data = await window.Services.Playlist.search(
-                    window._searchState.query, window._searchState.limit, nextPage);
-            } else if (type === 'artists') {
-                data =
-                    await window.Services.Artist.search(window._searchState.query, window._searchState.limit, nextPage);
-            }
+    // Check cache first
+    if (window.Cache.has(cacheKey)) {
+        console.log('[Search] Using cached page:', nextPage);
+        promise = window.Utils.Promise.resolve(window.Cache.get(cacheKey));
+    } else {
+        if (type === 'songs') {
+            promise = window.Services.Song.search(window._searchState.query, window._searchState.limit, nextPage);
+        } else if (type === 'albums') {
+            promise = window.Services.Album.search(window._searchState.query, window._searchState.limit, nextPage);
+        } else if (type === 'playlists') {
+            promise = window.Services.Playlist.search(window._searchState.query, window._searchState.limit, nextPage);
+        } else if (type === 'artists') {
+            promise = window.Services.Artist.search(window._searchState.query, window._searchState.limit, nextPage);
+        }
+        promise = promise.then(function(data) {
             window.Cache.set(cacheKey, data);
-        }
-
-        // Append results
-        if (data.results && data.results.length > 0) {
-            // Get existing results container
-            var resultsDiv = document.getElementById('results');
-            var existingCards = resultsDiv.querySelectorAll('.song-card, .album-card, .playlist-card');
-
-            // Remove load more button
-            var oldBtn = document.getElementById('load-more-btn');
-            if (oldBtn) oldBtn.remove();
-
-            // Append new results
-            if (type === 'songs') {
-                data.results.forEach(function(song) {
-                    resultsDiv.insertAdjacentHTML('beforeend', createSongCard(song));
-                });
-            } else if (type === 'albums') {
-                data.results.forEach(function(album) {
-                    resultsDiv.insertAdjacentHTML('beforeend', createAlbumCard(album));
-                });
-            } else if (type === 'playlists') {
-                data.results.forEach(function(playlist) {
-                    resultsDiv.insertAdjacentHTML('beforeend', createPlaylistCard(playlist));
-                });
-            } else if (type === 'artists') {
-                data.results.forEach(function(artist) {
-                    resultsDiv.insertAdjacentHTML('beforeend', createArtistCard(artist));
-                });
-            }
-            // Update state
-            window._searchState.currentPage = nextPage;
-            window._searchLoadedPages.push(cacheKey);
-
-            // Persist loaded pages state so back-button recalls pagination
-            window.Nav.updateCurrent({loadedPages: window._searchLoadedPages.slice()});
-
-            // Show load more button again
-            showLoadMoreButton('search');
-        } else {
-            // No more results
-            var endMsg = document.createElement('div');
-            endMsg.className = 'end-of-results';
-            endMsg.id = 'load-more-btn';
-            endMsg.textContent = '🏁 End of results';
-            document.getElementById('results').appendChild(endMsg);
-        }
-    } catch (error) {
-        console.error('[Search] Load more error:', error);
-        var btn = document.getElementById('load-more-btn');
-        if (btn) {
-            btn.textContent = 'Retry';
-            btn.disabled = false;
-        }
-    } finally {
-        window._searchState.isLoading = false;
+            return data;
+        });
     }
+
+    return promise
+        .then(function(data) {
+            // Append results
+            if (data.results && data.results.length > 0) {
+                var resultsDiv = document.getElementById('results');
+
+                // Remove load more button
+                var oldBtn = document.getElementById('load-more-btn');
+                if (oldBtn) oldBtn.remove();
+
+                // Append new results
+                if (type === 'songs') {
+                    data.results.forEach(function(song) {
+                        resultsDiv.insertAdjacentHTML('beforeend', createSongCard(song));
+                    });
+                } else if (type === 'albums') {
+                    data.results.forEach(function(album) {
+                        resultsDiv.insertAdjacentHTML('beforeend', createAlbumCard(album));
+                    });
+                } else if (type === 'playlists') {
+                    data.results.forEach(function(playlist) {
+                        resultsDiv.insertAdjacentHTML('beforeend', createPlaylistCard(playlist));
+                    });
+                } else if (type === 'artists') {
+                    data.results.forEach(function(artist) {
+                        resultsDiv.insertAdjacentHTML('beforeend', createArtistCard(artist));
+                    });
+                }
+                // Update state
+                window._searchState.currentPage = nextPage;
+                window._searchLoadedPages.push(cacheKey);
+
+                // Persist loaded pages state so back-button recalls pagination
+                window.Nav.updateCurrent({loadedPages: window._searchLoadedPages.slice()});
+
+                // Show load more button again
+                showLoadMoreButton('search');
+            } else {
+                // No more results
+                var endMsg = document.createElement('div');
+                endMsg.className = 'end-of-results';
+                endMsg.id = 'load-more-btn';
+                endMsg.textContent = '🏁 End of results';
+                document.getElementById('results').appendChild(endMsg);
+            }
+        })
+        .catch(function(error) {
+            console.error('[Search] Load more error:', error);
+            var btn = document.getElementById('load-more-btn');
+            if (btn) {
+                btn.textContent = 'Retry';
+                btn.disabled = false;
+            }
+        })
+        .then(function() {
+            window._searchState.isLoading = false;
+        });
 }
 
 // ============ SHOW LOAD MORE BUTTON ============

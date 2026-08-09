@@ -17,7 +17,7 @@
 ### Target Environment
 - **Primary:** Firefox Android + Violentmonkey (or Chrome Desktop + Tampermonkey)
 - **Development:** Any modern browser with Node.js server
-- **Command-Line:** Terminal shell with Node.js v22+
+- **Command-Line:** Terminal shell with Node.js v0.9.5, v0.11.8, or v22+
 
 ---
 
@@ -56,6 +56,7 @@ Refactored/
         │
         ├── utils/           # Pure utility functions (no side effects)
         │   ├── logger.js            # Global logging interceptor controller
+        │   ├── promise.js           # Unified Promise wrapper (ES5 compat fallback)
         │   ├── decrypt.js           # supported music platform URL decryption
         │   ├── resource.js          # Fetch audio, album art
         │   ├── formatters.js        # Data formatting
@@ -245,6 +246,23 @@ window.API._isProxy = window.location.port === '3000';
 - ✅ Works on any port
 - ✅ Clear intent
 - ✅ Explicit control
+
+### Why window.Utils.Promise namespace instead of global polyfills
+
+**Before (intrusive):**
+```javascript
+global.Promise = global.Promise || PromisePolyfill;
+```
+- ❌ Pollutes global namespaces in modern engines.
+- ❌ Forces modern browser extensions to evaluate custom polyfills or risk scope collisions.
+
+**After (clean wrapper):**
+```javascript
+window.Utils.Promise = window.Promise || FallbackPromise;
+```
+- ✅ Binds environment-specific Promise references under the `window.Utils` namespace.
+- ✅ In modern browsers and Node v22+, resolves directly to the native V8 Promise class.
+- ✅ In Node v0.9.5/v0.11.8, falls back programmatically to `FallbackPromise` without polluting global.
 
 ### Why Event Listeners Instead of `onclick`
 
@@ -523,39 +541,40 @@ node server.js
 
 ## File Loading Order (from index.html)
 
-1. `utils/logger.js` - Global logging controller
-2. `ui/utils.js` - UI utilities and card factories
-3. `libs/des.js` - Pure DES implementation
-4. `libs/writem4a.js` - M4A container writer
-5. `utils/decrypt.js` - Media URL decryption helper
-6. `utils/resource.js` - Fetch audio/art CDN requests
-7. `utils/formatters.js` - JSON normalization formatters
-8. `utils/url-helper.js` - URL pattern parsers
-9. `utils/download-helper.js` - Filename and file metadata writers
-10. `api/constants.js` - API domains and configuration constants
-11. `api/fetch.js` - HTTP queries wrapper
-12. `api/songs.js` - Song detail API calls
-13. `api/albums.js` - Album detail API calls
-14. `api/playlists.js` - Playlist detail API calls
-15. `api/artists.js` - Artist detail API calls
-16. `services/song.js` - Song business logic
-17. `services/album.js` - Album business logic
-18. `services/download.js` - Download compilation manager
-19. `services/playlist.js` - Playlist business logic
-20. `services/artist.js` - Artist business logic
-21. `ui/display/song-card.js` - Card formatting
-22. `ui/display/display-results.js` - Render search results
-23. `ui/display/album-view.js` - Render album panels
-24. `ui/display/playlist-view.js` - Render playlist panels
-25. `ui/display/artist-view.js` - Render artist panels popular/latest paging
-26. `ui/display/lyrics.js` - Render scrollable lyrics overlay
-27. `ui/display/navigation.js` - Navigation view state restorer
-28. `ui/search.js` - Search coordinator (URL vs Text)
-29. `ui/player.js` - Audio player controllers
-30. `ui/download.js` - Download progress buttons
-31. `ui/core.js` - Split/bundle initializer coordinator
-32. `ui/builder.js` - Overlay templates assembler
-33. `ui/handlers.js` - Shared click event delegation
+1. `api/constants.js` - API domains and configuration constants
+2. `utils/logger.js` - Global logging controller
+3. `ui/utils.js` - UI templates, cards factories
+4. `libs/des.js` - Pure DES implementation
+5. `libs/writem4a.js` - M4A container writer
+6. `utils/promise.js` - Unified isomorphic Promise wrapper
+7. `utils/decrypt.js` - Media URL decryption helper
+8. `utils/resource.js` - Fetch audio/art CDN requests
+9. `utils/formatters.js` - JSON normalization formatters
+10. `utils/url-helper.js` - URL pattern parsers
+11. `utils/download-helper.js` - Filename and file metadata writers
+12. `api/fetch.js` - HTTP queries wrapper
+13. `api/songs.js` - Song detail API calls
+14. `api/albums.js` - Album detail API calls
+15. `api/playlists.js` - Playlist detail API calls
+16. `api/artists.js` - Artist detail API calls
+17. `services/song.js` - Song business logic
+18. `services/album.js` - Album business logic
+19. `services/download.js` - Download compilation manager
+20. `services/playlist.js` - Playlist business logic
+21. `services/artist.js` - Artist business logic
+22. `ui/display/song-card.js` - Card formatting
+23. `ui/display/display-results.js` - Render search results
+24. `ui/display/album-view.js` - Render album panels
+25. `ui/display/playlist-view.js` - Render playlist panels
+26. `ui/display/artist-view.js` - Render artist panels popular/latest paging
+27. `ui/display/lyrics.js` - Render scrollable lyrics overlay
+28. `ui/display/navigation.js` - Navigation view state restorer
+29. `ui/search.js` - Search coordinator (URL vs Text)
+30. `ui/player.js` - Audio player controllers
+31. `ui/download.js` - Download progress buttons
+32. `ui/core.js` - Split/bundle initializer coordinator
+33. `ui/builder.js` - Overlay templates assembler
+34. `ui/handlers.js` - Shared click event delegation
 
 ---
 

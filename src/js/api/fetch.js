@@ -16,7 +16,7 @@ var isomorphicFetch = function(url, options) {
             ok: status >= 200 && status < 300,
             status: status,
             json: function() {
-                return Promise.resolve(JSON.parse(buffer.toString('utf8')));
+                return window.Utils.Promise.resolve(JSON.parse(buffer.toString('utf8')));
             },
             arrayBuffer: function() {
                 var ab = new ArrayBuffer(buffer.length);
@@ -24,14 +24,14 @@ var isomorphicFetch = function(url, options) {
                 for (var i = 0; i < buffer.length; i++) {
                     view[i] = buffer[i];
                 }
-                return Promise.resolve(ab);
+                return window.Utils.Promise.resolve(ab);
             }
         };
     }
 
     // In-process Mock Server delegation for offline testing
     if (global.isProxy && (urlStr.indexOf('/proxy') !== -1 || urlStr.indexOf('/mock/') !== -1)) {
-        return new Promise(function(resolve, reject) {
+        return new window.Utils.Promise(function(resolve, reject) {
             var mockReq = {url: urlStr, method: options.method || 'GET', headers: options.headers || {}};
             var mockRes = {
                 writeHead: function(status) {
@@ -55,7 +55,7 @@ var isomorphicFetch = function(url, options) {
 
     // Native Node HTTP/HTTPS request loader
     var httpModule = urlStr.indexOf('https:') === 0 ? require('https') : require('http');
-    return new Promise(function(resolve, reject) {
+    return new window.Utils.Promise(function(resolve, reject) {
         var parsed = require('url').parse(urlStr);
         var reqOptions = {
             hostname: parsed.hostname,

@@ -125,31 +125,38 @@ function restoreAlbum(data) {
 }
 
 // ============ RESTORE VIEW ============
-async function restoreView(view) {
+function restoreView(view) {
     console.log('[Restore] Restoring:', view.type, 'Data:', view.data);
 
     window._isRestoring = true;
 
+    var promise;
     switch (view.type) {
         case 'search':
             restoreSearch(view.data);
+            promise = window.Utils.Promise.resolve();
             break;
         case 'playlist':
             restorePlaylist(view.data);
+            promise = window.Utils.Promise.resolve();
             break;
         case 'album':
             restoreAlbum(view.data);
+            promise = window.Utils.Promise.resolve();
             break;
         case 'artist':
-            await restoreArtist(view.data);
+            promise = restoreArtist(view.data);
             break;
         default:
             console.log('[Restore] Unknown type:', view.type);
             if (typeof window.search === 'function') {
                 window.search();
             }
+            promise = window.Utils.Promise.resolve();
     }
 
-    window._isRestoring = false;
-    console.log('[Restore] Done, isRestoring:', window._isRestoring);
+    return promise.then(function() {
+        window._isRestoring = false;
+        console.log('[Restore] Done, isRestoring:', window._isRestoring);
+    });
 }

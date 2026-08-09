@@ -3,112 +3,6 @@
 var fs = require('fs');
 var path = require('path');
 
-// ============================================================
-// ES5 POLYFILLS FOR NODE v0.11.8 COMPATIBILITY
-// ============================================================
-
-// Promise ES5 Polyfill (with recursive thenable flattening)
-function PromisePolyfill(executor) {
-    var self = this;
-    self.state = 'pending';
-    self.value = undefined;
-    self.callbacks = [];
-
-    function resolve(val) {
-        if (self.state !== 'pending') return;
-        if (val && typeof val.then === 'function') {
-            val.then(resolve, reject);
-            return;
-        }
-        self.state = 'fulfilled';
-        self.value = val;
-        self.callbacks.forEach(function(cb) {
-            cb.onFulfilled(val);
-        });
-    }
-
-    function reject(reason) {
-        if (self.state !== 'pending') return;
-        self.state = 'rejected';
-        self.value = reason;
-        self.callbacks.forEach(function(cb) {
-            cb.onRejected(reason);
-        });
-    }
-
-    try {
-        executor(resolve, reject);
-    } catch (e) {
-        reject(e);
-    }
-}
-
-PromisePolyfill.prototype.then = function(onFulfilled, onRejected) {
-    var self = this;
-    return new PromisePolyfill(function(resolve, reject) {
-        function handle(value) {
-            try {
-                if (self.state === 'fulfilled') {
-                    if (typeof onFulfilled === 'function') {
-                        resolve(onFulfilled(value));
-                    } else {
-                        resolve(value);
-                    }
-                } else if (self.state === 'rejected') {
-                    if (typeof onRejected === 'function') {
-                        resolve(onRejected(value));
-                    } else {
-                        reject(value);
-                    }
-                }
-            } catch (e) {
-                reject(e);
-            }
-        }
-
-        if (self.state === 'pending') {
-            self.callbacks.push({onFulfilled: handle, onRejected: handle});
-        } else {
-            setImmediate(function() {
-                handle(self.value);
-            });
-        }
-    });
-};
-
-PromisePolyfill.prototype.catch = function(onRejected) {
-    return this.then(null, onRejected);
-};
-
-PromisePolyfill.resolve = function(val) {
-    return new PromisePolyfill(function(resolve) {
-        resolve(val);
-    });
-};
-
-PromisePolyfill.reject = function(reason) {
-    return new PromisePolyfill(function(resolve, reject) {
-        reject(reason);
-    });
-};
-
-PromisePolyfill.all = function(promises) {
-    return new PromisePolyfill(function(resolve, reject) {
-        var results = [];
-        var completed = 0;
-        if (promises.length === 0) return resolve(results);
-        promises.forEach(function(p, i) {
-            PromisePolyfill.resolve(p).then(function(val) {
-                results[i] = val;
-                completed++;
-                if (completed === promises.length) resolve(results);
-            }, reject);
-        });
-    });
-};
-
-global.Promise = global.Promise || PromisePolyfill;
-
 global.window = global;
 window.Cache = {
     store: {},
@@ -119,8 +13,6 @@ window.Cache = {
         this.store[key] = val;
     }
 };
-
-
 
 // Parse command line arguments at startup
 var args = process.argv.slice(2);
@@ -133,14 +25,7 @@ if (isMockEnabled) {
 // Configure global mock objects for Node environments
 global.isProxy = isMockEnabled;
 global.document = undefined;
-global.window = global;
 global.require = require;
-
-// Prepend Node.js safety wrapper
-var combinedCode = '\n' +
-    '    if (typeof window === \'undefined\') {\n' +
-    '        global.window = global;\n' +
-    '    }\n';
 
 // Parse script listings dynamically from index.html in correct load order
 try {
@@ -204,7 +89,7 @@ if (isMockEnabled) {
             var fullPath = path.join(__dirname, 'mock', relPath);
             if (fs.existsSync(fullPath)) {
                 var buffer = fs.readFileSync(fullPath);
-                return Promise.resolve({
+                return window.Utils.Promise.resolve({
                     ok: true,
                     status: 200,
                     arrayBuffer: function() {
@@ -213,10 +98,10 @@ if (isMockEnabled) {
                         for (var i = 0; i < buffer.length; i++) {
                             view[i] = buffer[i];
                         }
-                        return Promise.resolve(ab);
+                        return window.Utils.Promise.resolve(ab);
                     },
                     json: function() {
-                        return Promise.resolve(JSON.parse(buffer.toString('utf8')));
+                        return window.Utils.Promise.resolve(JSON.parse(buffer.toString('utf8')));
                     }
                 });
             }
@@ -224,7 +109,7 @@ if (isMockEnabled) {
 
         // 2. Intercept proxy requests (/proxy):
         if (urlStr.indexOf('/proxy') !== -1) {
-            return new Promise(function(resolve, reject) {
+            return new window.Utils.Promise(function(resolve, reject) {
                 var mockRes = {
                     writeHead: function(status, headers) {
                         this.status = status;
@@ -235,7 +120,7 @@ if (isMockEnabled) {
                             ok: true,
                             status: this.status || 200,
                             json: function() {
-                                return Promise.resolve(JSON.parse(data));
+                                return window.Utils.Promise.resolve(JSON.parse(data));
                             }
                         });
                     }
@@ -264,7 +149,7 @@ var readline = require('readline');
 
 // Dynamic confirmation prompt helper
 function askConfirmation(message) {
-    return new Promise(function(resolve) {
+    return new window.Utils.Promise(function(resolve) {
         var rl = readline.createInterface({input: process.stdin, output: process.stdout});
         rl.question(message, function(answer) {
             rl.close();
@@ -418,7 +303,7 @@ if (command === 'search') {
                 .then(function() {
                     var count = currentAlbum.songs.length;
                     var downloadNext = function(index) {
-                        if (index >= count) return Promise.resolve();
+                        if (index >= count) return window.Utils.Promise.resolve();
                         var song = currentAlbum.songs[index];
                         console.log('\n[' + (index + 1) + '/' + count + '] Fetching: ' + song.title);
                         return Services.Song.getDecrypted(song.token)
@@ -456,7 +341,7 @@ if (command === 'search') {
                 .then(function() {
                     var count = currentPlaylist.songs.length;
                     var downloadNext = function(index) {
-                        if (index >= count) return Promise.resolve();
+                        if (index >= count) return window.Utils.Promise.resolve();
                         var song = currentPlaylist.songs[index];
                         console.log('\n[' + (index + 1) + '/' + count + '] Fetching: ' + song.title);
                         return Services.Song.getDecrypted(song.token)

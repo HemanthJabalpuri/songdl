@@ -1,7 +1,7 @@
 // src/js/ui/player.js
 
 // Play a song and initialize the audio element
-async function playSong(songData) {
+function playSong(songData) {
     if (!songData) {
         console.error('[Player] No song data provided');
         return;
@@ -65,18 +65,17 @@ async function playSong(songData) {
             window.currentAudio = null;
         }
 
-        var audioHtml = `
-            <div id="player-container" style="background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-top: 15px; color: #fff;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <strong>Now Playing: ${displayTitle}</strong>
-                    <button id="player-close-btn" style="background: #dc3545; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer;">✕ Close</button>
-                </div>
-                <audio controls autoplay style="width: 100%;">
-                    <source src="${decryptedUrl}" type="audio/mpeg">
-                    Your browser does not support the audio element.
-                </audio>
-            </div>
-        `;
+        var audioHtml =
+            '<div id="player-container" style="background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-top: 15px; color: #fff;">\n' +
+            '    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">\n' +
+            '        <strong>Now Playing: ' + displayTitle + '</strong>\n' +
+            '        <button id="player-close-btn" style="background: #dc3545; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer;">✕ Close</button>\n' +
+            '    </div>\n' +
+            '    <audio controls autoplay style="width: 100%;">\n' +
+            '        <source src="' + decryptedUrl + '" type="audio/mpeg">\n' +
+            '        Your browser does not support the audio element.\n' +
+            '    </audio>\n' +
+            '</div>';
 
         var tempDiv = document.createElement('div');
         tempDiv.innerHTML = audioHtml;
@@ -137,7 +136,7 @@ function closePlayer() {
         window.currentAudio.pause();
         window.currentAudio.currentTime = 0;
         if (window.currentAudio.src) {
-            if (window.currentAudio.src.startsWith('blob:')) {
+            if (window.currentAudio.src.indexOf('blob:') === 0) {
                 URL.revokeObjectURL(window.currentAudio.src);
             }
             window.currentAudio.src = '';

@@ -2,18 +2,17 @@
 
 function escapeHtml(text) {
     if (!text) return '';
-    const div = document.createElement('div');
+    var div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
 function formatDuration(seconds) {
-    if (!seconds) return 'N/A';
-    const secs = parseInt(seconds);
-    if (isNaN(secs) || secs === 0) return 'N/A';
-    const mins = Math.floor(secs / 60);
-    const remainingSecs = secs % 60;
-    return `${mins}:${remainingSecs.toString().padStart(2, '0')}`;
+    if (isNaN(seconds) || seconds === null || seconds === undefined || seconds <= 0) return 'N/A';
+    var secs = parseInt(seconds);
+    var mins = Math.floor(secs / 60);
+    var remainingSecs = secs % 60;
+    return mins + ':' + (remainingSecs < 10 ? '0' + remainingSecs : remainingSecs);
 }
 
 // Get a standard SVG vector placeholder matching the component type
@@ -43,7 +42,7 @@ function buildCard(options) {
     var type = options.type;
     var token = options.token;
     var image = options.image;
-    if (!image || image.includes('placeholder.com')) {
+    if (!image || image.indexOf('placeholder.com') !== -1) {
         image = getDefaultImage(type);
     }
     var title = options.title || '';
@@ -58,45 +57,43 @@ function buildCard(options) {
         subtitleClass = type === 'album' ? 'album-artist' : 'playlist-artist';
     }
 
-    return `
-        <div class="${type}-card" data-token="${token}">
-            <img src="${image}" alt="${escapeHtml(title)}" />
-            <div class="${type}-info">
-                <div class="${titleClass}">${escapeHtml(title)}</div>
-                <div class="${subtitleClass}">${escapeHtml(subtitle)}</div>
-                ${details ? `<div class="${type}-details">${details}</div>` : ''}
-                <button class="btn-view-${type}" data-token="${token}">
-                    ${buttonText}
-                </button>
-            </div>
-        </div>
-    `;
+    return '\n        <div class="' + type + '-card" data-token="' + token + '">\n' +
+        '            <img src="' + image + '" alt="' + escapeHtml(title) + '" />\n' +
+        '            <div class="' + type + '-info">\n' +
+        '                <div class="' + titleClass + '">' + escapeHtml(title) + '</div>\n' +
+        '                <div class="' + subtitleClass + '">' + escapeHtml(subtitle) + '</div>\n' +
+        (details ? '                <div class="' + type + '-details">' + details + '</div>\n' : '') +
+        '                <button class="btn-view-' + type + '" data-token="' + token + '">\n' +
+        '                    ' + buttonText + '\n' +
+        '                </button>\n' +
+        '            </div>\n' +
+        '        </div>\n    ';
 }
 
 // Create HTML representations for album cards
 function createAlbumCard(album) {
-    var songCount = album.more_info?.song_count || 0;
+    var songCount = (album.more_info && album.more_info.song_count) || 0;
     return buildCard({
         type: 'album',
         token: album.token,
         image: album.image,
         title: album.title,
         subtitle: album.subtitle,
-        details: `${songCount} songs • ${escapeHtml(album.language || 'Unknown')} • ${album.year || 'N/A'}`,
+        details: songCount + ' songs • ' + escapeHtml(album.language || 'Unknown') + ' • ' + (album.year || 'N/A'),
         buttonText: '📂 View Album'
     });
 }
 
 // Create HTML representations for playlist cards
 function createPlaylistCard(playlist) {
-    var songCount = playlist.more_info?.song_count || playlist.song_count || '0';
+    var songCount = (playlist.more_info && playlist.more_info.song_count) || playlist.song_count || '0';
     return buildCard({
         type: 'playlist',
         token: playlist.token,
         image: playlist.image,
         title: playlist.title,
         subtitle: playlist.subtitle || '',
-        details: `${songCount} songs • ${escapeHtml(playlist.language || 'Unknown')}`,
+        details: songCount + ' songs • ' + escapeHtml(playlist.language || 'Unknown'),
         buttonText: '📂 View Playlist'
     });
 }
@@ -117,3 +114,5 @@ function createArtistCard(artist) {
 window.Utils = window.Utils || {};
 window.Utils.formatDuration = formatDuration;
 window.createArtistCard = createArtistCard;
+window.createAlbumCard = createAlbumCard;
+window.createPlaylistCard = createPlaylistCard;

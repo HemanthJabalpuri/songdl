@@ -1,7 +1,7 @@
 var fs = require('fs');
 var path = require('path');
 var mockServer = require('../mock/mock-server.js');
-var Promise = global.Promise;
+var Promise = window.Utils.Promise;
 
 module.exports = function enableMockFetch() {
     var originalFetch = global.fetch;

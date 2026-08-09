@@ -60,11 +60,23 @@ window._isRestoring = false;
 window.Nav = {
     push: function(view) {
         window._navStack.push(view);
-        console.log('[Nav] PUSH:', view.type, 'Stack:', window._navStack.map(v => v.type).join(' → '));
+        console.log(
+            '[Nav] PUSH:', view.type, 'Stack:',
+            window._navStack
+                .map(function(v) {
+                    return v.type;
+                })
+                .join(' → '));
     },
     pop: function() {
         var view = window._navStack.pop();
-        console.log('[Nav] POP:', view ? view.type : 'none', 'Stack:', window._navStack.map(v => v.type).join(' → '));
+        console.log(
+            '[Nav] POP:', view ? view.type : 'none', 'Stack:',
+            window._navStack
+                .map(function(v) {
+                    return v.type;
+                })
+                .join(' → '));
         return view;
     },
     clear: function() {

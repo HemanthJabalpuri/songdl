@@ -9,73 +9,55 @@ window.Services.Download = {
         console.log('[Services] Downloading song from data:', songData.title);
 
         var songUrl = songData.url;
-        if (!songUrl) return Promise.reject(new Error('No stream URL available'));
+        if (!songUrl) return window.Utils.Promise.reject(new Error('No stream URL available'));
 
         songUrl = window.Utils.formatters.formatUrlWithQuality(songUrl, window.currentQuality || 96);
 
-        var audioBytes = null;
-        var albumArtData = null;
-        var lyricsText = null;
+        // Initiate all requests in parallel
+        var audioPromise = window.Utils.fetchResource(songUrl, 'arraybuffer');
 
-        // 1. Fetch audio
-        return window.Utils.fetchResource(songUrl, 'arraybuffer')
-            .then(function(audioBuffer) {
-                audioBytes = new Uint8Array(audioBuffer);
-                console.log('[Services] Audio fetched:', (audioBytes.length / 1024 / 1024).toFixed(2) + ' MB');
+        var artPromise =
+            songData.image ? window.Utils.fetchAlbumArt(songData.image) : window.Utils.Promise.resolve(null);
 
-                if (audioBytes.length === 0) {
-                    throw new Error('Audio file is empty (0 bytes)');
+        var lyricsPromise = songData.has_lyrics ?
+            window.Services.Song.getLyrics(songData.token || songData.id).catch(function(e) {
+                console.warn('[Services] Failed to fetch lyrics:', e.message);
+                return null;
+            }) :
+            window.Utils.Promise.resolve(null);
+
+        // Resolve all in parallel
+        return window.Utils.Promise.all([audioPromise, artPromise, lyricsPromise]).then(function(results) {
+            var audioBuffer = results[0];
+            var albumArtData = results[1];
+            var lyricsText = results[2];
+
+            var audioBytes = new Uint8Array(audioBuffer);
+            if (audioBytes.length === 0) {
+                throw new Error('Audio file is empty (0 bytes)');
+            }
+
+            // Build metadata and tag M4A
+            var metadata = window.Utils.buildMetadata(songData, albumArtData, lyricsText);
+            console.log(
+                '[Services] Metadata: title="' + songData.title + '", artist="' +
+                (songData.artist || songData.all_artists) + '"');
+
+            var dataToDownload = audioBytes;
+            if (typeof window.writeM4ABytes === 'function') {
+                try {
+                    dataToDownload = window.writeM4ABytes(audioBytes, metadata);
+                    console.log('[Services] Metadata written to M4A');
+                } catch (e) {
+                    console.warn('[Services] Metadata write failed:', e.message);
                 }
+            }
 
-                // 2. Fetch album art
-                if (songData.image) {
-                    return window.Utils.fetchAlbumArt(songData.image).then(function(artData) {
-                        albumArtData = artData;
-                        if (albumArtData) {
-                            console.log('[Services] Album art ready for metadata');
-                        }
-                    });
-                }
-            })
-            .then(function() {
-                // 3. Fetch lyrics if available
-                if (songData.has_lyrics) {
-                    var token = songData.token || songData.id;
-                    return window.Services.Song.getLyrics(token)
-                        .then(function(text) {
-                            lyricsText = text;
-                        })
-                        .catch(function(e) {
-                            console.warn('[Services] Failed to fetch lyrics:', e.message);
-                        });
-                }
-            })
-            .then(function() {
-                // 4. Build metadata
-                var metadata = window.Utils.buildMetadata(songData, albumArtData, lyricsText);
-                console.log(
-                    '[Services] Metadata: title="' + songData.title + '", artist="' +
-                    (songData.artist || songData.all_artists) + '"');
+            var quality = window.currentQuality || 96;
+            var finalFilename = filename || window.Utils.buildFilename(songData, quality);
+            console.log('[Services] Filename:', finalFilename);
 
-                // 5. Write metadata to M4A
-                var dataToDownload = audioBytes;
-                if (typeof window.writeM4ABytes === 'function') {
-                    try {
-                        dataToDownload = window.writeM4ABytes(audioBytes, metadata);
-                        console.log('[Services] Metadata written to M4A');
-                    } catch (e) {
-                        console.warn('[Services] Metadata write failed:', e.message);
-                        dataToDownload = audioBytes;
-                    }
-                }
-
-                // 6. Generate filename
-                var quality = window.currentQuality || 96;
-                var finalFilename = filename || window.Utils.buildFilename(songData, quality);
-                console.log('[Services] Filename:', finalFilename);
-
-                // 7. Trigger download
-                return window.Utils.downloadFile(dataToDownload, finalFilename);
-            });
+            return window.Utils.downloadFile(dataToDownload, finalFilename);
+        });
     }
 };

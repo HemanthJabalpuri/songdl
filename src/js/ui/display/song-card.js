@@ -5,9 +5,9 @@ function createSongCard(song, index, context) {
     var hasStream = song.has_stream;
     var songId = song.id || song.token || 'song-' + (index || 0);
     var playCount = song.play_count ? parseInt(song.play_count).toLocaleString() : '0';
-    var duration = formatDuration(song.duration || song.more_info?.duration);
+    var duration = formatDuration(song.duration || (song.more_info && song.more_info.duration));
     var image = song.image || (context && context.image ? context.image : '');
-    if (!image || image.includes('placeholder.com')) {
+    if (!image || image.indexOf('placeholder.com') !== -1) {
         image = window.Utils.getDefaultImage('song');
     }
     var contextLanguage = context ? context.language : '';
@@ -41,7 +41,7 @@ function createSongCard(song, index, context) {
 
     // Context-specific display
     var artistDisplay = song.subtitle || '';
-    if (isAlbumView && artistDisplay.includes(' - ')) {
+    if (isAlbumView && artistDisplay.indexOf(' - ') !== -1) {
         var parts = artistDisplay.split(' - ');
         artistDisplay = parts[0];
     }
@@ -49,61 +49,55 @@ function createSongCard(song, index, context) {
     // Album view: compact details (no language/year)
     var detailsHtml;
     if (isAlbumView) {
-        detailsHtml = `${playCount} plays • ${duration}`;
+        detailsHtml = playCount + ' plays • ' + duration;
     } else {
-        detailsHtml = `${escapeHtml(contextLanguage || song.language || 'Unknown')} • 
-                       ${song.year || contextYear || 'N/A'} • 
-                       ${playCount} plays • 
-                       ${duration}`;
+        detailsHtml = escapeHtml(contextLanguage || song.language || 'Unknown') + ' • ' +
+            (song.year || contextYear || 'N/A') + ' • ' + playCount + ' plays • ' + duration;
     }
 
-    var
-        html =
-            `
-        <div class="song-card" data-token="${song.token || song.id}">
-            <img src="${image}" alt="${escapeHtml(song.title)}" />
-            <div class="song-info">
-                <div class="song-title">${titlePrefix}${escapeHtml(song.title)}</div>
-                <div class="song-artist">${escapeHtml(artistDisplay)}</div>
-                <div class="song-details">${detailsHtml}</div>
-                <div class="song-actions">
-                    <button class="btn-play" data-token="${song.token || song.id}" data-songid="${songId}" 
-                        ${!hasStream ? 'disabled' : ''}>
-                        ▶
-                    </button>
-                    <button class="btn-download" data-token="${song.token || song.id}" data-songid="${songId}" 
-                        ${!hasStream ? 'disabled' : ''}>
-                        ⬇
-                    </button>
-                    ${
-                hasLyrics ?
-                    `<button class="btn-lyrics" data-token="${song.token}" data-songid="${songId}">📜</button>` :
-                    ''}
-                    ${
-                hasMoreActions ? `
-                    <div style="position: relative; display: inline-block;">
-                        <button class="btn-more" data-token="${song.token}" data-songid="${songId}">⋮</button>
-                        <div class="more-menu" id="more-menu-${
-                                     songId}" style="display:none; position: absolute; right: 0; top: 100%;">
-                            ${
-                                     showAlbumInMenu ? `<button class="more-item" data-action="album" data-token="${
-                                                           albumToken}">💿 ${escapeHtml(albumName)}</button>` :
-                                                       ''}
-                            ${artists.map(function(artist) {
-                                         return `<button class="more-item" data-action="artist" data-token="${
-                                             artist.token}">🎤 ${escapeHtml(artist.name)}</button>`;
-                                     }).join('')}
-                        </div>
-                    </div>
-                    ` :
-                                 ''}
-                    <div class="play-progress" id="play-progress-${songId}">⏳ Decrypting...</div>
-                    <div class="download-progress" id="download-progress-${songId}">⏳ Downloading...</div>
-                    ${!hasStream ? '<span style="color:#999;font-size:12px;">No stream</span>' : ''}
-                </div>
-            </div>
-        </div>
-    `;
+    var html = '\n        <div class="song-card" data-token="' + (song.token || song.id) + '">\n' +
+        '            <img src="' + image + '" alt="' + escapeHtml(song.title) + '" />\n' +
+        '            <div class="song-info">\n' +
+        '                <div class="song-title">' + titlePrefix + escapeHtml(song.title) + '</div>\n' +
+        '                <div class="song-artist">' + escapeHtml(artistDisplay) + '</div>\n' +
+        '                <div class="song-details">' + detailsHtml + '</div>\n' +
+        '                <div class="song-actions">\n' +
+        '                    <button class="btn-play" data-token="' + (song.token || song.id) + '" data-songid="' +
+        songId + '" \n' + (!hasStream ? '                        disabled' : '') + '>\n' +
+        '                        ▶\n' +
+        '                    </button>\n' +
+        '                    <button class="btn-download" data-token="' + (song.token || song.id) + '" data-songid="' +
+        songId + '" \n' + (!hasStream ? '                        disabled' : '') + '>\n' +
+        '                        ⬇\n' +
+        '                    </button>\n' +
+        (hasLyrics ? '                    <button class="btn-lyrics" data-token="' + song.token + '" data-songid="' +
+                 songId + '">📜</button>\n' :
+                     '') +
+        (hasMoreActions ? '                    <div style="position: relative; display: inline-block;">\n' +
+                 '                        <button class="btn-more" data-token="' + song.token + '" data-songid="' +
+                 songId + '">⋮</button>\n' +
+                 '                        <div class="more-menu" id="more-menu-' + songId +
+                 '" style="display:none; position: absolute; right: 0; top: 100%;">\n' +
+                 (showAlbumInMenu ?
+                      '                            <button class="more-item" data-action="album" data-token="' +
+                          albumToken + '">💿 ' + escapeHtml(albumName) + '</button>\n' :
+                      '') +
+                 artists
+                     .map(function(artist) {
+                         return '                            <button class="more-item" data-action="artist" data-token="' +
+                             artist.token + '">🎤 ' + escapeHtml(artist.name) + '</button>\n';
+                     })
+                     .join('') +
+                 '                        </div>\n' +
+                 '                    </div>\n' :
+                          '') +
+        '                    <div class="play-progress" id="play-progress-' + songId + '">⏳ Decrypting...</div>\n' +
+        '                    <div class="download-progress" id="download-progress-' + songId +
+        '">⏳ Downloading...</div>\n' +
+        (!hasStream ? '                    <span style="color:#999;font-size:12px;">No stream</span>\n' : '') +
+        '                </div>\n' +
+        '            </div>\n' +
+        '        </div>\n    ';
 
     return html;
 }

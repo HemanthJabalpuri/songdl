@@ -26,7 +26,7 @@ window.Services.Song = {
     getLyrics: function(token) {
         var cached = window.Cache.get('lyrics:' + token);
         if (cached) {
-            return Promise.resolve(cached);
+            return window.Utils.Promise.resolve(cached);
         }
 
         return window.API.getLyrics(token).then(function(data) {

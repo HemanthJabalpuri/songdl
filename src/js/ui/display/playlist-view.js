@@ -1,8 +1,8 @@
 // src/js/ui/display/playlist-view.js
 
 // ============ LOAD MORE PLAYLIST ============
-async function loadMorePlaylist() {
-    if (window._playlistState.isLoading) return;
+function loadMorePlaylist() {
+    if (window._playlistState.isLoading) return window.Utils.Promise.resolve();
     window._playlistState.isLoading = true;
 
     var btn = document.getElementById('playlist-load-more-btn');
@@ -15,72 +15,77 @@ async function loadMorePlaylist() {
     var cacheKey = window.Cache.getDetailKey('playlist', window._playlistState.token) + ':' + nextPage + ':' +
         window._playlistState.limit;
 
-    try {
-        var data;
+    var promise;
 
-        // Check cache first
-        if (window.Cache.has(cacheKey)) {
-            console.log('[Display] Using cached playlist page:', nextPage);
-            data = window.Cache.get(cacheKey);
-        } else {
-            data = await window.Services.Playlist.getDetails(
-                window._playlistState.token, nextPage, window._playlistState.limit);
-            window.Cache.set(cacheKey, data);
-        }
-
-        // Append songs
-        if (data.songs && data.songs.length > 0) {
-            var resultsDiv = document.getElementById('results');
-
-            // Remove load more button
-            var oldBtn = document.getElementById('playlist-load-more-btn');
-            if (oldBtn) oldBtn.remove();
-
-            // Calculate starting index for this page (global)
-            var startIndex = (nextPage - 1) * window._playlistState.limit;
-
-            // Append new songs with correct global numbering
-            data.songs.forEach(function(song, idx) {
-                var globalIndex = startIndex + idx;
-                var songCard = createSongCard(song, globalIndex, data);
-                resultsDiv.insertAdjacentHTML('beforeend', songCard);
-            });
-
-            // Update state
-            window._playlistState.currentPage = nextPage;
-            window._playlistLoadedPages.push(cacheKey);
-
-            // Update active stack data using helper
-            window.Nav.updateCurrent({loadedPages: window._playlistLoadedPages.slice()});
-
-            // Attach song data to new cards
-            var cards = resultsDiv.querySelectorAll('.song-card');
-            cards.forEach(function(card, idx) {
-                var globalIdx = startIndex + idx;
-                if (idx >= startIndex && data.songs[idx - startIndex]) {
-                    card._songData = data.songs[idx - startIndex];
-                }
-            });
-
-            // Show load more button again
-            showPlaylistLoadMoreButton();
-        } else {
-            var endMsg = document.createElement('div');
-            endMsg.className = 'end-of-results';
-            endMsg.id = 'playlist-load-more-btn';
-            endMsg.textContent = '🏁 End of playlist';
-            document.getElementById('results').appendChild(endMsg);
-        }
-    } catch (error) {
-        console.error('[Display] Load more playlist error:', error);
-        var btn = document.getElementById('playlist-load-more-btn');
-        if (btn) {
-            btn.textContent = 'Retry';
-            btn.disabled = false;
-        }
-    } finally {
-        window._playlistState.isLoading = false;
+    // Check cache first
+    if (window.Cache.has(cacheKey)) {
+        console.log('[Display] Using cached playlist page:', nextPage);
+        promise = window.Utils.Promise.resolve(window.Cache.get(cacheKey));
+    } else {
+        promise =
+            window.Services.Playlist.getDetails(window._playlistState.token, nextPage, window._playlistState.limit)
+                .then(function(data) {
+                    window.Cache.set(cacheKey, data);
+                    return data;
+                });
     }
+
+    return promise
+        .then(function(data) {
+            // Append songs
+            if (data.songs && data.songs.length > 0) {
+                var resultsDiv = document.getElementById('results');
+
+                // Remove load more button
+                var oldBtn = document.getElementById('playlist-load-more-btn');
+                if (oldBtn) oldBtn.remove();
+
+                // Calculate starting index for this page (global)
+                var startIndex = (nextPage - 1) * window._playlistState.limit;
+
+                // Append new songs with correct global numbering
+                data.songs.forEach(function(song, idx) {
+                    var globalIndex = startIndex + idx;
+                    var songCard = createSongCard(song, globalIndex, data);
+                    resultsDiv.insertAdjacentHTML('beforeend', songCard);
+                });
+
+                // Update state
+                window._playlistState.currentPage = nextPage;
+                window._playlistLoadedPages.push(cacheKey);
+
+                // Update active stack data using helper
+                window.Nav.updateCurrent({loadedPages: window._playlistLoadedPages.slice()});
+
+                // Attach song data to new cards
+                var cards = resultsDiv.querySelectorAll('.song-card');
+                cards.forEach(function(card, idx) {
+                    if (idx >= startIndex && data.songs[idx - startIndex]) {
+                        card._songData = data.songs[idx - startIndex];
+                    }
+                });
+
+                // Show load more button again
+                showPlaylistLoadMoreButton();
+            } else {
+                var endMsg = document.createElement('div');
+                endMsg.className = 'end-of-results';
+                endMsg.id = 'playlist-load-more-btn';
+                endMsg.textContent = '🏁 End of playlist';
+                document.getElementById('results').appendChild(endMsg);
+            }
+        })
+        .catch(function(error) {
+            console.error('[Display] Load more playlist error:', error);
+            var btn = document.getElementById('playlist-load-more-btn');
+            if (btn) {
+                btn.textContent = 'Retry';
+                btn.disabled = false;
+            }
+        })
+        .then(function() {
+            window._playlistState.isLoading = false;
+        });
 }
 
 // ============ SHOW PLAYLIST LOAD MORE BUTTON ============
@@ -98,7 +103,8 @@ function showPlaylistLoadMoreButton() {
         var loadedCount = window._playlistLoadedPages.length * window._playlistState.limit;
         hasMore = loadedCount < window._playlistState.total;
     } else {
-        var lastData = window.Cache.get(window._playlistLoadedPages[window._playlistLoadedPages.length - 1]);
+        var lastKey = window._playlistLoadedPages[window._playlistLoadedPages.length - 1];
+        var lastData = window.Cache.get(lastKey);
         if (lastData && lastData.songs) {
             hasMore = lastData.songs.length >= window._playlistState.limit;
         }
@@ -126,25 +132,26 @@ function showPlaylistLoadMoreButton() {
 // ============ RENDER PLAYLIST ============
 function renderPlaylist(playlist) {
     var image = playlist.image;
-    if (!image || image.includes('placeholder.com')) {
+    if (!image || image.indexOf('placeholder.com') !== -1) {
         image = window.Utils.getDefaultImage('playlist');
     }
-    var html = `
-        <div class="playlist-header">
-            <img src="${image}" alt="${playlist.title}" />
-            <div class="playlist-header-info">
-                <h2>${escapeHtml(playlist.title)}</h2>
-                <p>${escapeHtml(playlist.subtitle || '')}</p>
-                <p>${playlist.list_count || playlist.song_count || 0} songs • ${
-        escapeHtml(playlist.language || 'Unknown')}</p>
-                ${playlist.description ? `<p class="playlist-description">${escapeHtml(playlist.description)}</p>` : ''}
-                <div class="playlist-actions">
-                    <button class="btn-back" id="btn-back-search">← Back</button>
-                </div>
-            </div>
-        </div>
-        <div class="song-list playlist-songs-list">
-    `;
+    var playlistCountInfo = playlist.list_count || playlist.song_count || 0;
+    var html = '\n        <div class="playlist-header">\n' +
+        '            <img src="' + image + '" alt="' + escapeHtml(playlist.title) + '" />\n' +
+        '            <div class="playlist-header-info">\n' +
+        '                <h2>' + escapeHtml(playlist.title) + '</h2>\n' +
+        '                <p>' + escapeHtml(playlist.subtitle || '') + '</p>\n' +
+        '                <p>' + playlistCountInfo + ' songs • ' + escapeHtml(playlist.language || 'Unknown') +
+        '</p>\n' +
+        (playlist.description ?
+             '                <p class="playlist-description">' + escapeHtml(playlist.description) + '</p>\n' :
+             '') +
+        '                <div class="playlist-actions">\n' +
+        '                    <button class="btn-back" id="btn-back-search">← Back</button>\n' +
+        '                </div>\n' +
+        '            </div>\n' +
+        '        </div>\n' +
+        '        <div class="song-list playlist-songs-list">\n    ';
 
     var playlistContext = {
         type: 'playlist',
@@ -160,7 +167,7 @@ function renderPlaylist(playlist) {
             html += createSongCard(song, index, playlistContext);
         });
     } else {
-        html += `<div class="no-results">No songs found in this playlist.</div>`;
+        html += '<div class="no-results">No songs found in this playlist.</div>';
     }
 
     html += '</div>';
@@ -177,7 +184,7 @@ function renderPlaylist(playlist) {
     }
 }
 
-async function viewPlaylist(token) {
+function viewPlaylist(token) {
     console.log('[View] viewPlaylist called, isRestoring:', window._isRestoring);
 
     // Only push if not restoring
@@ -219,34 +226,34 @@ async function viewPlaylist(token) {
 
         renderPlaylist(playlist);
         showPlaylistLoadMoreButton();
-        return;
+        return window.Utils.Promise.resolve();
     }
 
-    try {
-        var playlist = await window.Services.Playlist.getDetails(token, page, limit);
+    return window.Services.Playlist.getDetails(token, page, limit)
+        .then(function(playlist) {
+            // Store in cache
+            window.Cache.set(cacheKey, playlist);
+            window._playlistState.total = parseInt(playlist.list_count) || parseInt(playlist.song_count) || 0;
+            window._playlistLoadedPages.push(cacheKey);
 
-        // Store in cache
-        window.Cache.set(cacheKey, playlist);
-        window._playlistState.total = parseInt(playlist.list_count) || parseInt(playlist.song_count) || 0;
-        window._playlistLoadedPages.push(cacheKey);
-
-        // Update stack entry with the first page
-        var currentStack = window.Nav.getStack();
-        for (var i = currentStack.length - 1; i >= 0; i--) {
-            if (currentStack[i].type === 'playlist') {
-                currentStack[i].data.loadedPages = window._playlistLoadedPages.slice();
-                console.log('[Nav] Updated playlist stack with first page');
-                break;
+            // Update stack entry with the first page
+            var currentStack = window.Nav.getStack();
+            for (var i = currentStack.length - 1; i >= 0; i--) {
+                if (currentStack[i].type === 'playlist') {
+                    currentStack[i].data.loadedPages = window._playlistLoadedPages.slice();
+                    console.log('[Nav] Updated playlist stack with first page');
+                    break;
+                }
             }
-        }
 
-        renderPlaylist(playlist);
-        showPlaylistLoadMoreButton();
-
-    } catch (error) {
-        console.error('[View Playlist Error] Failed to load or render details:', error);
-        DOM.results.innerHTML = `<div class="error">❌ Error loading playlist: ${error.message}</div>`;
-    }
+            renderPlaylist(playlist);
+            showPlaylistLoadMoreButton();
+        })
+        .catch(function(error) {
+            console.error('[View Playlist Error] Failed to load or render details:', error);
+            DOM.results.innerHTML =
+                '<div class="error">❌ Error loading playlist: ' + escapeHtml(error.message) + '</div>';
+        });
 }
 
 // ============ EXPOSE ============

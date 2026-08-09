@@ -1,9 +1,9 @@
 // src/js/ui/download.js
 
-async function downloadSong(songData) {
+function downloadSong(songData) {
     if (!songData) {
         console.error('[Download] No song data provided');
-        return;
+        return window.Utils.Promise.resolve();
     }
 
     var token = songData.token || songData.id;
@@ -26,34 +26,48 @@ async function downloadSong(songData) {
         var song = window.Utils.formatters.formatDecryptedSong(songData, decryptedUrl);
 
         // Use existing download logic
-        await window.Services.Download.songFromData(song);
+        return window.Services.Download.songFromData(song)
+            .then(function() {
+                if (progressDiv) {
+                    progressDiv.textContent = '✅ Done!';
+                    progressDiv.style.color = '#1db954';
+                    setTimeout(function() {
+                        progressDiv.style.display = 'none';
+                        progressDiv.style.color = '#28a745';
+                    }, 3000);
+                }
+            })
+            .catch(function(error) {
+                console.error('[Download] Error:', error);
+                alert('Failed to download: ' + error.message);
+                if (progressDiv) {
+                    progressDiv.textContent = '❌ Failed';
+                    progressDiv.style.color = '#ff4444';
+                    setTimeout(function() {
+                        progressDiv.style.display = 'none';
+                        progressDiv.style.color = '#28a745';
+                    }, 3000);
+                }
+            })
+            .then(function() {
+                buttons.forEach(function(btn) {
+                    btn.textContent = '⬇';
+                    btn.disabled = false;
+                });
+            });
 
-        if (progressDiv) {
-            progressDiv.textContent = '✅ Done!';
-            progressDiv.style.color = '#1db954';
-            setTimeout(function() {
-                progressDiv.style.display = 'none';
-                progressDiv.style.color = '#28a745';
-            }, 3000);
-        }
     } catch (error) {
-        console.error('[Download] Error:', error);
-        alert('Failed to download: ' + error.message);
-        if (progressDiv) {
-            progressDiv.textContent = '❌ Failed';
-            progressDiv.style.color = '#ff4444';
-            setTimeout(function() {
-                progressDiv.style.display = 'none';
-                progressDiv.style.color = '#28a745';
-            }, 3000);
-        }
-    } finally {
+        console.error('[Download] Setup error:', error);
+        alert('Failed to initialize download: ' + error.message);
         buttons.forEach(function(btn) {
             btn.textContent = '⬇';
             btn.disabled = false;
         });
+        if (progressDiv) {
+            progressDiv.style.display = 'none';
+        }
+        return window.Utils.Promise.resolve();
     }
 }
-
 
 window.downloadSong = downloadSong;
