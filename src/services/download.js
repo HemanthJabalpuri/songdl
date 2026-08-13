@@ -16,7 +16,7 @@ window.Services.Download = {
         var artPromise =
             songData.image ? window.Utils.fetchAlbumArt(songData.image) : window.Utils.Promise.resolve(null);
 
-        var lyricsPromise = songData.has_lyrics ?
+        var lyricsPromise = (songData.more_info && songData.more_info.has_lyrics) ?
             window.Services.Song.getLyrics(songData.token || songData.id).catch(function(e) {
                 console.warn('[Services] Failed to fetch lyrics:', e.message);
                 return null;
@@ -36,9 +36,10 @@ window.Services.Download = {
 
             // Build metadata and tag M4A
             var metadata = window.Utils.buildMetadata(songData, albumArtData, lyricsText);
+            var artists = window.Utils.formatters.extractArtists(songData);
             console.log(
                 '[Services] Metadata: title="' + songData.title + '", artist="' +
-                (songData.artist || songData.all_artists) + '"');
+                (artists.allArtists || songData.subtitle || 'Unknown') + '"');
 
             var dataToDownload = audioBytes;
             if (typeof window.Utils.writeM4ABytes === 'function') {

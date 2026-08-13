@@ -2,13 +2,14 @@
 
 // Extract rendering logic to a separate function
 function renderAlbum(album) {
+    window.UI.hideSearchOptions();
     var image = album.image;
     if (!image || image.indexOf('placeholder.com') !== -1) {
         image = window.Utils.getDefaultImage('album');
     }
     var songCountInfo = album.song_count || (album.songs ? album.songs.length : 0);
     /* clang-format off */
-    var html = window.Utils.compileHTML([
+    var headerHtml = window.Utils.compileHTML([
         '<div class="album-header">',
         '    <img src="' + image + '" alt="' + escapeHtml(album.title) + '" />',
         '    <div class="album-header-info">',
@@ -19,34 +20,31 @@ function renderAlbum(album) {
         '            <button class="btn-back" id="btn-back-search">← Back</button>',
         '        </div>',
         '    </div>',
-        '</div>',
-        '<div class="song-list album-songs-list">'
+        '</div>'
     ]);
     /* clang-format on */
+
+    var headerNode = window.Utils.compileHTMLToNode(headerHtml);
+    window.UI.bindBackButton(headerNode, '#btn-back-search');
+
+    var listNode = document.createElement('div');
+    listNode.className = 'song-list album-songs-list';
 
     var albumContext =
         {type: 'album', image: album.image, language: album.language, year: album.year, title: album.title};
 
     if (album.songs && album.songs.length > 0) {
         album.songs.forEach(function(song, index) {
-            html += createSongCard(song, index, albumContext);
-        });
-    } else {
-        html += '<div class="no-results">No songs found in this album.</div>';
-    }
-
-    html += '</div>';
-    DOM.results.innerHTML = html;
-
-    // Attach song data to cards
-    var cards = DOM.results.querySelectorAll('.song-card');
-    if (album.songs && album.songs.length > 0) {
-        cards.forEach(function(card, index) {
-            if (album.songs[index]) {
-                card._songData = album.songs[index];
+            var card = createSongCard(song, index, albumContext);
+            if (card) {
+                listNode.appendChild(card);
             }
         });
+    } else {
+        listNode.innerHTML = '<div class="no-results">No songs found in this album.</div>';
     }
+
+    window.Utils.render(DOM.results, [headerNode, listNode]);
 }
 
 // ============ VIEW ALBUM ============

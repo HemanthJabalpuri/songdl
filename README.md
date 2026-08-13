@@ -1,6 +1,6 @@
 # 🎵 Song Downloader
 
-Download songs, albums, artists, and playlists from supported music platform with full metadata, right in your browser.
+Download songs from supported music platform albums, playlists, and artists with full metadata, right in your browser.
 
 ---
 
@@ -23,7 +23,7 @@ This userscript solves common problems:
 - 🎚️ **Quality** - Choose from 12, 48, 96, 160, 320 kbps
 - 🔗 **URL Detection** - Paste any supported music platform URL (song, album, playlist, artist) and the UI resolves it automatically
 - 📀 **Details Views**:
-  - **Albums**: View tracklists and download individual tracks or the entire album at once.
+  - **Albums**: View tracklists and download individual tracks.
   - **Playlists**: View curations and download tracks with dynamic "Load More" pagination support.
   - **Artists**: Explore artist details, switch between Popular and Latest tabs, and load more relative songs/albums.
 - 🖼️ **Album Art** - Embedded in downloaded files
@@ -45,7 +45,7 @@ This userscript solves common problems:
 
 ### 3. Visit supported music platform
 - Go to supported music platform
-- Click the 🎵 button or press `Alt+J` to open the UI
+- Click the 🎵 button to open the UI
 
 ---
 
@@ -53,7 +53,6 @@ This userscript solves common problems:
 
 ### Opening the UI
 - Click the **🎵** floating button in the bottom-right corner
-- Or press **Alt+J** on your keyboard
 
 ### Searching
 1. Type a song, album, playlist, or artist name in the search box
@@ -68,7 +67,7 @@ This userscript solves common problems:
 ### Downloading
 - Click the **⬇ Download** button on any song
 - The song downloads with full metadata (M4A format)
-- Album downloads: Click **View Album** → Download individual songs or the whole list
+- Album/Playlist downloads: Click **View Album** / **View Playlist** → Download individual songs from the list
 
 ### Quality Selection
 - Use the **Quality** dropdown in the header
@@ -107,8 +106,6 @@ All audio files, decryptions, search pages, and details records are stored in a 
 
 | Shortcut | Action |
 |----------|--------|
-| `Alt+J` | Open/Close UI |
-| `Escape` | Close UI |
 | `Enter` | Search (when focused on search box) |
 
 ---

@@ -54,3 +54,44 @@ window.Utils.injectAllStyles = function() {
 window.Utils.compileHTML = function(htmlLines) {
     return Array.isArray(htmlLines) ? htmlLines.join('\n') : htmlLines;
 };
+
+// Compile HTML string array into a single interactive DOM element node
+window.Utils.compileHTMLToNode = function(htmlLines) {
+    var rawHtml = Array.isArray(htmlLines) ? htmlLines.join('\n') : htmlLines;
+    var temp = document.createElement('div');
+    temp.innerHTML = rawHtml.trim();
+    return temp.firstElementChild;
+};
+
+// Render HTML strings or DOM elements or arrays of mixed content to a parent node container
+window.Utils.render = function(parent, content) {
+    if (!parent) return;
+    parent.innerHTML = '';
+    
+    if (content === undefined || content === null) {
+        return;
+    }
+    
+    var items = Array.isArray(content) ? content : [content];
+    items.forEach(function(item) {
+        if (item === undefined || item === null) return;
+        if (item instanceof HTMLElement) {
+            parent.appendChild(item);
+        } else if (typeof item === 'string') {
+            parent.insertAdjacentHTML('beforeend', item);
+        }
+    });
+};
+
+// Bind click events on elements matching selector within parent, handling default/propagation details automatically
+window.Utils.bindClick = function(parent, selector, handler) {
+    if (!parent) return;
+    var elements = selector ? parent.querySelectorAll(selector) : [parent];
+    elements.forEach(function(element) {
+        element.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            handler(e, element);
+        });
+    });
+};

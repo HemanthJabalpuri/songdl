@@ -37,7 +37,7 @@ test('formatters.formatSong maps correct keys & types', function() {
     assert.ok(formatted);
     assert.strictEqual(formatted.id, 'mock_song_001');
     assert.strictEqual(formatted.title, 'Jingle Bells');
-    assert.strictEqual(typeof formatted.has_lyrics, 'boolean');
+    assert.strictEqual(typeof formatted.more_info.has_lyrics, 'boolean');
     assert.strictEqual(formatted.more_info.album, 'Christmas Album');
 });
 

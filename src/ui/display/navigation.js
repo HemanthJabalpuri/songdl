@@ -13,9 +13,7 @@ function restoreSearch(data) {
 
     if (!window.Utils.Cache.has(firstPageKey)) {
         console.log('[Restore] No cache for search, falling back to search');
-        if (typeof window.UI.search === 'function') {
-            window.UI.search();
-        }
+        window.UI.search();
         return;
     }
 
@@ -36,9 +34,7 @@ function restoreSearch(data) {
 
     if (allResults.length === 0) {
         console.log('[Restore] No results found, falling back to search');
-        if (typeof window.UI.search === 'function') {
-            window.UI.search();
-        }
+        window.UI.search();
         return;
     }
 
@@ -47,6 +43,8 @@ function restoreSearch(data) {
     window.UI._searchState.query = query;
     window.UI._searchState.currentPage = loadedPages.length;
     window.UI._searchLoadedPages = loadedPages.slice();
+    window.UI.currentSearchType = searchType;
+    window.UI.setCategoryHighlight(searchType);
 
     // Display results
     displaySearchResults(allResults, searchType);
@@ -148,10 +146,7 @@ function restoreView(view) {
             promise = window.UI.restoreArtist(view.data);
             break;
         default:
-            console.log('[Restore] Unknown type:', view.type);
-            if (typeof window.UI.search === 'function') {
-                window.UI.search();
-            }
+            window.UI.search();
             promise = window.Utils.Promise.resolve();
     }
 
@@ -160,3 +155,24 @@ function restoreView(view) {
         console.log('[Restore] Done, isRestoring:', window.UI._isRestoring);
     });
 }
+
+// Bind standard back button behavior to a selector within a parent Node
+function bindBackButton(parentNode, selector) {
+    window.Utils.bindClick(parentNode, selector || '.btn-back, #btn-back-search, #btn-back', function() {
+        var current = window.UI.Nav.pop();
+        var prev = window.UI.Nav.peek();
+        if (prev) {
+            restoreView(prev);
+        } else {
+            var results = document.getElementById('results');
+            var stats = document.getElementById('stats');
+            if (results) results.innerHTML = '';
+            if (stats) stats.innerHTML = '';
+            if (DOM.searchInput) {
+                DOM.searchInput.value = '';
+                DOM.searchInput.focus();
+            }
+        }
+    });
+}
+window.UI.bindBackButton = bindBackButton;

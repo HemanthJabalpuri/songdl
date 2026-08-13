@@ -34,6 +34,23 @@ function displayLyricsOverlay(lyricsText) {
     ]);
     /* clang-format on */
 
+    var closeBtn = overlay.querySelector('#lyrics-close-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeLyricsOverlay();
+        });
+    }
+
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeLyricsOverlay();
+        }
+    });
+
     document.body.appendChild(overlay);
 }
 

@@ -2,12 +2,11 @@
 
 ## Project Summary
 
-**Song Downloader** is a userscript designed for Firefox Android with Violentmonkey. It provides a clean UI for searching, playing, and downloading songs and albums from supported music platform with full metadata (ID3 tags, album art, lyrics).
+**Song Downloader** is a userscript designed for Firefox Android with Violentmonkey. It provides a clean UI for searching, playing, and downloading songs from supported music platform with full metadata (ID3 tags, album art, lyrics).
 
 ### Key Features
 - Search songs and albums
 - Download individual songs with metadata (M4A format)
-- Download entire albums
 - In-browser audio player with inline player below song
 - Quality selection (12, 48, 96, 160, 320 kbps)
 - Lyrics fetching and embedding
@@ -16,8 +15,8 @@
 
 ### Target Environment
 - **Primary:** Firefox Android + Violentmonkey (or Chrome Desktop + Tampermonkey)
-- **Development:** Any modern browser with Node.js server
-- **Command-Line:** Terminal shell with Node.js v0.9.5, v0.11.8, or v22+
+- **Development:** Any modern browser and Node.js server running in background
+- **Command-Line:** Terminal shell with Node.js v0.11.8+
 
 ---
 
@@ -163,7 +162,7 @@ Installed in Violentmonkey on supported music platform
 
 ### CLI Mode (Terminal Developer Tool)
 ```
-node songdl-cli.js [--mock] [command]
+./bin/linux_x64/node songdl-cli.js [--mock] [command]
 ```
 - Fits developers running queries or automated checks inside terminal shells (Node.js v22+ required).
 - Dynamic in-memory script loader parser imports from `src/app-scripts.js` directly (no userscript compiling needed).
@@ -177,16 +176,16 @@ node songdl-cli.js [--mock] [command]
 
 ```bash
 # Build userscript
-node build.js
+./bin/linux_x64/node build.js
 
 # Start development server
-node server.js
+./bin/linux_x64/node server.js
 
 # Run automated tests
-node run-tests.js
+./bin/linux_x64/node run-tests.js
 
 # Run CLI commands (with mock)
-node songdl-cli.js --mock search songs jingle
+./bin/linux_x64/node songdl-cli.js --mock search songs jingle
 
 # Test modes:
 # Split mode: http://localhost:3000/
@@ -202,7 +201,7 @@ The project includes a robust, modular automated testing suite located in the `/
 
 To run the entire test suite, execute:
 ```bash
-node run-tests.js
+./bin/linux_x64/node run-tests.js
 ```
 
 ### Testing Architecture
@@ -520,10 +519,10 @@ Since the music platform details API does not return total item count values, pa
 
 ```bash
 # Build userscript
-node build.js
+./bin/linux_x64/node build.js
 
 # Start development server (split + bundle modes)
-node server.js
+./bin/linux_x64/node server.js
 ```
 
 ---
@@ -564,13 +563,13 @@ node server.js
 32. `ui/download.js` - Download progress buttons
 33. `ui/core.js` - Bootstrapper split/bundle initializer coordinator
 34. `ui/builder.js` - Dialog container template assembler
-35. `ui/handlers.js` - Click event delegation and keyboard hotkeys
+35. `ui/handlers.js` - App event listeners and tab switching
 
 ---
 
 ## Testing
 
 ### Manual Testing
-1. **Split Mode:** `node server.js` → http://localhost:3000/
-2. **Bundle Mode:** `node build.js` → `node server.js` → http://localhost:3000/bundle
-3. **Userscript:** `node build.js` → Install in Violentmonkey → supported music platform
+1. **Split Mode:** `./bin/linux_x64/node server.js` → http://localhost:3000/
+2. **Bundle Mode:** `./bin/linux_x64/node build.js` → `./bin/linux_x64/node server.js` → http://localhost:3000/bundle
+3. **Userscript:** `./bin/linux_x64/node build.js` → Install in Violentmonkey → visit supported music platform

@@ -22,11 +22,10 @@ function downloadSong(songData) {
     });
 
     try {
-        var decryptedUrl = window.Utils.getDecryptedUrl(songData, window.UI.currentQuality || 96);
-        var song = window.Utils.formatters.formatDecryptedSong(songData, decryptedUrl);
+        songData.url = window.Utils.getDecryptedUrl(songData, window.UI.currentQuality || 96);
 
         // Use existing download logic
-        return window.Services.Download.songFromData(song)
+        return window.Services.Download.songFromData(songData)
             .then(function() {
                 if (progressDiv) {
                     progressDiv.textContent = '✅ Done!';

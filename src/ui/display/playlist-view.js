@@ -44,10 +44,13 @@ function loadMorePlaylist() {
                 var startIndex = (nextPage - 1) * window.UI._playlistState.limit;
 
                 // Append new songs with correct global numbering
+                var targetList = resultsDiv ? (resultsDiv.querySelector('.playlist-songs-list') || resultsDiv) : null;
                 data.songs.forEach(function(song, idx) {
                     var globalIndex = startIndex + idx;
                     var songCard = createSongCard(song, globalIndex, data);
-                    resultsDiv.insertAdjacentHTML('beforeend', songCard);
+                    if (songCard && targetList) {
+                        targetList.appendChild(songCard);
+                    }
                 });
 
                 // Update state
@@ -56,14 +59,6 @@ function loadMorePlaylist() {
 
                 // Update active stack data using helper
                 window.UI.Nav.updateCurrent({loadedPages: window.UI._playlistLoadedPages.slice()});
-
-                // Attach song data to new cards
-                var cards = resultsDiv.querySelectorAll('.song-card');
-                cards.forEach(function(card, idx) {
-                    if (idx >= startIndex && data.songs[idx - startIndex]) {
-                        card._songData = data.songs[idx - startIndex];
-                    }
-                });
 
                 // Show load more button again
                 showPlaylistLoadMoreButton();
@@ -131,13 +126,14 @@ function showPlaylistLoadMoreButton() {
 
 // ============ RENDER PLAYLIST ============
 function renderPlaylist(playlist) {
+    window.UI.hideSearchOptions();
     var image = playlist.image;
     if (!image || image.indexOf('placeholder.com') !== -1) {
         image = window.Utils.getDefaultImage('playlist');
     }
     var playlistCountInfo = playlist.list_count || playlist.song_count || 0;
     /* clang-format off */
-    var html = window.Utils.compileHTML([
+    var headerHtml = window.Utils.compileHTML([
         '<div class="playlist-header">',
         '    <img src="' + image + '" alt="' + escapeHtml(playlist.title) + '" />',
         '    <div class="playlist-header-info">',
@@ -149,10 +145,15 @@ function renderPlaylist(playlist) {
         '            <button class="btn-back" id="btn-back-search">← Back</button>',
         '        </div>',
         '    </div>',
-        '</div>',
-        '<div class="song-list playlist-songs-list">'
+        '</div>'
     ]);
     /* clang-format on */
+
+    var headerNode = window.Utils.compileHTMLToNode(headerHtml);
+    window.UI.bindBackButton(headerNode, '#btn-back-search');
+
+    var listNode = document.createElement('div');
+    listNode.className = 'song-list playlist-songs-list';
 
     var playlistContext = {
         type: 'playlist',
@@ -163,26 +164,17 @@ function renderPlaylist(playlist) {
     };
 
     if (playlist.songs && playlist.songs.length > 0) {
-        // For page 1, index starts at 0, so it's correct
         playlist.songs.forEach(function(song, index) {
-            html += createSongCard(song, index, playlistContext);
-        });
-    } else {
-        html += '<div class="no-results">No songs found in this playlist.</div>';
-    }
-
-    html += '</div>';
-    DOM.results.innerHTML = html;
-
-    // Attach song data to cards
-    var cards = DOM.results.querySelectorAll('.song-card');
-    if (playlist.songs && playlist.songs.length > 0) {
-        cards.forEach(function(card, index) {
-            if (playlist.songs[index]) {
-                card._songData = playlist.songs[index];
+            var card = createSongCard(song, index, playlistContext);
+            if (card) {
+                listNode.appendChild(card);
             }
         });
+    } else {
+        listNode.innerHTML = '<div class="no-results">No songs found in this playlist.</div>';
     }
+
+    window.Utils.render(DOM.results, [headerNode, listNode]);
 }
 
 function viewPlaylist(token) {

@@ -20,7 +20,8 @@ window.Utils.downloadFile = function(data, filename) {
 
 // Build a filename from song metadata
 window.Utils.buildFilename = function(song, quality) {
-    var artist = song.primary_artist || 'Unknown Artist';
+    var artists = window.Utils.formatters.extractArtists(song);
+    var artist = artists.primaryArtist || song.subtitle || 'Unknown Artist';
     var safeTitle = (song.title || 'song').replace(/[^a-zA-Z0-9\s-]/g, '').trim();
     var safeArtist = artist.replace(/[^a-zA-Z0-9\s-]/g, '').trim();
     var filename = safeTitle + ' - ' + safeArtist;
@@ -33,15 +34,19 @@ window.Utils.buildFilename = function(song, quality) {
 
 // Build metadata object for M4A
 window.Utils.buildMetadata = function(song, albumArt, lyrics) {
-    var allArtists = song.all_artists || song.subtitle || '';
+    var artists = window.Utils.formatters.extractArtists(song);
+    var allArtists = artists.allArtists || song.subtitle || '';
+
+    var album = window.Utils.formatters.getAlbumName(song);
+    var copyright = song.more_info ? song.more_info.copyright_text : '';
 
     var metadata = {
         title: song.title || '',
         artist: allArtists,
-        album: song.album || '',
+        album: album,
         year: song.year || '',
         genre: song.language || '',
-        copyright: song.copyright || '',
+        copyright: copyright,
         comment: 'Token: ' + (song.token || ''),
         album_artist: allArtists,
     };

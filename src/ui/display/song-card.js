@@ -4,7 +4,6 @@
 function createSongCard(song, index, context) {
     var hasStream = song.has_stream;
     var songId = song.id || song.token || 'song-' + (index || 0);
-    var playCount = song.play_count ? parseInt(song.play_count).toLocaleString() : '0';
     var duration = window.Utils.formatDuration(song.duration || (song.more_info && song.more_info.duration));
     var image = song.image || (context && context.image ? context.image : '');
     if (!image || image.indexOf('placeholder.com') !== -1) {
@@ -13,7 +12,7 @@ function createSongCard(song, index, context) {
     var contextLanguage = context ? context.language : '';
     var contextYear = context ? context.year : '';
     var titlePrefix = (index !== undefined && context) ? (index + 1) + '. ' : '';
-    var hasLyrics = song.has_lyrics || false;
+    var hasLyrics = !!(song.more_info && song.more_info.has_lyrics);
 
     // Determine context type
     var isAlbumView = context && context.type === 'album';
@@ -46,17 +45,22 @@ function createSongCard(song, index, context) {
         artistDisplay = parts[0];
     }
 
+    var playCountStr = '';
+    if (song.play_count && song.play_count !== '0' && song.play_count !== 0) {
+        playCountStr = parseInt(song.play_count).toLocaleString() + ' plays • ';
+    }
+
     // Album view: compact details (no language/year)
     var detailsHtml;
     if (isAlbumView) {
-        detailsHtml = playCount + ' plays • ' + duration;
+        detailsHtml = playCountStr + duration;
     } else {
         detailsHtml = escapeHtml(contextLanguage || song.language || 'Unknown') + ' • ' +
-            (song.year || contextYear || 'N/A') + ' • ' + playCount + ' plays • ' + duration;
+            (song.year || contextYear || 'N/A') + ' • ' + playCountStr + duration;
     }
 
     /* clang-format off */
-    var html = window.Utils.compileHTML([
+    var node = window.Utils.compileHTMLToNode([
         '<div class="song-card" data-token="' + (song.token || song.id) + '">',
         '    <img src="' + image + '" alt="' + escapeHtml(song.title) + '" />',
         '    <div class="song-info">',
@@ -91,7 +95,49 @@ function createSongCard(song, index, context) {
     ]);
     /* clang-format on */
 
-    return html;
+    // Attach song data directly to returned Node for queue building inside player.js
+    node._songData = song;
+
+    // Play operation
+    window.Utils.bindClick(node, '.btn-play', function() {
+        window.UI.playSong(song);
+    });
+
+    // Download operation
+    window.Utils.bindClick(node, '.btn-download', function() {
+        window.UI.downloadSong(song);
+    });
+
+    // Show Lyrics operation
+    window.Utils.bindClick(node, '.btn-lyrics', function() {
+        window.UI.showLyrics(song.token, song.id);
+    });
+
+    // Toggle More Actions Menu
+    window.Utils.bindClick(node, '.btn-more', function() {
+        var menu = node.querySelector('#more-menu-' + songId);
+        if (menu) {
+            document.querySelectorAll('.more-menu').forEach(function(m) {
+                if (m !== menu) m.style.display = 'none';
+            });
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+        }
+    });
+
+    // Click Action inside the More Actions Menu
+    window.Utils.bindClick(node, '.more-item', function(e, element) {
+        var action = element.dataset.action;
+        var token = element.dataset.token;
+        var menu = node.querySelector('.more-menu');
+        if (menu) menu.style.display = 'none';
+        if (action === 'album') {
+            window.UI.viewAlbum(token);
+        } else if (action === 'artist') {
+            window.UI.viewArtist(token);
+        }
+    });
+
+    return node;
 }
 
 /* clang-format off */

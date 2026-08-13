@@ -52,7 +52,7 @@ function buildCard(options) {
     }
 
     /* clang-format off */
-    return window.Utils.compileHTML([
+    var node = window.Utils.compileHTMLToNode([
         '<div class="' + type + '-card" data-token="' + token + '">',
         '    <img src="' + image + '" alt="' + escapeHtml(title) + '" />',
         '    <div class="' + type + '-info">',
@@ -66,6 +66,18 @@ function buildCard(options) {
         '</div>'
     ]);
     /* clang-format on */
+
+    window.Utils.bindClick(node, null, function() {
+        if (type === 'album') {
+            window.UI.viewAlbum(token);
+        } else if (type === 'playlist') {
+            window.UI.viewPlaylist(token);
+        } else if (type === 'artist') {
+            window.UI.viewArtist(token);
+        }
+    });
+
+    return node;
 }
 
 // Create HTML representations for album cards
@@ -85,13 +97,16 @@ function createAlbumCard(album) {
 // Create HTML representations for playlist cards
 function createPlaylistCard(playlist) {
     var songCount = (playlist.more_info && playlist.more_info.song_count) || playlist.song_count || '0';
+    var hasSongsText = playlist.subtitle && (playlist.subtitle.toLowerCase().indexOf('song') !== -1 || playlist.subtitle.toLowerCase().indexOf('track') !== -1);
+    var details = hasSongsText ? escapeHtml(playlist.language || 'Unknown') : songCount + ' songs • ' + escapeHtml(playlist.language || 'Unknown');
+
     return buildCard({
         type: 'playlist',
         token: playlist.token,
         image: playlist.image,
         title: playlist.title,
         subtitle: playlist.subtitle || '',
-        details: songCount + ' songs • ' + escapeHtml(playlist.language || 'Unknown'),
+        details: details,
         buttonText: '📂 View Playlist'
     });
 }

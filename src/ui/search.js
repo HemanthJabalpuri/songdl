@@ -13,9 +13,6 @@ function handleUrlSearch(parsed) {
 
     var promise;
     if (parsed.type === 'song' || parsed.type === 'lyrics') {
-        if (window.UI.currentSearchType !== 'songs') {
-            switchTab('songs');
-        }
         promise = window.API.getSong(parsed.token).then(function(songData) {
             var song = songData.songs ? songData.songs[0] : null;
             if (song) {
@@ -27,9 +24,6 @@ function handleUrlSearch(parsed) {
             }
         });
     } else if (parsed.type === 'album') {
-        if (window.UI.currentSearchType !== 'albums') {
-            switchTab('albums');
-        }
         promise = window.API.getAlbum(parsed.token).then(function(albumData) {
             if (albumData && albumData.id) {
                 if (statsDiv) statsDiv.innerHTML = 'Found 1 album';
@@ -39,9 +33,6 @@ function handleUrlSearch(parsed) {
             }
         });
     } else if (parsed.type === 'playlist') {
-        if (window.UI.currentSearchType !== 'playlists') {
-            switchTab('playlists');
-        }
         promise = window.API.getPlaylist(parsed.token).then(function(playlistData) {
             if (playlistData && playlistData.id) {
                 if (statsDiv) statsDiv.innerHTML = 'Found 1 playlist';
@@ -51,9 +42,6 @@ function handleUrlSearch(parsed) {
             }
         });
     } else if (parsed.type === 'artist') {
-        if (window.UI.currentSearchType !== 'artists') {
-            switchTab('artists');
-        }
         promise = window.API.getArtist(parsed.token).then(function(artistData) {
             if (artistData && artistData.artistId) {
                 if (statsDiv) statsDiv.innerHTML = 'Found 1 artist';
@@ -337,38 +325,49 @@ function showLoadMoreButton(source) {
     resultsDiv.appendChild(btn);
 }
 
+/* Search Options Pills Container Toggle Helpers */
+window.UI.showSearchOptions = function() {
+    var opts = document.getElementById('search-options');
+    if (opts) opts.style.display = 'flex';
+};
+
+window.UI.hideSearchOptions = function() {
+    var opts = document.getElementById('search-options');
+    if (opts) opts.style.display = 'none';
+};
+
 window.UI.search = search;
 window.UI.loadMoreSearch = loadMoreSearch;
 
 /* clang-format off */
 // Register search styling rules
 window.Utils.registerStyle([
-    '/* Search Tabs */',
-    '.search-tabs {',
+    '/* Search Options Pills */',
+    '.search-options {',
     '    display: flex;',
-    '    gap: 10px;',
+    '    gap: 8px;',
     '    margin-bottom: 20px;',
     '}',
-    '.tab {',
-    '    padding: 10px 24px;',
+    '.search-option {',
+    '    padding: 6px 16px;',
     '    background: #282828;',
     '    color: #888;',
     '    border: none;',
-    '    border-radius: 8px;',
-    '    font-size: 15px;',
+    '    border-radius: 20px;',
+    '    font-size: 13px;',
     '    cursor: pointer;',
     '    transition: all 0.2s;',
     '}',
-    '.tab:hover {',
+    '.search-option:hover {',
     '    background: #333;',
     '}',
-    '.tab.active {',
+    '.search-option.active {',
     '    background: #1db954;',
     '    color: #111;',
     '    font-weight: bold;',
     '}',
-    '/* Disabled tab */',
-    '.tab.disabled {',
+    '/* Disabled search-option */',
+    '.search-option.disabled {',
     '    opacity: 0.4;',
     '    cursor: not-allowed;',
     '    pointer-events: none;',

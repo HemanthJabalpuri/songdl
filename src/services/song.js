@@ -14,8 +14,9 @@ window.Services.Song = {
             var songData = rawData.songs ? rawData.songs[0] : null;
             if (!songData) throw new Error('Song not found');
 
-            var decryptedUrl = window.Utils.getDecryptedUrl(songData, window.UI.currentQuality || 96);
-            return window.Utils.formatters.formatDecryptedSong(songData, decryptedUrl);
+            var formattedSong = window.Utils.formatters.formatSong(songData);
+            formattedSong.url = window.Utils.getDecryptedUrl(songData, window.UI.currentQuality || 96);
+            return formattedSong;
         });
     },
 

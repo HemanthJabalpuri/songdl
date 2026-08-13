@@ -31,15 +31,15 @@ function createUI() {
         '            <span style="font-size:11px;color:#666;">kbps</span>',
         '        </div>',
         '    </div>',
-        '    <div class="search-tabs">',
-        '        <button class="tab active" id="tab-songs">Songs</button>',
-        '        <button class="tab" id="tab-albums">Albums</button>',
-        '        <button class="tab" id="tab-playlists">Playlists</button>',
-        '        <button class="tab" id="tab-artists">Artists</button>',
-        '    </div>',
         '    <div class="search-box">',
         '        <input type="text" id="searchInput" placeholder="Search for songs or albums..." autofocus />',
         '        <button class="btn-search" id="searchBtn">Search</button>',
+        '    </div>',
+        '    <div class="search-options" id="search-options" style="display: none;">',
+        '        <button class="search-option active" data-type="songs">Songs</button>',
+        '        <button class="search-option" data-type="albums">Albums</button>',
+        '        <button class="search-option" data-type="playlists">Playlists</button>',
+        '        <button class="search-option" data-type="artists">Artists</button>',
         '    </div>',
         '    <div id="stats" class="stats"></div>',
         '    <div id="results"></div>',
@@ -61,10 +61,31 @@ function createUI() {
     DOM.searchInput = document.getElementById('searchInput');
     DOM.results = document.getElementById('results');
     DOM.stats = document.getElementById('stats');
-    DOM.tabs = document.querySelectorAll('.tab');
+    DOM.tabs = document.querySelectorAll('.search-option');
     DOM.overlay = document.getElementById('ui-overlay');
     DOM.toggleBtn = document.getElementById('ui-toggle-btn');
     DOM.closeBtn = document.getElementById('ui-close-btn');
+
+    // Bind search option clicks locally
+    var optsNode = overlay.querySelector('.search-options');
+    if (optsNode) {
+        window.Utils.bindClick(optsNode, '.search-option', function(e, btn) {
+            var selectedType = btn.dataset.type;
+            window.UI.setCategoryHighlight(selectedType);
+            window.UI.currentSearchType = selectedType;
+
+            // Reset current results view for the new category
+            var results = document.getElementById('results');
+            var stats = document.getElementById('stats');
+            if (results) results.innerHTML = '';
+            if (stats) stats.innerHTML = '';
+
+            // Auto-trigger search if input isn't empty
+            if (DOM.searchInput && DOM.searchInput.value.trim() !== '') {
+                window.UI.search();
+            }
+        });
+    }
 
     setupEventListeners();
     setupAppEventListeners();
@@ -105,6 +126,15 @@ function openUI() {
     isOpen = true;
     console.log('[UI] Opened');
 }
+
+window.UI.setCategoryHighlight = function(type) {
+    var optsNode = document.getElementById('search-options');
+    if (optsNode) {
+        optsNode.querySelectorAll('.search-option').forEach(function(btn) {
+            btn.classList.toggle('active', btn.dataset.type === type);
+        });
+    }
+};
 
 window.UI.createUI = createUI;
 window.UI.toggleUI = toggleUI;
@@ -255,10 +285,10 @@ window.Utils.registerStyle([
     '}',
     '/* ===== Responsive ===== */',
     '@media (max-width: 600px) {',
-    '    .search-tabs {',
+    '    .search-options {',
     '        flex-wrap: wrap;',
     '    }',
-    '    .tab {',
+    '    .search-option {',
     '        flex: 1;',
     '        text-align: center;',
     '        padding: 8px 12px;',
