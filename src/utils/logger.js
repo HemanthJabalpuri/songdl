@@ -19,6 +19,6 @@ console.warn = function() {
 
 console.error = function() {
     // Errors always render by default, but respect the toggle if wanted
-    if (window.Utils.Utils && window.Utils.LOGGING_ENABLED === false) return;
+    if (window.Utils.LOGGING_ENABLED === false) return;
     originalError.apply(console, arguments);
 };
