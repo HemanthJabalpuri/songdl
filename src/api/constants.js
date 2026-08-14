@@ -7,7 +7,7 @@ window.UI = window.UI || {};
 window.API.constants = window.API.constants || {};
 
 // API endpoints
-const HOST = 'https://www.mymusic.com';
+var HOST = 'https://www.mymusic.com';
 window.API.constants.API_HOST = HOST;
 window.API.constants.API_BASE = HOST + '/api.php';
 window.API.constants.REFERER = HOST + '/';

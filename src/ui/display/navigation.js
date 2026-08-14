@@ -27,8 +27,8 @@ function restoreSearch(data) {
             }
         });
     } else {
-        var data = window.Utils.Cache.get(firstPageKey);
-        allResults = data.results || [];
+        var cachedData = window.Utils.Cache.get(firstPageKey);
+        allResults = cachedData.results || [];
         loadedPages = [firstPageKey];
     }
 
@@ -87,9 +87,9 @@ function restorePlaylist(data) {
             }
         });
     } else {
-        var data = window.Utils.Cache.get(firstPageKey);
-        playlistData = data;
-        allSongs = data.songs || [];
+        var cachedData = window.Utils.Cache.get(firstPageKey);
+        playlistData = cachedData;
+        allSongs = cachedData.songs || [];
         loadedPages = [firstPageKey];
     }
 
@@ -159,7 +159,7 @@ function restoreView(view) {
 // Bind standard back button behavior to a selector within a parent Node
 function bindBackButton(parentNode, selector) {
     window.Utils.bindClick(parentNode, selector || '.btn-back, #btn-back-search, #btn-back', function() {
-        var current = window.UI.Nav.pop();
+        window.UI.Nav.pop();
         var prev = window.UI.Nav.peek();
         if (prev) {
             restoreView(prev);

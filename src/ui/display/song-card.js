@@ -16,7 +16,6 @@ function createSongCard(song, index, context) {
 
     // Determine context type
     var isAlbumView = context && context.type === 'album';
-    var isPlaylistView = context && context.type === 'playlist';
 
     // Extract album token and name for more menu
     var albumToken = null;

@@ -1,4 +1,5 @@
 // tests/bootstrap.js
+require('./node-fetch.js');
 var fs = require('fs');
 var path = require('path');
 
@@ -53,8 +54,9 @@ try {
     });
 
     // 4. Intercept calls to mock URLs and delegate them to mock-server
-    var originalFetch = window.Utils.fetch;
-    window.Utils.fetch = function(url, options) {
+    // 4. Intercept calls to mock URLs and delegate them to mock-server
+    var originalFetch = global.fetch;
+    global.fetch = function(url, options) {
         options = options || {};
         var urlStr = url.toString();
 

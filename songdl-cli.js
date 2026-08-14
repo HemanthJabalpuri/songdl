@@ -4,6 +4,7 @@ var fs = require('fs');
 var path = require('path');
 
 global.window = global;
+require('./tests/node-fetch.js');
 
 
 // Parse command line arguments at startup

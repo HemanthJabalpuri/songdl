@@ -77,15 +77,16 @@ function renderHeaderNode(artist) {
 function renderFooterNode(artist) {
     var container = document.createElement('div');
     container.className = 'artist-sections-wrapper';
+    var section, list;
 
     if (artist.dedicatedPlaylists && artist.dedicatedPlaylists.length > 0) {
-        var section = window.Utils.compileHTMLToNode([
+        section = window.Utils.compileHTMLToNode([
             '<div class="artist-playlists-section" id="artist-dedicated-playlists">',
             '    <h3>Dedicated Playlists</h3>',
             '    <div class="playlist-list"></div>',
             '</div>'
         ]);
-        var list = section.querySelector('.playlist-list');
+        list = section.querySelector('.playlist-list');
         artist.dedicatedPlaylists.forEach(function(playlist) {
             var card = createPlaylistCard(playlist);
             if (card && list) list.appendChild(card);
@@ -94,13 +95,13 @@ function renderFooterNode(artist) {
     }
 
     if (artist.featuredPlaylists && artist.featuredPlaylists.length > 0) {
-        var section = window.Utils.compileHTMLToNode([
+        section = window.Utils.compileHTMLToNode([
             '<div class="artist-playlists-section" id="artist-featured-playlists">',
             '    <h3>Featured In</h3>',
             '    <div class="playlist-list"></div>',
             '</div>'
         ]);
-        var list = section.querySelector('.playlist-list');
+        list = section.querySelector('.playlist-list');
         artist.featuredPlaylists.forEach(function(playlist) {
             var card = createPlaylistCard(playlist);
             if (card && list) list.appendChild(card);
@@ -109,13 +110,13 @@ function renderFooterNode(artist) {
     }
 
     if (artist.singles && artist.singles.length > 0) {
-        var section = window.Utils.compileHTMLToNode([
+        section = window.Utils.compileHTMLToNode([
             '<div class="artist-albums-section" id="artist-singles">',
             '    <h3>Singles</h3>',
             '    <div class="album-list"></div>',
             '</div>'
         ]);
-        var list = section.querySelector('.album-list');
+        list = section.querySelector('.album-list');
         artist.singles.forEach(function(single) {
             var card = createAlbumCard(single);
             if (card && list) list.appendChild(card);
@@ -124,13 +125,13 @@ function renderFooterNode(artist) {
     }
 
     if (artist.latestReleases && artist.latestReleases.length > 0) {
-        var section = window.Utils.compileHTMLToNode([
+        section = window.Utils.compileHTMLToNode([
             '<div class="artist-albums-section" id="artist-latest-releases">',
             '    <h3>Latest Releases</h3>',
             '    <div class="album-list"></div>',
             '</div>'
         ]);
-        var list = section.querySelector('.album-list');
+        list = section.querySelector('.album-list');
         artist.latestReleases.forEach(function(release) {
             var card = createAlbumCard(release);
             if (card && list) list.appendChild(card);

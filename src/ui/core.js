@@ -77,8 +77,6 @@ window.UI.Nav = {
 var isOpen = false;
 var isInitialized = false;
 var isToggling = false;
-var currentPlayerElement = null;
-var currentSongCard = null;
 
 // DOM references
 var DOM = {

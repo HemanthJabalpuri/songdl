@@ -3,61 +3,7 @@
 // Restricts recursive parsing to metadata-only atoms to avoid GC allocating and shifts index tables in-place using
 // direct byte signatures.
 
-var latin1Decoder = typeof TextDecoder !== 'undefined' ? new TextDecoder('latin1') : null;
-var utf8Decoder = typeof TextDecoder !== 'undefined' ? new TextDecoder('utf-8') : null;
-var utf8Encoder = typeof TextEncoder !== 'undefined' ? new TextEncoder() : null;
 
-// Converts a segment of Uint8Array to string.
-function bytesToString(bytes, offset, endOffset, encoding) {
-    if (encoding === undefined) encoding = 'latin1';
-    var slice = bytes.subarray(offset, endOffset);
-    if (encoding === 'utf8') {
-        if (utf8Decoder) return utf8Decoder.decode(slice);
-        // Fallback for old Node.js
-        var buf;
-        if (typeof Buffer.from === 'function') {
-            buf = Buffer.from(slice);
-        } else {
-            buf = new Buffer(slice.length);
-            for (var i = 0; i < slice.length; i++) {
-                buf[i] = slice[i];
-            }
-        }
-        return buf.toString('utf8');
-    } else {
-        if (latin1Decoder) return latin1Decoder.decode(slice);
-        var buf;
-        if (typeof Buffer.from === 'function') {
-            buf = Buffer.from(slice);
-        } else {
-            buf = new Buffer(slice.length);
-            for (var i = 0; i < slice.length; i++) {
-                buf[i] = slice[i];
-            }
-        }
-        return buf.toString('binary');
-    }
-}
-
-// Converts a string to Uint8Array.
-function stringToBytes(str, encoding) {
-    if (encoding === undefined) encoding = 'utf8';
-    if (encoding === 'latin1') {
-        var bytes = new Uint8Array(str.length);
-        for (var i = 0; i < str.length; i++) {
-            bytes[i] = str.charCodeAt(i) & 0xff;
-        }
-        return bytes;
-    }
-    if (utf8Encoder) return utf8Encoder.encode(str);
-    // Fallback for old Node.js
-    var buf = new Buffer(str, 'utf8');
-    var arr = new Uint8Array(buf.length);
-    for (var i = 0; i < buf.length; i++) {
-        arr[i] = buf[i];
-    }
-    return arr;
-}
 
 // Concatenates multiple Uint8Array arrays into one.
 function concatUint8Arrays(arrays) {
@@ -67,7 +13,7 @@ function concatUint8Arrays(arrays) {
     }
     var result = new Uint8Array(totalLength);
     var offset = 0;
-    for (var i = 0; i < arrays.length; i++) {
+    for (i = 0; i < arrays.length; i++) {
         var arr = arrays[i];
         result.set(arr, offset);
         offset += arr.length;
@@ -95,19 +41,12 @@ function writeUIntBE(view, value, offset, byteLength) {
 
 // 64-bit Big-Endian DataView helpers supporting legacy runtimes natively
 function readUInt64(view, offset) {
-    if (typeof view.getBigUint64 === 'function') {
-        return Number(view.getBigUint64(offset, false));
-    }
     var high = view.getUint32(offset, false);
     var low = view.getUint32(offset + 4, false);
     return high * 0x100000000 + low;
 }
 
 function writeUInt64(view, value, offset) {
-    if (typeof view.setBigUint64 === 'function') {
-        view.setBigUint64(offset, BigInt(value), false);
-        return;
-    }
     var high = Math.floor(value / 0x100000000);
     var low = value % 0x100000000;
     view.setUint32(offset, high, false);
@@ -178,7 +117,7 @@ function readAtomHeader(bytes, offset) {
     if (offset + 8 > bytes.length) return null;
     var view = new DataView(bytes.buffer, bytes.byteOffset + offset, 8);
     var size = view.getUint32(0, false);
-    var type = bytesToString(bytes, offset + 4, offset + 8, 'latin1');
+    var type = window.Utils.bytesToString(bytes, offset + 4, offset + 8, 'latin1');
     var headerSize = 8;
     var actualSize = size;
 
@@ -272,19 +211,20 @@ function parseAtomTree(bytes, offset, endOffset) {
 function shiftStcoInBytes(bytes, delta) {
     if (delta === 0) return;
     var view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    var size, count, i, idx, val;
 
     // Find 'stco' in bytes (4-byte signature: [115, 116, 99, 111])
     var pos = 0;
     while (pos + 8 <= bytes.length) {
         // checking [s, t, c, o]
         if (bytes[pos] === 115 && bytes[pos + 1] === 116 && bytes[pos + 2] === 99 && bytes[pos + 3] === 111) {
-            var size = view.getUint32(pos - 4, false);
+            size = view.getUint32(pos - 4, false);
             if (pos - 4 + size <= bytes.length) {
-                var count = view.getUint32(pos + 8, false);
-                for (var i = 0; i < count; i++) {
-                    var idx = pos + 12 + i * 4;
+                count = view.getUint32(pos + 8, false);
+                for (i = 0; i < count; i++) {
+                    idx = pos + 12 + i * 4;
                     if (idx + 4 <= bytes.length) {
-                        var val = view.getUint32(idx, false);
+                        val = view.getUint32(idx, false);
                         view.setUint32(idx, val + delta, false);
                     }
                 }
@@ -293,13 +233,13 @@ function shiftStcoInBytes(bytes, delta) {
         }
         // Find 'co64' in bytes (4-byte signature: [99, 111, 54, 52])
         if (bytes[pos] === 99 && bytes[pos + 1] === 111 && bytes[pos + 2] === 54 && bytes[pos + 3] === 52) {
-            var size = view.getUint32(pos - 4, false);
+            size = view.getUint32(pos - 4, false);
             if (pos - 4 + size <= bytes.length) {
-                var count = view.getUint32(pos + 8, false);
-                for (var i = 0; i < count; i++) {
-                    var idx = pos + 12 + i * 8;
+                count = view.getUint32(pos + 8, false);
+                for (i = 0; i < count; i++) {
+                    idx = pos + 12 + i * 8;
                     if (idx + 8 <= bytes.length) {
-                        var val = readUInt64(view, idx);
+                        val = readUInt64(view, idx);
                         writeUInt64(view, val + delta, idx);
                     }
                 }
@@ -315,6 +255,7 @@ function shiftStcoInBytes(bytes, delta) {
 // string encoding allocations.
 function serializeAtomTree(atom, delta) {
     if (delta === undefined) delta = 0;
+    var i, header, view;
     // If track atom payload is encountered, apply offset shifts to stco/co64 directly
     if (delta !== 0 && atom.type === 'trak') {
         shiftStcoInBytes(atom.payload, delta);
@@ -322,20 +263,20 @@ function serializeAtomTree(atom, delta) {
 
     if (atom.children && atom.children.length > 0) {
         var serializedChildren = [];
-        for (var i = 0; i < atom.children.length; i++) {
+        for (i = 0; i < atom.children.length; i++) {
             serializedChildren.push(serializeAtomTree(atom.children[i], delta));
         }
 
         var payloadLength = 0;
-        for (var i = 0; i < serializedChildren.length; i++) {
+        for (i = 0; i < serializedChildren.length; i++) {
             payloadLength += serializedChildren[i].length;
         }
         if (atom.type === 'meta') {
             payloadLength += 4;
         }
 
-        var header = new Uint8Array(atom.headerSize);
-        var view = new DataView(header.buffer, header.byteOffset, header.byteLength);
+        header = new Uint8Array(atom.headerSize);
+        view = new DataView(header.buffer, header.byteOffset, header.byteLength);
         view.setUint32(0, payloadLength + atom.headerSize, false);
 
         // Optimized: Set type string characters directly (allocation-free)
@@ -351,8 +292,8 @@ function serializeAtomTree(atom, delta) {
         parts = parts.concat(serializedChildren);
         return concatUint8Arrays(parts);
     } else {
-        var header = new Uint8Array(atom.headerSize);
-        var view = new DataView(header.buffer, header.byteOffset, header.byteLength);
+        header = new Uint8Array(atom.headerSize);
+        view = new DataView(header.buffer, header.byteOffset, header.byteLength);
         view.setUint32(0, atom.payload.length + atom.headerSize, false);
 
         // Set type characters directly
@@ -369,6 +310,7 @@ function serializeAtomTree(atom, delta) {
 function extractTags(ilstAtom) {
     var tags = {};
     if (!ilstAtom || !ilstAtom.children) return tags;
+    var valView;
 
     for (var i = 0; i < ilstAtom.children.length; i++) {
         var tagAtom = ilstAtom.children[i];
@@ -387,12 +329,12 @@ function extractTags(ilstAtom) {
 
         if (key === 'track' || key === 'disc') {
             if (valueBuf.length >= 6) {
-                var valView = new DataView(valueBuf.buffer, valueBuf.byteOffset, valueBuf.byteLength);
+                valView = new DataView(valueBuf.buffer, valueBuf.byteOffset, valueBuf.byteLength);
                 tags[key] = valView.getUint16(2, false);
                 tags[key + '_count'] = valView.getUint16(4, false);
             }
         } else if (typeClass === 1) {
-            tags[key] = bytesToString(valueBuf, 0, valueBuf.length, 'utf8');
+            tags[key] = window.Utils.bytesToString(valueBuf, 0, valueBuf.length, 'utf8');
         } else if (typeClass === 13 || typeClass === 14) {
             tags[key] = {
                 format: typeClass === 13 ? 'jpeg' : 'png',
@@ -400,10 +342,10 @@ function extractTags(ilstAtom) {
                 data: valueBuf
             };
         } else if (typeClass === 21) {
-            var valView = new DataView(valueBuf.buffer, valueBuf.byteOffset, valueBuf.byteLength);
+            valView = new DataView(valueBuf.buffer, valueBuf.byteOffset, valueBuf.byteLength);
             tags[key] = readUIntBE(valView, 0, valueBuf.length);
         } else {
-            tags[key] = bytesToString(valueBuf, 0, valueBuf.length, 'utf8');
+            tags[key] = window.Utils.bytesToString(valueBuf, 0, valueBuf.length, 'utf8');
         }
     }
     return tags;
@@ -424,7 +366,7 @@ function createTagAtom(type, value, isPicture) {
         valView.setUint32(0, value, false);
         typeClass = 21;
     } else {
-        valueBuf = stringToBytes(String(value), 'utf8');
+        valueBuf = window.Utils.stringToBytes(String(value), 'utf8');
         typeClass = 1;
     }
 
@@ -461,7 +403,7 @@ function verifyM4AStructure(bytes) {
     if (bytes.length < 8) return false;
 
     // 1. Verify ftyp signature
-    if (bytesToString(bytes, 4, 8, 'latin1') !== 'ftyp') return false;
+    if (window.Utils.bytesToString(bytes, 4, 8, 'latin1') !== 'ftyp') return false;
 
     // 2. Scan top-level atoms for mdat and moov
     var atoms = scanTopLevelAtoms(bytes);
@@ -492,6 +434,7 @@ function parseM4ABytes(bytes) {
         throw new Error(
             'Unsupported or invalid file structure. Only M4A (.m4a) files with valid audio and metadata containers are supported.');
     }
+    var view;
 
     var atoms = scanTopLevelAtoms(bytes);
     var moovDescriptor = findAtomInList(atoms, 'moov');
@@ -519,11 +462,11 @@ function parseM4ABytes(bytes) {
         var timescale = 0;
         var duration = 0;
         if (version === 0 && payload.length >= 20) {
-            var view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+            view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
             timescale = view.getUint32(12, false);
             duration = view.getUint32(16, false);
         } else if (version === 1 && payload.length >= 32) {
-            var view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+            view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
             timescale = view.getUint32(20, false);
             duration = readUInt64(view, 24);
         }
@@ -543,6 +486,7 @@ function writeM4ABytes(bytes, newTags, options) {
         throw new Error(
             'Unsupported or invalid file structure. Only M4A (.m4a) files with valid audio and metadata containers are supported.');
     }
+    var i, atom;
 
     var atomsList = scanTopLevelAtoms(bytes);
     var moovIndex = findIndexInList(atomsList, 'moov');
@@ -555,13 +499,13 @@ function writeM4ABytes(bytes, newTags, options) {
     var moovAtom = parseAtomTree(bytes, moovDescriptor.offset, moovDescriptor.offset + moovDescriptor.size);
 
     // 2. Traverses/constructs the udta -> meta -> ilst path recursively
-    var udta = getOrCreateChild(moovAtom, 'udta', stringToBytes('\x00\x00\x00\x08udta', 'latin1'));
-    var meta = getOrCreateChild(udta, 'meta', stringToBytes('\x00\x00\x00\x0cmeta', 'latin1'), new Uint8Array(4));
-    var ilst = getOrCreateChild(meta, 'ilst', stringToBytes('\x00\x00\x00\x08ilst', 'latin1'));
+    var udta = getOrCreateChild(moovAtom, 'udta', window.Utils.stringToBytes('\x00\x00\x00\x08udta', 'latin1'));
+    var meta = getOrCreateChild(udta, 'meta', window.Utils.stringToBytes('\x00\x00\x00\x0cmeta', 'latin1'), new Uint8Array(4));
+    var ilst = getOrCreateChild(meta, 'ilst', window.Utils.stringToBytes('\x00\x00\x00\x08ilst', 'latin1'));
 
     // 3. Rebuilds/appends the metadata tag atoms list
     var newKeys = Object.keys(newTags);
-    for (var i = 0; i < newKeys.length; i++) {
+    for (i = 0; i < newKeys.length; i++) {
         var key = newKeys[i];
         var val = newTags[key];
         var atomType = TAG_TO_ATOM[key];
@@ -588,8 +532,8 @@ function writeM4ABytes(bytes, newTags, options) {
     var newMdatOffset = 0;
     var hasMdat = false;
 
-    for (var i = 0; i < atomsList.length; i++) {
-        var atom = atomsList[i];
+    for (i = 0; i < atomsList.length; i++) {
+        atom = atomsList[i];
         if (atom.type === 'mdat') {
             oldMdatOffset = atom.offset;
             newMdatOffset = currentNewOffset;
@@ -605,8 +549,8 @@ function writeM4ABytes(bytes, newTags, options) {
 
     // 7. Concatenate all atoms back preserving original order
     var outputParts = [];
-    for (var i = 0; i < atomsList.length; i++) {
-        var atom = atomsList[i];
+    for (i = 0; i < atomsList.length; i++) {
+        atom = atomsList[i];
         if (atom.type === 'moov') {
             outputParts.push(finalMoovBytes);
         } else {

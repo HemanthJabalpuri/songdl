@@ -13,12 +13,13 @@ var APP_SCRIPTS = [].concat(
     ],
     // 2. Encryption & Assembly Libraries
     [
+        'libs/compat.js',
         'libs/des.js',
-        'libs/writem4a.js'
+        'libs/writem4a.js',
+        'libs/promise.js'
     ],
     // 3. Infrastructure Utilities & Loaders (provides compileHTML)
     [
-        'utils/promise.js',
         'utils/ui-loader.js',
         'utils/cache.js',
         'utils/logger.js'

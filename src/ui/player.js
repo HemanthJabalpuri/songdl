@@ -2,7 +2,6 @@
 
 // Global player variables and queue manager
 var currentPlayerElement = null;
-var currentSongCard = null;
 window.UI.currentAudio = null;
 window.UI.playerQueue = [];
 window.UI.currentQueueIndex = -1;
@@ -21,7 +20,6 @@ function playSong(songData) {
     if (currentPlayerElement) {
         currentPlayerElement.remove();
         currentPlayerElement = null;
-        currentSongCard = null;
     }
 
     var progressDiv = document.getElementById('play-progress-' + token);
@@ -140,7 +138,6 @@ function playSong(songData) {
 
         // Store references
         currentPlayerElement = playerElement;
-        currentSongCard = songCard;
 
         var audio = playerElement.querySelector('audio');
         window.UI.currentAudio = audio;
@@ -209,7 +206,6 @@ function closePlayer() {
     if (currentPlayerElement) {
         currentPlayerElement.remove();
         currentPlayerElement = null;
-        currentSongCard = null;
     }
 
     // Clear active playing highlights

@@ -1,22 +1,22 @@
 // mock/generate-mock-data.js
 // Generate mock data for testing pagination with artists support
 
-const fs = require('fs');
-const path = require('path');
+var fs = require('fs');
+var path = require('path');
 
 
 
 // ============ PATHS ============
-const DATA_DIR = path.join(__dirname, 'data');
-const SEARCH_SONGS_DIR = path.join(DATA_DIR, 'search', 'songs');
-const SEARCH_ALBUMS_DIR = path.join(DATA_DIR, 'search', 'albums');
-const SEARCH_PLAYLISTS_DIR = path.join(DATA_DIR, 'search', 'playlists');
-const SEARCH_ARTISTS_DIR = path.join(DATA_DIR, 'search', 'artists');
-const DETAILS_SONGS_DIR = path.join(DATA_DIR, 'details', 'songs');
-const DETAILS_ALBUMS_DIR = path.join(DATA_DIR, 'details', 'albums');
-const DETAILS_PLAYLISTS_DIR = path.join(DATA_DIR, 'details', 'playlists');
-const DETAILS_LYRICS_DIR = path.join(DATA_DIR, 'details', 'lyrics');
-const DETAILS_ARTISTS_DIR = path.join(DATA_DIR, 'details', 'artists');
+var DATA_DIR = path.join(__dirname, 'data');
+var SEARCH_SONGS_DIR = path.join(DATA_DIR, 'search', 'songs');
+var SEARCH_ALBUMS_DIR = path.join(DATA_DIR, 'search', 'albums');
+var SEARCH_PLAYLISTS_DIR = path.join(DATA_DIR, 'search', 'playlists');
+var SEARCH_ARTISTS_DIR = path.join(DATA_DIR, 'search', 'artists');
+var DETAILS_SONGS_DIR = path.join(DATA_DIR, 'details', 'songs');
+var DETAILS_ALBUMS_DIR = path.join(DATA_DIR, 'details', 'albums');
+var DETAILS_PLAYLISTS_DIR = path.join(DATA_DIR, 'details', 'playlists');
+var DETAILS_LYRICS_DIR = path.join(DATA_DIR, 'details', 'lyrics');
+var DETAILS_ARTISTS_DIR = path.join(DATA_DIR, 'details', 'artists');
 
 // ============ GLOBAL COUNTERS ============
 var globalSongIndex = 0;

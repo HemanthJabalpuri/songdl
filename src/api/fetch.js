@@ -1,61 +1,4 @@
 // src/js/api/fetch.js
-// ============ ISOMORPHIC FETCH FALLBACK ============
-var isomorphicFetch = function(url, options) {
-    if (typeof fetch === 'function') {
-        return fetch(url, options);
-    }
-
-    options = options || {};
-    var urlStr = url.toString();
-
-    function makeResponse(status, buffer) {
-        return {
-            ok: status >= 200 && status < 300,
-            status: status,
-            json: function() {
-                return window.Utils.Promise.resolve(JSON.parse(buffer.toString('utf8')));
-            },
-            arrayBuffer: function() {
-                var ab = new ArrayBuffer(buffer.length);
-                var view = new Uint8Array(ab);
-                for (var i = 0; i < buffer.length; i++) {
-                    view[i] = buffer[i];
-                }
-                return window.Utils.Promise.resolve(ab);
-            }
-        };
-    }
-
-    // Native Node HTTP/HTTPS request loader
-    var httpModule = urlStr.indexOf('https:') === 0 ? require('https') : require('http');
-    return new window.Utils.Promise(function(resolve, reject) {
-        var parsed = require('url').parse(urlStr);
-        var reqOptions = {
-            hostname: parsed.hostname,
-            port: parsed.port,
-            path: parsed.path,
-            method: options.method || 'GET',
-            headers: options.headers || {},
-            rejectUnauthorized: false
-        };
-        var req = httpModule.request(reqOptions, function(res) {
-            var chunks = [];
-            res.on('data', function(chunk) {
-                chunks.push(chunk);
-            });
-            res.on('end', function() {
-                resolve(makeResponse(res.statusCode, Buffer.concat(chunks)));
-            });
-        });
-        req.on('error', reject);
-        if (options.body) {
-            req.write(options.body);
-        }
-        req.end();
-    });
-};
-window.Utils.fetch = isomorphicFetch;
-
 // ============ LOW-LEVEL FETCH ============
 window.API._fetchAPI = function(url, options) {
     options = options || {};
@@ -65,7 +8,7 @@ window.API._fetchAPI = function(url, options) {
         console.log('[API] Using proxy for:', url.substring(0, 60) + '...');
         var proxyEndpoint =
             (typeof window !== 'undefined' && window.location) ? '/proxy' : 'http://localhost:3000/proxy';
-        return isomorphicFetch(proxyEndpoint, {
+        return fetch(proxyEndpoint, {
                    method: 'POST',
                    headers: {
                        'X-Proxy-URL': url,
@@ -85,7 +28,7 @@ window.API._fetchAPI = function(url, options) {
 
     // Direct fetch (userscript or browser)
     console.log('[API] Direct fetch for:', url.substring(0, 60) + '...');
-    return isomorphicFetch(url, options).then(function(res) {
+    return fetch(url, options).then(function(res) {
         if (!res.ok) {
             console.error('[API Fetch Error] Direct HTTP failed with status:', res.status, 'for:', url);
             throw new Error('HTTP ' + res.status);

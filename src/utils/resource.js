@@ -35,7 +35,7 @@ function handleGMResponse(response, resolve, reject) {
 // ============ FETCH METHODS ============
 
 function fetchViaDirect(url, responseType) {
-    return (window.Utils.fetch || fetch)(url, {headers: getHeaders()}).then(function(response) {
+    return fetch(url, {headers: getHeaders()}).then(function(response) {
         return handleResponse(response, responseType, url);
     });
 }
