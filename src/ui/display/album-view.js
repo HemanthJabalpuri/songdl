@@ -15,9 +15,9 @@ function renderAlbum(album) {
         '    <div class="album-header-info">',
         '        <h2>' + escapeHtml(album.title) + '</h2>',
         '        <p>' + escapeHtml(album.subtitle || '') + '</p>',
-        '        <p>' + songCountInfo + ' songs • ' + escapeHtml(album.language || 'Unknown') + ' • ' + (album.year || 'N/A') + '</p>',
+        '        <p>' + songCountInfo + ' songs | ' + escapeHtml(album.language || 'Unknown') + ' | ' + (album.year || 'N/A') + '</p>',
         '        <div class="album-actions">',
-        '            <button class="btn-back" id="btn-back-search">← Back</button>',
+        '            <button class="btn-back" id="btn-back-search">' + window.UI.icons.back + 'Back</button>',
         '        </div>',
         '    </div>',
         '</div>'
@@ -66,7 +66,7 @@ function viewAlbum(token) {
         return window.Utils.Promise.resolve();
     }
 
-    DOM.results.innerHTML = '<div class="loading">📂 Loading album...</div>';
+    DOM.results.innerHTML = '<div class="loading">' + window.UI.icons.spinnerLarge + 'Loading album...</div>';
     DOM.stats.innerHTML = '';
 
     return window.Services.Album.getDetails(token)
@@ -78,7 +78,7 @@ function viewAlbum(token) {
         .catch(function(error) {
             console.error('[View Album Error] Failed to load or render details:', error);
             DOM.results.innerHTML =
-                '<div class="error">❌ Error loading album: ' + escapeHtml(error.message) + '</div>';
+                '<div class="error">Error loading album: ' + escapeHtml(error.message) + '</div>';
         });
 }
 

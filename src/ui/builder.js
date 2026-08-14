@@ -18,7 +18,7 @@ function createUI() {
     overlay.innerHTML = window.Utils.compileHTML([
         '<div class="container">',
         '    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:10px;flex-wrap:wrap;">',
-        '        <h1 style="margin:0;font-size:24px;white-space:nowrap;">🎵 Song Downloader</h1>',
+        '        <h1 style="margin:0;font-size:24px;white-space:nowrap;display:flex;align-items:center;gap:8px;">' + window.UI.icons.music + ' Song Downloader</h1>',
         '        <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#888;flex-shrink:0;margin-left:auto;">',
         '            <span>Quality:</span>',
         '            <select id="quality-select" style="background:#222;color:#fff;border:1px solid #444;border-radius:4px;padding:4px 8px;font-size:13px;cursor:pointer;">',
@@ -51,7 +51,7 @@ function createUI() {
 
     var toggleBtn = document.createElement('button');
     toggleBtn.id = 'ui-toggle-btn';
-    toggleBtn.textContent = '🎵';
+    toggleBtn.innerHTML = window.UI.icons.music;
     toggleBtn.title = 'Open Song Downloader (Alt+J)';
     document.body.appendChild(toggleBtn);
 
@@ -116,7 +116,7 @@ function openUI() {
     // Prefill URL from current page if available
     detectAndPrefillUrl();
 
-    if (DOM.toggleBtn) DOM.toggleBtn.textContent = '✕';
+    if (DOM.toggleBtn) DOM.toggleBtn.innerHTML = window.UI.icons.close;
     if (DOM.searchInput) {
         setTimeout(function() {
             DOM.searchInput.focus();
@@ -294,6 +294,14 @@ window.Utils.registerStyle([
     '        padding: 8px 12px;',
     '        font-size: 13px;',
     '    }',
+    '}',
+    '/* ===== Loading Spinner ===== */',
+    '@keyframes spin {',
+    '    0% { transform: rotate(0deg); }',
+    '    100% { transform: rotate(360deg); }',
+    '}',
+    '.spinner {',
+    '    animation: spin 1s linear infinite;',
     '}'
 ]);
 /* clang-format on */

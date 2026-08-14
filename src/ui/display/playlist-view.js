@@ -66,7 +66,7 @@ function loadMorePlaylist() {
                 var endMsg = document.createElement('div');
                 endMsg.className = 'end-of-results';
                 endMsg.id = 'playlist-load-more-btn';
-                endMsg.textContent = '🏁 End of playlist';
+                endMsg.textContent = 'End of playlist';
                 document.getElementById('results').appendChild(endMsg);
             }
         })
@@ -109,7 +109,7 @@ function showPlaylistLoadMoreButton() {
         var endMsg = document.createElement('div');
         endMsg.className = 'end-of-results';
         endMsg.id = 'playlist-load-more-btn';
-        endMsg.textContent = '🏁 End of playlist';
+        endMsg.textContent = 'End of playlist';
         resultsDiv.appendChild(endMsg);
         return;
     }
@@ -139,10 +139,10 @@ function renderPlaylist(playlist) {
         '    <div class="playlist-header-info">',
         '        <h2>' + escapeHtml(playlist.title) + '</h2>',
         '        <p>' + escapeHtml(playlist.subtitle || '') + '</p>',
-        '        <p>' + playlistCountInfo + ' songs • ' + escapeHtml(playlist.language || 'Unknown') + '</p>',
+        '        <p>' + playlistCountInfo + ' songs | ' + escapeHtml(playlist.language || 'Unknown') + '</p>',
         playlist.description ? '        <p class="playlist-description">' + escapeHtml(playlist.description) + '</p>' : '',
         '        <div class="playlist-actions">',
-        '            <button class="btn-back" id="btn-back-search">← Back</button>',
+        '            <button class="btn-back" id="btn-back-search">' + window.UI.icons.back + 'Back</button>',
         '        </div>',
         '    </div>',
         '</div>'
@@ -197,7 +197,7 @@ function viewPlaylist(token) {
     var limit = window.UI._playlistState.limit;
     var cacheKey = 'playlist:' + token + ':' + page + ':' + limit;
 
-    DOM.results.innerHTML = '<div class="loading">📂 Loading playlist...</div>';
+    DOM.results.innerHTML = '<div class="loading">' + window.UI.icons.spinnerLarge + 'Loading playlist...</div>';
     DOM.stats.innerHTML = '';
 
     // Check cache first
@@ -245,7 +245,7 @@ function viewPlaylist(token) {
         .catch(function(error) {
             console.error('[View Playlist Error] Failed to load or render details:', error);
             DOM.results.innerHTML =
-                '<div class="error">❌ Error loading playlist: ' + escapeHtml(error.message) + '</div>';
+                '<div class="error">Error loading playlist: ' + escapeHtml(error.message) + '</div>';
         });
 }
 

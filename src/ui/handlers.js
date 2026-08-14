@@ -83,4 +83,4 @@ if (typeof window.UI.createUI === 'function' && typeof document !== 'undefined')
     window.UI.createUI();
 }
 
-console.log('[UI] Click the 🎵 button in the bottom-right corner to toggle');
+console.log('[UI] Click the floating button in the bottom-right corner to toggle');

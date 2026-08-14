@@ -25,8 +25,8 @@ function displayLyricsOverlay(lyricsText) {
     overlay.innerHTML = window.Utils.compileHTML([
         '<div class="lyrics-card">',
         '    <div class="lyrics-header">',
-        '        <h2>📜 Lyrics</h2>',
-        '        <button id="lyrics-close-btn">✕</button>',
+        '        <h2>Lyrics</h2>',
+        '        <button id="lyrics-close-btn">' + window.UI.icons.close + '</button>',
         '    </div>',
         '    <div id="lyrics-content">' + escapeHtml(lyricsText),
         '    </div>',

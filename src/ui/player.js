@@ -28,12 +28,12 @@ function playSong(songData) {
 
     if (progressDiv) {
         progressDiv.style.display = 'block';
-        progressDiv.textContent = '⏳ Decrypting...';
+        progressDiv.innerHTML = window.UI.icons.spinner + 'Decrypting...';
     }
 
     var buttons = document.querySelectorAll('[data-token="' + token + '"] .btn-play');
     buttons.forEach(function(btn) {
-        btn.textContent = '⏳';
+        btn.innerHTML = window.UI.icons.spinner;
         btn.disabled = true;
     });
 
@@ -46,7 +46,7 @@ function playSong(songData) {
         }
 
         if (progressDiv) {
-            progressDiv.textContent = '✅ Ready!';
+            progressDiv.textContent = 'Ready!';
             setTimeout(function() {
                 progressDiv.style.display = 'none';
             }, 2000);
@@ -109,7 +109,7 @@ function playSong(songData) {
             '<div id="player-container" style="background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-top: 15px; color: #fff;">',
             '    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">',
             '        <strong>Now Playing: ' + displayTitle + '</strong>',
-            '        <button id="player-close-btn" style="background: #dc3545; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer;">✕ Close</button>',
+            '        <button id="player-close-btn" style="background: #dc3545; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer;">Close</button>',
             '    </div>',
             '    <audio controls autoplay style="width: 100%;">',
             '        <source src="' + decryptedUrl + '" type="audio/mpeg">',
@@ -161,7 +161,7 @@ function playSong(songData) {
         console.error('[Player] Play error:', error);
         alert('Failed to play: ' + error.message);
         if (progressDiv) {
-            progressDiv.textContent = '❌ Failed';
+            progressDiv.textContent = 'Failed';
             progressDiv.style.color = '#dc3545';
             setTimeout(function() {
                 progressDiv.style.display = 'none';
@@ -170,7 +170,7 @@ function playSong(songData) {
         }
     } finally {
         buttons.forEach(function(btn) {
-            btn.textContent = '▶';
+            btn.innerHTML = window.UI.icons.play;
             btn.disabled = false;
         });
     }

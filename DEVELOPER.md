@@ -111,7 +111,6 @@ Refactored/
 | `window.UI.DOM` | UI DOM node elements references cache |
 | `window.UI.Nav` | Browser-like navigation panel history stack |
 | `window.isProxy` | Sandbox HTTP proxy mode detection flag |
-| `window.Cache` | Direct convenience alias to window.Utils.Cache |
 
 ---
 

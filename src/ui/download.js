@@ -12,12 +12,12 @@ function downloadSong(songData) {
     var progressDiv = document.getElementById('download-progress-' + token);
     if (progressDiv) {
         progressDiv.style.display = 'block';
-        progressDiv.textContent = '⏳ Downloading...';
+        progressDiv.innerHTML = window.UI.icons.spinner + 'Downloading...';
     }
 
     var buttons = document.querySelectorAll('[data-token="' + token + '"] .btn-download');
     buttons.forEach(function(btn) {
-        btn.textContent = '⏳';
+        btn.innerHTML = window.UI.icons.spinner;
         btn.disabled = true;
     });
 
@@ -28,7 +28,7 @@ function downloadSong(songData) {
         return window.Services.Download.songFromData(songData)
             .then(function() {
                 if (progressDiv) {
-                    progressDiv.textContent = '✅ Done!';
+                    progressDiv.textContent = 'Done!';
                     progressDiv.style.color = '#1db954';
                     setTimeout(function() {
                         progressDiv.style.display = 'none';
@@ -40,7 +40,7 @@ function downloadSong(songData) {
                 console.error('[Download] Error:', error);
                 alert('Failed to download: ' + error.message);
                 if (progressDiv) {
-                    progressDiv.textContent = '❌ Failed';
+                    progressDiv.textContent = 'Failed';
                     progressDiv.style.color = '#ff4444';
                     setTimeout(function() {
                         progressDiv.style.display = 'none';
@@ -50,7 +50,7 @@ function downloadSong(songData) {
             })
             .then(function() {
                 buttons.forEach(function(btn) {
-                    btn.textContent = '⬇';
+                    btn.innerHTML = window.UI.icons.download;
                     btn.disabled = false;
                 });
             });
@@ -59,7 +59,7 @@ function downloadSong(songData) {
         console.error('[Download] Setup error:', error);
         alert('Failed to initialize download: ' + error.message);
         buttons.forEach(function(btn) {
-            btn.textContent = '⬇';
+            btn.innerHTML = window.UI.icons.download;
             btn.disabled = false;
         });
         if (progressDiv) {

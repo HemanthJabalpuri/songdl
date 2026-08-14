@@ -2,6 +2,10 @@
 // ============ HELPERS ============
 
 function getHeaders() {
+    var isBrowser = typeof window !== 'undefined' && typeof window.location !== 'undefined' && typeof document !== 'undefined';
+    if (isBrowser) {
+        return {};
+    }
     return {
         'Referer': window.API.constants.REFERER,
         'Origin': window.API.constants.API_HOST,

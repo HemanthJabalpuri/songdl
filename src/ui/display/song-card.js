@@ -47,7 +47,7 @@ function createSongCard(song, index, context) {
 
     var playCountStr = '';
     if (song.play_count && song.play_count !== '0' && song.play_count !== 0) {
-        playCountStr = parseInt(song.play_count).toLocaleString() + ' plays • ';
+        playCountStr = parseInt(song.play_count).toLocaleString() + ' plays | ';
     }
 
     // Album view: compact details (no language/year)
@@ -55,8 +55,8 @@ function createSongCard(song, index, context) {
     if (isAlbumView) {
         detailsHtml = playCountStr + duration;
     } else {
-        detailsHtml = escapeHtml(contextLanguage || song.language || 'Unknown') + ' • ' +
-            (song.year || contextYear || 'N/A') + ' • ' + playCountStr + duration;
+        detailsHtml = escapeHtml(contextLanguage || song.language || 'Unknown') + ' | ' +
+            (song.year || contextYear || 'N/A') + ' | ' + playCountStr + duration;
     }
 
     /* clang-format off */
@@ -69,25 +69,25 @@ function createSongCard(song, index, context) {
         '        <div class="song-details">' + detailsHtml + '</div>',
         '        <div class="song-actions">',
         '            <button class="btn-play" data-token="' + (song.token || song.id) + '" data-songid="' + songId + '"' + (!hasStream ? ' disabled' : '') + '>',
-        '                ▶',
+        '                ' + window.UI.icons.play,
         '            </button>',
         '            <button class="btn-download" data-token="' + (song.token || song.id) + '" data-songid="' + songId + '"' + (!hasStream ? ' disabled' : '') + '>',
-        '                ⬇',
+        '                ' + window.UI.icons.download,
         '            </button>',
-        hasLyrics ? '            <button class="btn-lyrics" data-token="' + song.token + '" data-songid="' + songId + '">📜</button>' : '',
+        hasLyrics ? '            <button class="btn-lyrics" data-token="' + song.token + '" data-songid="' + songId + '">' + window.UI.icons.lyrics + '</button>' : '',
         hasMoreActions ? [
             '            <div class="more-actions-wrapper">',
-            '                <button class="btn-more" data-token="' + song.token + '" data-songid="' + songId + '">⋮</button>',
+            '                <button class="btn-more" data-token="' + song.token + '" data-songid="' + songId + '">' + window.UI.icons.more + '</button>',
             '                <div class="more-menu" id="more-menu-' + songId + '" style="display: none;">',
-            showAlbumInMenu ? '                    <button class="more-item" data-action="album" data-token="' + albumToken + '">💿 ' + escapeHtml(albumName) + '</button>' : '',
+            showAlbumInMenu ? '                    <button class="more-item" data-action="album" data-token="' + albumToken + '">' + window.UI.icons.disc + escapeHtml(albumName) + '</button>' : '',
             artists.map(function(artist) {
-                return '                    <button class="more-item" data-action="artist" data-token="' + artist.token + '">🎤 ' + escapeHtml(artist.name) + '</button>';
+                return '                    <button class="more-item" data-action="artist" data-token="' + artist.token + '">' + window.UI.icons.mic + escapeHtml(artist.name) + '</button>';
             }).join('\n'),
             '                </div>',
             '            </div>'
         ].join('\n') : '',
-        '            <div class="play-progress" id="play-progress-' + songId + '">⏳ Decrypting...</div>',
-        '            <div class="download-progress" id="download-progress-' + songId + '">⏳ Downloading...</div>',
+        '            <div class="play-progress" id="play-progress-' + songId + '">' + window.UI.icons.spinner + 'Decrypting...</div>',
+        '            <div class="download-progress" id="download-progress-' + songId + '">' + window.UI.icons.spinner + 'Downloading...</div>',
         !hasStream ? '            <span style="color:#999;font-size:12px;">No stream</span>' : '',
         '        </div>',
         '    </div>',

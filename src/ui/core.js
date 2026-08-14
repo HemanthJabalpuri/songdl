@@ -42,7 +42,7 @@ window.UI.Nav = {
                 .map(function(v) {
                     return v.type;
                 })
-                .join(' → '));
+                .join(' -> '));
     },
     pop: function() {
         var view = window.UI._navStack.pop();
@@ -52,7 +52,7 @@ window.UI.Nav = {
                 .map(function(v) {
                     return v.type;
                 })
-                .join(' → '));
+                .join(' -> '));
         return view;
     },
     clear: function() {
@@ -116,7 +116,7 @@ function closeUI() {
     }
 
     DOM.overlay.classList.remove('active');
-    if (DOM.toggleBtn) DOM.toggleBtn.textContent = '🎵';
+    if (DOM.toggleBtn) DOM.toggleBtn.innerHTML = window.UI.icons.music;
 
     isOpen = false;
     console.log('[UI] Closed');

@@ -7,7 +7,7 @@ function handleUrlSearch(parsed) {
     var playerDiv = document.getElementById('player');
 
     // Clear previous results
-    resultsDiv.innerHTML = '<div class="loading">🔍 Loading...</div>';
+    resultsDiv.innerHTML = '<div class="loading">' + window.UI.icons.spinnerLarge + 'Loading...</div>';
     if (statsDiv) statsDiv.innerHTML = '';
     if (playerDiv) playerDiv.innerHTML = '';
 
@@ -20,7 +20,7 @@ function handleUrlSearch(parsed) {
                 if (statsDiv) statsDiv.innerHTML = 'Found 1 song';
                 displaySongs([formattedSong]);
             } else {
-                resultsDiv.innerHTML = '<div class="no-results">😕 Song not found</div>';
+                resultsDiv.innerHTML = '<div class="no-results">Song not found</div>';
             }
         });
     } else if (parsed.type === 'album') {
@@ -29,7 +29,7 @@ function handleUrlSearch(parsed) {
                 if (statsDiv) statsDiv.innerHTML = 'Found 1 album';
                 window.UI.viewAlbum(parsed.token);
             } else {
-                resultsDiv.innerHTML = '<div class="no-results">😕 Album not found</div>';
+                resultsDiv.innerHTML = '<div class="no-results">Album not found</div>';
             }
         });
     } else if (parsed.type === 'playlist') {
@@ -38,7 +38,7 @@ function handleUrlSearch(parsed) {
                 if (statsDiv) statsDiv.innerHTML = 'Found 1 playlist';
                 window.UI.viewPlaylist(parsed.token);
             } else {
-                resultsDiv.innerHTML = '<div class="no-results">😕 Playlist not found</div>';
+                resultsDiv.innerHTML = '<div class="no-results">Playlist not found</div>';
             }
         });
     } else if (parsed.type === 'artist') {
@@ -47,7 +47,7 @@ function handleUrlSearch(parsed) {
                 if (statsDiv) statsDiv.innerHTML = 'Found 1 artist';
                 window.UI.viewArtist(parsed.token);
             } else {
-                resultsDiv.innerHTML = '<div class="no-results">😕 Artist not found</div>';
+                resultsDiv.innerHTML = '<div class="no-results">Artist not found</div>';
             }
         });
     } else {
@@ -56,7 +56,7 @@ function handleUrlSearch(parsed) {
 
     return promise.catch(function(error) {
         console.error('[Search] URL fetch error:', error);
-        resultsDiv.innerHTML = '<div class="error">❌ Failed to load: ' + escapeHtml(error.message) + '</div>';
+        resultsDiv.innerHTML = '<div class="error">Failed to load: ' + escapeHtml(error.message) + '</div>';
     });
 }
 
@@ -84,7 +84,7 @@ function handleTextSearch(query) {
 
     console.log('[Search] Searching for:', query, 'Type:', searchType);
 
-    resultsDiv.innerHTML = '<div class="loading">🔍 Searching</div>';
+    resultsDiv.innerHTML = '<div class="loading">' + window.UI.icons.spinnerLarge + 'Searching...</div>';
     if (statsDiv) statsDiv.innerHTML = '';
     if (playerDiv) playerDiv.innerHTML = '';
 
@@ -110,7 +110,7 @@ function handleTextSearch(query) {
             displaySearchResults(data.results, searchType);
             showLoadMoreButton('search');
         } else {
-            resultsDiv.innerHTML = '<div class="no-results">😕 No results found. Try a different search term.</div>';
+            resultsDiv.innerHTML = '<div class="no-results">No results found. Try a different search term.</div>';
         }
         return window.Utils.Promise.resolve();
     }
@@ -152,12 +152,12 @@ function handleTextSearch(query) {
                 showLoadMoreButton('search');
             } else {
                 resultsDiv.innerHTML =
-                    '<div class="no-results">😕 No results found. Try a different search term.</div>';
+                    '<div class="no-results">No results found. Try a different search term.</div>';
             }
         })
         .catch(function(error) {
             console.error('[Search] Error:', error);
-            resultsDiv.innerHTML = '<div class="error">❌ Error: ' + escapeHtml(error.message) + '</div>';
+            resultsDiv.innerHTML = '<div class="error">Error: ' + escapeHtml(error.message) + '</div>';
             if (statsDiv) statsDiv.innerHTML = '';
         });
 }
@@ -266,7 +266,7 @@ function loadMoreSearch() {
                 var endMsg = document.createElement('div');
                 endMsg.className = 'end-of-results';
                 endMsg.id = 'load-more-btn';
-                endMsg.textContent = '🏁 End of results';
+                endMsg.textContent = 'End of results';
                 document.getElementById('results').appendChild(endMsg);
             }
         })
@@ -309,7 +309,7 @@ function showLoadMoreButton(source) {
         var endMsg = document.createElement('div');
         endMsg.className = 'end-of-results';
         endMsg.id = 'load-more-btn';
-        endMsg.textContent = '🏁 End of results';
+        endMsg.textContent = 'End of results';
         resultsDiv.appendChild(endMsg);
         return;
     }
